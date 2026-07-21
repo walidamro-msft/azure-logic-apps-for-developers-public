@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Connectors and Integration Accounts &middot; Azure Logic Apps Workshop</title>
+  <meta name="description" content="Choose built-in connectors, managed connectors, and Integration Account capabilities for Azure Logic Apps workflows." />
+  <script>
+    (function () {
+      var t = localStorage.getItem("logic-apps-workshop-theme");
+      document.documentElement.setAttribute("data-theme",
+        (t === "light" || t === "dark") ? t : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
+    })();
+  </script>
+  <link rel="icon" type="image/svg+xml" href="../images/azure/02631-icon-service-Logic-Apps.svg" />
+  <link rel="stylesheet" href="../assets/site.css" />
+</head>
+<body data-root=".." data-active="connectors-and-integration-accounts">
+  <div class="page">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../index.html">Home</a><span class="sep">/</span><span>Topics</span><span class="sep">/</span><span>Connectors and Integration Accounts</span>
+    </nav>
+
+    <header class="hero">
+      <h1>Connectors and Integration Accounts</h1>
+      <p class="subtitle">Choose where an integration runs, how it is billed and secured, and whether the solution needs reusable B2B artifacts.</p>
+      <div class="badge-row"><span class="badge">Design guidance</span><span class="badge">Connector strategy</span><span class="badge">B2B integration</span></div>
+    </header>
+
+    <div class="layout">
+      <main class="content">
+        <section id="built-in-connectors" class="section-card reveal">
+          <h2>Built-In Connectors</h2>
+          <p>Built-in connectors run natively within your Logic Apps compute environment. General built-ins such as HTTP, Request, Schedule, and Data Operations implement workflow behavior directly in the runtime. Many Standard service-provider built-ins run in the same process as the single-tenant runtime, avoiding the extra network hop to shared connector infrastructure and generally providing lower latency, higher throughput, private-network access, and compute-inclusive execution compared with managed equivalents.</p>
+          <div class="callout"><strong>Plan check:</strong> the built-in gallery differs by workflow type. Consumption has a smaller native gallery. Most service-provider connectors in this list require Standard, and stateless Standard workflows support push triggers only.</div>
+          <h3>Built-In Cost Model</h3>
+          <div class="table-wrap">
+            <table aria-label="Built-in connector cost model">
+              <thead><tr><th>Hosting model</th><th>How built-in operations are billed</th><th>Cost drivers to model</th></tr></thead>
+              <tbody>
+                <tr><td>Consumption</td><td>An initial monthly grant of built-in executions is shared per Azure subscription. Executions above that grant follow Consumption Actions pricing.</td><td>Trigger checks, action executions, loop cycles, retries, and each workflow instance created by Split On.</td></tr>
+                <tr><td>Standard</td><td>Built-in operations are included without a separate per-operation charge, but the Standard hosting capacity is billed while provisioned.</td><td>Selected hosting tier and instances, scaling, workflow storage transactions, networking, and any downstream Azure service charges.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout"><strong>Cost boundary:</strong> included connector execution does not make the connected service free. External Azure Function Apps, Storage, Service Bus, Event Hubs, SQL, Key Vault, Cosmos DB, data transfer, and other dependencies retain their own pricing. Local functions packaged inside a Standard Logic Apps workspace are included in the Logic Apps hosting cost.</div>
+          <h3>Common Built-In Connectors</h3>
+          <p>This practical selection from the current built-in catalog covers common orchestration, API, messaging, data, storage, and security scenarios.</p>
+          <div class="table-wrap">
+            <table aria-label="Common built-in connectors">
+              <thead><tr><th>Connector family</th><th>Availability</th><th>Common design use</th></tr></thead>
+              <tbody>
+                <tr><td>HTTP</td><td>Consumption and Standard</td><td>Call HTTP or HTTPS APIs, webhooks, and service endpoints.</td></tr>
+                <tr><td>Request</td><td>Consumption and Standard</td><td>Expose a request trigger and return a synchronous response.</td></tr>
+                <tr><td>Schedule</td><td>Consumption and Standard stateful</td><td>Run recurring work, delays, and time-based processing.</td></tr>
+                <tr><td>Control</td><td>Consumption and Standard</td><td>Build conditions, switches, scopes, loops, and termination paths.</td></tr>
+                <tr><td>Data Operations</td><td>Consumption and Standard</td><td>Compose, parse, filter, select, join, and create tables from data.</td></tr>
+                <tr><td>Variables</td><td>Consumption and Standard</td><td>Initialize and update workflow-local values and collections.</td></tr>
+                <tr><td>Azure Functions</td><td>Consumption and Standard</td><td>Call custom code when declarative workflow actions are not enough.</td></tr>
+                <tr><td>Azure Logic Apps / Workflow Operations</td><td>Consumption / Standard</td><td>Call reusable child workflows with an explicit contract.</td></tr>
+                <tr><td>Azure Blob Storage</td><td>Standard</td><td>Read, write, list, and monitor blob content.</td></tr>
+                <tr><td>Azure Service Bus</td><td>Standard</td><td>Process queues, topics, subscriptions, sessions, and messages.</td></tr>
+                <tr><td>SQL Server</td><td>Standard</td><td>Query and update SQL data or run stored procedures.</td></tr>
+                <tr><td>Azure Event Hubs</td><td>Standard</td><td>Consume and publish high-volume event streams.</td></tr>
+                <tr><td>Azure Event Grid Publisher</td><td>Standard</td><td>Publish events into Event Grid topics for decoupled delivery.</td></tr>
+                <tr><td>Azure Key Vault</td><td>Standard</td><td>Read and manage secrets through a runtime-local connector.</td></tr>
+                <tr><td>Azure Cosmos DB</td><td>Standard</td><td>Create, query, and manage Cosmos DB documents.</td></tr>
+                <tr><td>Azure Queue Storage</td><td>Standard</td><td>Create and process lightweight Azure Storage queue messages.</td></tr>
+                <tr><td>File System</td><td>Standard</td><td>Read and manage files on reachable network file systems.</td></tr>
+                <tr><td>SFTP</td><td>Standard</td><td>Exchange files with SFTP servers over private or public routes.</td></tr>
+                <tr><td>FTP</td><td>Standard</td><td>Work with files and folders on FTP or FTPS servers.</td></tr>
+                <tr><td>XML Operations</td><td>Consumption and Standard</td><td>Validate, parse, compose, and transform XML with schemas and maps.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout"><strong>Selection rule:</strong> in Standard, start with a suitable built-in version when latency, throughput, networking, or execution cost matters. Confirm authentication support and operation parity because a built-in and managed connector with the same service name can expose different triggers, actions, and limits.</div>
+        </section>
+
+        <section id="managed-connectors" class="section-card reveal">
+          <h2>Managed Connectors</h2>
+          <p>Managed connectors are Microsoft-managed services hosted in global, multitenant Azure. They appear under <strong>Shared</strong> in the designer and usually require an API connection plus authentication. Because a managed call travels from the workflow runtime to shared connector infrastructure before reaching the target service, managed connectors generally have higher latency than an equivalent built-in connector. Both Consumption and Standard workflows can use them, but connector availability, regional support, authentication choices, throttling, and pricing must be checked for the selected operation.</p>
+          <div class="callout"><strong>Connector Namespace boundary:</strong> Azure Connector Namespace is currently in preview and provides access to the managed connector catalog only. It does not expose Logic Apps built-in connectors, which run natively within a Logic Apps compute environment.</div>
+          <div class="callout"><strong>Architecture boundary:</strong> a Standard workflow can run on single-tenant compute while a managed connector call still leaves that runtime and executes through the shared managed connector service. Include the connector's network path, connection resource, access policy, throttling, latency, and per-call meter in the design.</div>
+          <h3>Managed Connector Cost Model</h3>
+          <div class="table-wrap">
+            <table aria-label="Managed connector cost model">
+              <thead><tr><th>Hosting model</th><th>How managed operations are billed</th><th>Cost drivers to model</th></tr></thead>
+              <tbody>
+                <tr><td>Consumption</td><td>Each execution follows the connector's Standard or Enterprise Consumption pricing class.</td><td>Polling checks, action executions, retries, loops, Split On workflow instances, and connector class.</td></tr>
+                <tr><td>Standard</td><td>Each call follows the same Standard or Enterprise connector pricing classes in addition to Standard hosting cost.</td><td>Every connector call, including calls generated by pagination or chunking, retries, loops, and polling.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout"><strong>Gateway note:</strong> the on-premises data gateway resource does not itself incur a Logic Apps charge. Operations routed through it are still billed using the workflow and managed connector pricing model, and you remain responsible for the machine that hosts the gateway.</div>
+          <h3>Common Managed Connectors</h3>
+          <p>This practical design shortlist uses representative connectors from Microsoft's current managed connector guidance and catalog.</p>
+          <div class="table-wrap">
+            <table aria-label="Common managed connectors">
+              <thead><tr><th>Managed connector</th><th>Pricing class</th><th>Category</th><th>Common design use</th></tr></thead>
+              <tbody>
+                <tr><td>Azure Service Bus</td><td>Standard</td><td>Azure messaging</td><td>Send and receive queue or topic messages for durable asynchronous integration.</td></tr>
+                <tr><td>Azure Blob Storage</td><td>Standard</td><td>Azure storage</td><td>Create, retrieve, list, and monitor blob content.</td></tr>
+                <tr><td>SQL Server</td><td>Standard</td><td>Data</td><td>Work with Azure SQL or SQL Server through records, queries, and procedures.</td></tr>
+                <tr><td>Office 365 Outlook</td><td>Standard</td><td>Microsoft 365</td><td>Automate organizational email, calendars, contacts, and approvals.</td></tr>
+                <tr><td>SharePoint Online</td><td>Standard</td><td>Microsoft 365</td><td>Manage lists, files, folders, metadata, and document events.</td></tr>
+                <tr><td>Microsoft Teams</td><td>Standard</td><td>Microsoft 365</td><td>Post messages, create meetings, and automate collaboration workflows.</td></tr>
+                <tr><td>OneDrive for Business</td><td>Standard</td><td>Microsoft 365</td><td>Monitor and manage user or organizational files.</td></tr>
+                <tr><td>Dynamics 365</td><td>Standard</td><td>Business applications</td><td>Orchestrate customer, sales, service, and operational records.</td></tr>
+                <tr><td>Salesforce</td><td>Standard</td><td>SaaS</td><td>Create and manage Salesforce records, objects, and jobs.</td></tr>
+                <tr><td>Power BI</td><td>Standard</td><td>Analytics</td><td>Push data and trigger analytics-oriented workflow actions.</td></tr>
+                <tr><td>Azure DevOps</td><td>Standard</td><td>Developer services</td><td>Automate work items, builds, releases, and engineering events.</td></tr>
+                <tr><td>Azure Key Vault</td><td>Standard</td><td>Security</td><td>Retrieve or manage secrets when the managed connector model fits.</td></tr>
+                <tr><td>Azure Event Hubs</td><td>Standard</td><td>Azure messaging</td><td>Publish and consume event-stream data.</td></tr>
+                <tr><td>Azure Queues</td><td>Standard</td><td>Azure storage</td><td>Create and process Azure Storage queue messages.</td></tr>
+                <tr><td>Azure Table Storage</td><td>Standard</td><td>Azure storage</td><td>Create, query, update, and delete table entities.</td></tr>
+                <tr><td>SFTP-SSH</td><td>Standard</td><td>File transfer</td><td>Exchange partner files over SSH with managed connection handling.</td></tr>
+                <tr><td>FTP</td><td>Standard</td><td>File transfer</td><td>Read and write files on internet-reachable FTP or FTPS servers.</td></tr>
+                <tr><td>File System</td><td>Standard</td><td>On-premises</td><td>Access on-premises file shares through the on-premises data gateway.</td></tr>
+                <tr><td>SAP</td><td>Enterprise</td><td>Enterprise system</td><td>Send messages to SAP and invoke business operations.</td></tr>
+                <tr><td>Oracle Database</td><td>Standard</td><td>On-premises data</td><td>Query and update Oracle through the on-premises data gateway.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout"><strong>Before selecting one:</strong> check the connector reference for supported triggers and actions, authentication, known limits, regional availability, data gateway requirements, and whether a Standard built-in counterpart provides a better runtime path.</div>
+        </section>
+
+        <section id="integration-accounts" class="section-card reveal">
+          <h2 class="service-heading"><img src="../images/azure/10218-icon-service-Integration-Accounts.svg" alt="" width="36" height="36" />Integration Accounts</h2>
+          <p>An Integration Account is a <strong>separate Azure resource outside the Logic App resource and its workflows</strong>. It provides a reusable container for business-to-business artifacts, including trading partners, agreements, schemas, maps, certificates, and custom metadata. The Logic App references or links to the Integration Account; the account is not contained inside the Logic App.</p>
+          <div class="diagram-wrap">
+            <pre class="mermaid">
+flowchart LR
+    subgraph RG[Azure resource group]
+      direction LR
+      subgraph LA[Logic App resource]
+        direction TB
+        W1[Workflow A]
+        W2[Workflow B]
+      end
+      IA["<img src='../images/azure/10218-icon-service-Integration-Accounts.svg' width='16' height='16' style='vertical-align:middle;margin-right:4px;'/> Integration Account<br/><small>Separate Azure resource</small>"]
+    end
+
+    W1 -. links to or references .-> IA
+    W2 -. reuses artifacts .-> IA
+
+    class W1,W2 azure;
+    class IA premium;
+            </pre>
+          </div>
+          <div class="callout"><strong>Resource boundary:</strong> the Logic App and Integration Account are peer Azure resources. They can be deployed and managed independently, and multiple Logic Apps can reuse a centrally governed Integration Account when the applicable subscription, region, and workflow requirements are met.</div>
+          <p>Consumption workflows must link the Logic App resource to the Integration Account before using B2B artifacts. Standard can store maps and schemas directly in the Logic App project, while partners and agreements still require an Integration Account; some Standard operations connect to the account rather than requiring a resource link.</p>
+          <h3>Integration Account Cost Model</h3>
+          <div class="table-wrap">
+            <table aria-label="Integration Account cost model">
+              <thead><tr><th>Cost component</th><th>How it is billed</th><th>Design implication</th></tr></thead>
+              <tbody>
+                <tr><td>Integration Account resource</td><td>Billed separately according to the selected Integration Account tier in both Consumption and Standard.</td><td>Choose the tier from required artifact capacity, agreements, partners, and B2B capabilities rather than workflow hosting type.</td></tr>
+                <tr><td>B2B workflow operations</td><td>Consumption operations follow their applicable execution meter. Standard built-in B2B operations are included in Standard compute; managed operations retain connector charges.</td><td>Count encode, decode, validation, transformation, retries, loops, and acknowledgements in the end-to-end message cost.</td></tr>
+                <tr><td>Supporting services</td><td>Logic Apps hosting, workflow storage, Key Vault, networking, monitoring, and data transfer are billed separately where applicable.</td><td>An Integration Account tier is only one component of the total B2B solution cost.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout"><strong>Cost optimization:</strong> Standard workflows can store maps and schemas directly in the logic app resource. If the solution does not require centrally governed partners, agreements, certificates, or cross-resource artifact reuse, project-level artifacts can avoid an unnecessary Integration Account resource.</div>
+          <h3>Common Enterprise Integration Patterns</h3>
+          <div class="table-wrap">
+            <table aria-label="Common Integration Account and enterprise integration patterns">
+              <thead><tr><th>Integration</th><th>What it provides</th><th>Typical scenario</th></tr></thead>
+              <tbody>
+                <tr><td>AS2</td><td>Encode and decode signed, encrypted, or compressed AS2 messages and acknowledgements.</td><td>Secure document exchange with suppliers and trading partners.</td></tr>
+                <tr><td>X12</td><td>Encode, decode, validate, and acknowledge ANSI X12 EDI transactions.</td><td>North American purchase orders, invoices, shipping notices, and claims.</td></tr>
+                <tr><td>EDIFACT</td><td>Encode, decode, validate, and acknowledge UN/EDIFACT messages.</td><td>International supply-chain, logistics, retail, and customs exchanges.</td></tr>
+                <tr><td>RosettaNet</td><td>Process RosettaNet Partner Interface Process messages and acknowledgements.</td><td>High-tech manufacturing and semiconductor partner integration.</td></tr>
+                <tr><td>SWIFT</td><td>Encode and decode SWIFT financial messages in supported Standard scenarios.</td><td>Banking and financial transaction message processing.</td></tr>
+                <tr><td>Flat File</td><td>Encode structured XML to flat files or decode flat files by using schemas.</td><td>Legacy fixed-width or delimited partner and mainframe formats.</td></tr>
+                <tr><td>XML Validation</td><td>Validate inbound or outbound XML against an XSD schema.</td><td>Reject malformed partner documents before business processing.</td></tr>
+                <tr><td>XML Transformation</td><td>Transform XML by using XSLT maps stored with the app or Integration Account.</td><td>Convert a partner schema into an internal canonical model.</td></tr>
+                <tr><td>Liquid Transformation</td><td>Transform JSON, text, and XML using Liquid templates.</td><td>Reshape API or partner payloads without custom code.</td></tr>
+                <tr><td>Artifact Metadata Lookup</td><td>Read custom metadata associated with partners, agreements, schemas, maps, or certificates.</td><td>Drive routing and processing rules from governed B2B configuration.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout"><strong>Design boundary:</strong> use an Integration Account when partner agreements, certificates, protocols, or artifacts need centralized B2B governance and reuse. For Standard workflows that only share maps and schemas inside one logic app resource, project-level artifacts can be simpler.</div>
+          <h3>Current Microsoft References</h3>
+          <ul>
+            <li><a href="https://learn.microsoft.com/en-us/azure/connectors/built-in">Built-in connectors overview</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/connectors/managed">Managed connectors overview</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/logic-apps/connector-namespace/connector-namespace-overview">Azure Connector Namespace overview</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/connectors/connector-reference/connector-reference-logicapps-connectors">Azure Logic Apps connector reference</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/logic-apps/logic-apps-enterprise-integration-overview">B2B enterprise integration workflows</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/logic-apps/logic-apps-enterprise-integration-create-integration-account">Create and manage Integration Accounts</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/logic-apps/logic-apps-pricing">Usage metering, billing, and pricing</a></li>
+            <li><a href="https://azure.microsoft.com/en-us/pricing/details/logic-apps/">Current Azure Logic Apps prices by region and currency</a></li>
+          </ul>
+        </section>
+
+        <nav class="pager" aria-label="Workshop pagination">
+          <a class="prev" href="design-best-practices.html"><small>Previous</small><strong>&larr; Design Guidance</strong></a>
+          <a class="next" href="security-governance.html"><small>Next</small><strong>Security &amp; Limits &rarr;</strong></a>
+        </nav>
+      </main>
+
+      <aside class="toc" aria-label="Table of contents">
+        <h3>On This Page</h3>
+        <a href="#built-in-connectors">Built-In Connectors</a>
+        <a href="#managed-connectors">Managed Connectors</a>
+        <a href="#integration-accounts">Integration Accounts</a>
+      </aside>
+    </div>
+  </div>
+
+  <script type="module" src="../assets/site.js"></script>
+</body>
+</html>

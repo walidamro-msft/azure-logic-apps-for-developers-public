@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hands-on Labs &middot; Azure Logic Apps Workshop</title>
+  <meta name="description" content="Six guided Azure Logic Apps labs for the Azure portal and Visual Studio Code." />
+  <script>
+    (function () {
+      var t = localStorage.getItem("logic-apps-workshop-theme");
+      document.documentElement.setAttribute("data-theme",
+        (t === "light" || t === "dark") ? t : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
+    })();
+  </script>
+  <link rel="icon" type="image/svg+xml" href="../images/azure/02631-icon-service-Logic-Apps.svg" />
+  <link rel="stylesheet" href="../assets/site.css" />
+</head>
+<body data-root=".." data-active="labs">
+  <div class="page">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../index.html">Home</a><span class="sep">/</span><span>Labs</span>
+    </nav>
+
+    <header class="hero">
+      <h1>Hands-on Labs</h1>
+      <p class="subtitle">Build event-driven, scheduled, testable, and code-extended workflows using both the Azure portal and Visual Studio Code.</p>
+      <div class="badge-row"><span class="badge">6 guided labs</span><span class="badge">Portal + VS Code</span><span class="badge">Consumption + Standard</span></div>
+    </header>
+
+    <div class="layout">
+      <main class="content">
+        <section id="choose" class="section-card reveal">
+          <h2>Choose Your Path</h2>
+          <p>Complete the labs in order for a progressive introduction, or select the scenario that matches your current work. Portal labs focus on workflow design and operations. VS Code labs use Logic Apps Standard because local development is supported for Standard projects.</p>
+          <div class="callout"><strong>Before you begin:</strong> use a non-production Azure subscription, choose one region for related resources, and remove the lab resource group when you finish.</div>
+        </section>
+
+        <section id="catalog" class="section-card reveal">
+          <h2>Lab Catalog</h2>
+          <div class="cheat">
+            <div class="cheat-item"><h3><a href="lab01-http-product-api-portal.html">Lab 01: HTTP Product API</a></h3><p>Create a request-response API in the Azure portal, validate product input, and return predictable HTTP responses.</p><p><strong>Tool:</strong> Portal &middot; <strong>Plan:</strong> Consumption</p></div>
+            <div class="cheat-item"><h3><a href="lab02-timer-daily-report-portal.html">Lab 02: Timer Daily Report</a></h3><p>Run a scheduled workflow that summarizes daily sales data and stores the report in Blob Storage.</p><p><strong>Tool:</strong> Portal &middot; <strong>Plan:</strong> Consumption</p></div>
+            <div class="cheat-item"><h3><a href="lab03-order-fulfillment-vscode.html">Lab 03: Order Fulfillment</a></h3><p>Build a Standard workflow locally with validation, fulfillment branches, scopes, and response handling.</p><p><strong>Tool:</strong> VS Code &middot; <strong>Plan:</strong> Standard</p></div>
+            <div class="cheat-item"><h3><a href="lab04-event-grid-blob-processor-portal.html">Lab 04: Event Grid Blob Processor</a></h3><p>React to blob-created events and write an auditable metadata record without polling storage.</p><p><strong>Tool:</strong> Portal &middot; <strong>Plan:</strong> Consumption</p></div>
+            <div class="cheat-item"><h3><a href="lab05-logic-app-testing-portal.html">Lab 05: Logic App Testing</a></h3><p>Use static action results to verify success and failure paths without calling a live dependency.</p><p><strong>Tool:</strong> Portal &middot; <strong>Plan:</strong> Consumption or Standard</p></div>
+            <div class="cheat-item"><h3><a href="lab06-inline-dotnet-code-vscode.html">Lab 06: Inline .NET Code</a></h3><p>Use the Standard-only C# script action to calculate order totals and return typed workflow output.</p><p><strong>Tool:</strong> VS Code &middot; <strong>Plan:</strong> Standard</p></div>
+          </div>
+        </section>
+
+        <section id="prerequisites" class="section-card reveal">
+          <h2>Common Prerequisites</h2>
+          <ul>
+            <li>An Azure subscription where you can create resource groups and Logic Apps resources.</li>
+            <li>For portal labs: access to the Azure portal and permission to create API connections.</li>
+            <li>For VS Code labs: Visual Studio Code, the Azure Logic Apps (Standard) extension, and Azure Functions Core Tools.</li>
+            <li>A unique suffix for globally scoped resource names, such as your initials plus four digits.</li>
+          </ul>
+          <div class="speaker-note"><h3>Security</h3><p>Prefer managed identity and least-privilege role assignments. Do not place credentials, connection strings, or access keys in workflow definitions or source control.</p></div>
+        </section>
+
+        <nav class="pager" aria-label="Workshop pagination">
+          <a class="prev" href="../topics/build-and-manage.html"><small>Related topic</small><strong>&larr; Build &amp; Manage</strong></a>
+          <a class="next" href="lab01-http-product-api-portal.html"><small>Start the labs</small><strong>Lab 01: HTTP Product API &rarr;</strong></a>
+        </nav>
+      </main>
+
+      <aside class="toc" aria-label="Table of contents">
+        <h3>On This Page</h3>
+        <a href="#choose">Choose Your Path</a>
+        <a href="#catalog">Lab Catalog</a>
+        <a href="#prerequisites">Common Prerequisites</a>
+      </aside>
+    </div>
+  </div>
+  <script type="module" src="../assets/site.js"></script>
+</body>
+</html>

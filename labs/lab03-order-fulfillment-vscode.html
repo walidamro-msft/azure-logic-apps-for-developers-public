@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lab 03: Order Fulfillment &middot; Azure Logic Apps Workshop</title>
+  <meta name="description" content="Build and run an order fulfillment workflow locally with Logic Apps Standard and Visual Studio Code." />
+  <script>(function(){var t=localStorage.getItem("logic-apps-workshop-theme");document.documentElement.setAttribute("data-theme",(t==="light"||t==="dark")?t:(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"));})();</script>
+  <link rel="icon" type="image/svg+xml" href="../images/azure/02631-icon-service-Logic-Apps.svg" /><link rel="stylesheet" href="../assets/site.css" />
+</head><body data-root=".." data-active="lab03-order-fulfillment">
+<div class="page"><nav class="breadcrumb" aria-label="Breadcrumb"><a href="../index.html">Home</a><span class="sep">/</span><a href="index.html">Labs</a><span class="sep">/</span><span>Lab 03</span></nav>
+<header class="hero"><h1>Lab 03: Order Fulfillment</h1><p class="subtitle">Build a local Standard workflow that validates an order, routes inventory decisions, and returns an auditable result.</p><div class="badge-row"><span class="badge">Visual Studio Code</span><span class="badge">Standard</span><span class="badge">~55 min</span></div></header>
+<div class="layout"><main class="content">
+<section id="scenario" class="section-card reveal"><h2>Scenario and Objectives</h2><p>An order API must reject invalid requests, reserve in-stock orders, and route unavailable inventory for review. In this lab, Compose actions stand in for external systems so the orchestration can run entirely on your machine.</p><ul><li>Create a Logic Apps Standard project and stateful workflow.</li><li>Use conditions, scopes, variables, and run-after behavior.</li><li>Run and debug the workflow locally.</li><li>Separate workflow orchestration from replaceable integration boundaries.</li></ul></section>
+<section id="architecture" class="section-card reveal"><h2>Workflow Design</h2><div class="diagram-wrap"><pre class="mermaid">flowchart LR
+ A[HTTP order] --> V{Valid order?}
+ V -->|No| R[400 response]
+ V -->|Yes| T[Try fulfillment scope]
+ T --> I{Inventory available?}
+ I -->|Yes| C[Confirmed]
+ I -->|No| Q[Manual review]
+ T -. failure .-> F[Failure scope]
+ C --> S[200 response]
+ Q --> S
+ F --> E[500 response]
+ classDef azure fill:#e6f2fb,stroke:#0078d4,stroke-width:2,color:#0f1722;
+ classDef result fill:#e7f5e7,stroke:#107c10,stroke-width:2,color:#103010;
+ class A,V,T,I,F azure; class R,C,Q,S,E result;</pre></div></section>
+<section id="prerequisites" class="section-card reveal"><h2>Prerequisites</h2><ul><li>Visual Studio Code with the <strong>Azure Logic Apps (Standard)</strong> extension.</li><li>Azure Functions Core Tools v4 and the runtime required by the extension.</li><li>Azurite if your local Standard runtime configuration uses local Azure Storage.</li><li>A parent folder outside this workshop repository where the extension can create the generated workspace.</li></ul><div class="callout"><strong>Important:</strong> VS Code local development is for Logic Apps Standard. Do not create a Consumption resource for this lab.</div></section>
+<section id="project" class="section-card reveal"><h2>Create the Local Workspace</h2><ol><li>In the Azure view, find <strong>Logic Apps (Standard)</strong>, open the <strong>Workspace</strong> menu, and select <strong>Create new logic app workspace...</strong>.
+<figure class="media-panel">
+  <img src="../images/custom/lab03-create-new-logic-app-in-vs-code.png" alt="Visual Studio Code Azure view with the Logic Apps Workspace menu open and Create new logic app workspace highlighted." loading="lazy" />
+  <figcaption>Open the Workspace menu and select <strong>Create new logic app workspace...</strong>.</figcaption>
+</figure></li><li>On <strong>Project setup</strong>, select a <strong>Workspace parent folder path</strong> outside this workshop repository and enter <code>order-fulfillment-workspace</code> for <strong>Workspace name</strong>.</li><li>Under <strong>Logic app details</strong>, enter <code>order-fulfillment-app</code> for <strong>Logic app name</strong> and select <strong>Logic app (Standard)</strong>.
+<figure class="media-panel">
+  <img src="../images/custom/lab03-create-new-logic-app-in-vs-code-step2.png" alt="Create logic app workspace form showing the workspace parent folder and order-fulfillment-workspace name under Project setup, plus the order-fulfillment-app name and Logic app Standard selection under Logic app details." loading="lazy" />
+  <figcaption>For steps 2 and 3, configure the workspace location and name, then enter the logic app name and select <strong>Logic app (Standard)</strong>.</figcaption>
+</figure></li><li>Under <strong>Workflow configuration</strong>, enter <code>order-fulfillment</code> for <strong>Workflow name</strong> and select <strong>Stateful</strong> for <strong>Workflow type</strong>.</li><li>Select <strong>Review + Create</strong>, review the summary, and then select <strong>Create</strong>.</li><li>VS Code opens the newly created workspace in a new window. Switch to that VS Code window and continue the rest of the lab there.</li><li>Confirm the generated logic app project contains <code>host.json</code>, <code>local.settings.json</code>, and an <code>order-fulfillment/workflow.json</code> definition.
+<figure class="media-panel">
+  <img src="../images/custom/lab03-create-new-logic-app-in-vs-code-new-workspace-files.png" alt="Visual Studio Code Explorer showing the order-fulfillment-workspace with the order-fulfillment-app project, order-fulfillment workflow folder, workflow.json, host.json, and local.settings.json files." loading="lazy" />
+  <figcaption>Compare your Explorer tree with the generated workspace structure shown here.</figcaption>
+</figure></li><li>In Explorer, expand <code>order-fulfillment-app/order-fulfillment</code>, right-click <code>workflow.json</code>, and select <strong>Open designer</strong>.</li><li>When VS Code asks whether to enable connectors in Azure, select <strong>Skip for now</strong>. This lab uses built-in operations and does not require Azure-hosted connectors.</li><li>After the designer renders, add <strong>When a HTTP request is received</strong> as the trigger and set the method to POST.</li><li>Paste the request schema below and save the designer.</li></ol>
+<pre class="code" data-lang="json">{
+  "type": "object",
+  "properties": {
+    "orderId": { "type": "string" },
+    "customerId": { "type": "string" },
+    "quantity": { "type": "integer" },
+    "availableStock": { "type": "integer" }
+  },
+  "required": ["orderId", "customerId", "quantity", "availableStock"]
+}</pre><div class="speaker-note"><h3>Source control</h3><p>The generated <code>local.settings.json</code> can contain local secrets. Keep it out of source control and use app settings or secret references after deployment.</p></div></section>
+<section id="build" class="section-card reveal"><h2>Build the Fulfillment Flow</h2><div class="callout"><strong>New designer:</strong> Add <strong>Initialize variable</strong> at the workflow's top level. It cannot be added inside a condition branch or scope. After initialization, use <strong>Set variable</strong> whenever a branch needs to change the value. The labels or placement can differ in the old designer.</div><ol><li>Immediately after the HTTP trigger and before the condition, select <strong>Add an action</strong>, search for <strong>Initialize variable</strong>, and add the built-in action. Set <strong>Name</strong> to <code>fulfillmentStatus</code>, <strong>Type</strong> to <strong>String</strong>, and <strong>Value</strong> to <code>pending</code>.</li><li>Below <strong>Initialize variable</strong>, add a <strong>Condition</strong> named <strong>Order is valid</strong>. Configure its single condition row as follows:<ol><li>Select the left <strong>Choose a value</strong> field, open <strong>Expression</strong>, paste the expression below without a leading <code>@</code>, and select <strong>Add</strong>.</li><li>Set the operator to <strong>is equal to</strong>.</li><li>In the right <strong>Choose a value</strong> field, open <strong>Expression</strong>, enter <code>true</code>, and select <strong>Add</strong>. Use the Boolean expression <code>true</code>, not the text string <code>"true"</code>.</li></ol>
+<pre class="code">and(
+  not(empty(triggerBody()?['orderId'])),
+  not(empty(triggerBody()?['customerId'])),
+  greater(int(triggerBody()?['quantity']), 0),
+  greaterOrEquals(int(triggerBody()?['availableStock']), 0)
+)</pre><p>You do not need to add these four checks as separate condition rows. The <code>and(...)</code> expression returns one Boolean result.</p><div class="callout"><strong>Verify before continuing:</strong> <strong>Order is valid</strong> must contain the complete <code>and(...)</code> expression above. Do not use the <code>availableStock</code> versus <code>quantity</code> expression here; that comparison belongs only in the nested <strong>Inventory is available</strong> condition.</div></li><li>In the <strong>False</strong> branch, add a <strong>Response</strong> action. Set <strong>Status Code</strong> to <code>400</code>, then copy this JSON into <strong>Body</strong>:
+<pre class="code" data-lang="json">{
+  "status": "rejected",
+  "reason": "Invalid order"
+}</pre><p>Before leaving the action, confirm that both <strong>Status Code</strong> and <strong>Body</strong> remain populated after the designer saves.</p></li><li>Build the inventory check inside the <strong>True</strong> branch:<ol><li>Select the <strong>+</strong> in the <strong>True</strong> branch, select <strong>Add an action</strong>, search for <strong>Scope</strong>, and add the built-in <strong>Control</strong> Scope action.</li><li>Rename the Scope action to <strong>Try fulfillment</strong>. The scope groups the inventory decision so its overall success or failure can be handled later.</li><li>Select <strong>Add an action</strong> inside the scope, search for <strong>Condition</strong>, and add the built-in <strong>Control</strong> Condition action.</li><li>Rename the nested condition to <strong>Inventory is available</strong>.</li><li>In the condition's left <strong>Choose a value</strong> field, open <strong>Expression</strong> and copy:
+<pre class="code">int(triggerBody()?['availableStock'])</pre></li><li>Set the operator to <strong>is greater than or equal to</strong>.</li><li>In the right <strong>Choose a value</strong> field, open <strong>Expression</strong> and copy:
+<pre class="code">int(triggerBody()?['quantity'])</pre></li></ol>The condition follows the <strong>True</strong> branch when available stock is at least the requested quantity; otherwise, it follows the <strong>False</strong> branch.</li><li>In the inventory <strong>True</strong> branch, add <strong>Set variable</strong>, select <code>fulfillmentStatus</code>, and set <strong>Value</strong> to <code>confirmed</code>. In the inventory <strong>False</strong> branch, add another <strong>Set variable</strong>, select <code>fulfillmentStatus</code>, and set <strong>Value</strong> to <code>manual-review</code>.</li><li>Add the success response outside <strong>Try fulfillment</strong> but still inside the outer <strong>Order is valid</strong> True branch. Select the <strong>+</strong> directly below the orange boundary of the entire <strong>Try fulfillment</strong> scope, then add a <strong>Response</strong> action. Do not select a <strong>+</strong> inside the scope. The Response card must appear below, not within, the orange scope boundary. Leave its default run-after behavior as <strong>is successful</strong>, set <strong>Status Code</strong> to <code>200</code>, and copy this JSON into <strong>Body</strong>:
+<pre class="code" data-lang="json">{
+  "orderId": "@{triggerBody()?['orderId']}",
+  "status": "@{variables('fulfillmentStatus')}",
+  "runId": "@{workflow()?['run']?['name']}"
+}</pre><p>In your current workflow, delete the 200 Response shown inside <strong>Try fulfillment</strong> and recreate it at this outer location.</p></li><li>Add the failure handler between the <strong>Try fulfillment</strong> scope and the 200 <strong>Response</strong>, as a parallel sibling of that Response:<ol><li>Select the <strong>+</strong> between <strong>Try fulfillment</strong> and the 200 <strong>Response</strong>. Make sure this <strong>+</strong> is outside the orange <strong>Try fulfillment</strong> boundary.</li><li>Select <strong>Add a parallel branch</strong>.</li><li>In the new branch, select <strong>Add an action</strong>, search for <strong>Scope</strong>, add the built-in <strong>Control</strong> Scope, and rename it <strong>Handle failure</strong>.</li><li>Open <strong>Handle failure</strong> settings and select <strong>Run after</strong>. Clear <strong>is successful</strong>, select <strong>has failed</strong> and <strong>has timed out</strong>, and save the settings. These statuses apply to <strong>Try fulfillment</strong>.</li><li>Inside <strong>Handle failure</strong>, add a <strong>Response</strong> action and set <strong>Status Code</strong> to <code>500</code>. Copy this JSON into <strong>Body</strong>:</li></ol>
+<pre class="code" data-lang="json">{
+  "status": "failed",
+  "reason": "Order fulfillment failed"
+}</pre></li></ol></section>
+<section id="run" class="section-card reveal"><h2>Run Locally</h2><div class="callout"><strong>Where to run the test commands:</strong> Do not paste them into the designer or the terminal running the host. Use a second PowerShell terminal and leave the host terminal running.</div><ol><li>Save the workflow. If your local settings use Azurite, start Azurite before continuing.</li><li>In the VS Code window containing <code>order-fulfillment-workspace</code>, press <strong>F5</strong>. If VS Code asks which configuration to run, select the generated Logic Apps project configuration.</li><li>Open the bottom <strong>Terminal</strong> panel. Wait until the host reports that it started, and then leave this terminal running.</li><li>In the Terminal panel, select the <strong>+</strong> to open a second PowerShell terminal.</li><li>In the second terminal, run the following setup once. The local management endpoint returns the signed callback URL required to invoke the HTTP trigger. The helper sends a payload and displays both the HTTP status and response body, including expected error responses.
+<pre class="code">$managementUri = 'http://localhost:7071/runtime/webhooks/workflow/api/management/workflows/order-fulfillment/triggers/When_an_HTTP_request_is_received/listCallbackUrl?api-version=2022-05-01'
+
+$callbackUri = (Invoke-RestMethod `
+  -Uri $managementUri `
+  -Method Post
+).value
+
+function Invoke-OrderWorkflow {
+  param([hashtable]$Payload)
+
+  $body = $Payload | ConvertTo-Json
+
+  try {
+    $response = Invoke-WebRequest `
+      -Uri $callbackUri `
+      -Method Post `
+      -ContentType 'application/json' `
+      -Body $body
+
+    [pscustomobject]@{
+      StatusCode = [int]$response.StatusCode
+      ResponseBody = $response.Content
+    } | Format-List
+  }
+  catch {
+    $responseBody = $_.ErrorDetails.Message
+
+    if ([string]::IsNullOrWhiteSpace($responseBody) -and $_.Exception.Response.Content) {
+      $responseBody = $_.Exception.Response.Content.ReadAsStringAsync().GetAwaiter().GetResult()
+    }
+
+    if ([string]::IsNullOrWhiteSpace($responseBody) -and $_.Exception.Response.GetResponseStream) {
+      $reader = [System.IO.StreamReader]::new($_.Exception.Response.GetResponseStream())
+      try {
+        $responseBody = $reader.ReadToEnd()
+      }
+      finally {
+        $reader.Dispose()
+      }
+    }
+
+    [pscustomobject]@{
+      StatusCode = [int]$_.Exception.Response.StatusCode
+      ResponseBody = $responseBody
+    } | Format-List
+  }
+}</pre></li><li>Keep the second terminal open and run each test separately.</li></ol>
+<h3>Test 1: Confirmed order</h3><p>Run:</p><pre class="code">Invoke-OrderWorkflow -Payload @{
+  orderId = 'ORD-1001'
+  customerId = 'C-42'
+  quantity = 2
+  availableStock = 8
+}</pre><p>The status code should be <code>200</code>, and the response body should contain the status <code>confirmed</code>.</p>
+<h3>Test 2: Manual review</h3><p>Run:</p><pre class="code">$body = @{
+  orderId = 'ORD-1002'
+  customerId = 'C-42'
+  quantity = 10
+  availableStock = 3
+} | ConvertTo-Json
+
+try {
+  $response = Invoke-WebRequest `
+    -Uri $callbackUri `
+    -Method Post `
+    -ContentType 'application/json' `
+    -Body $body
+
+  [pscustomobject]@{
+    StatusCode = [int]$response.StatusCode
+    ResponseBody = $response.Content
+  } | Format-List
+}
+catch {
+  [pscustomobject]@{
+    StatusCode = [int]$_.Exception.Response.StatusCode
+    ResponseBody = $_.ErrorDetails.Message
+  } | Format-List
+}</pre><p>The status code should be <code>200</code>, and the response body should contain <code>"orderId":"ORD-1002"</code> and <code>"status":"manual-review"</code>.</p>
+<h3>Test 3: Rejected order</h3><div class="callout"><strong>Configure the JSON response first:</strong> In the designer, open the <strong>False</strong> branch of <strong>Order is valid</strong> and select its <strong>Response</strong> action. Set <strong>Status Code</strong> to <code>400</code>. In <strong>Body</strong>, enter the JSON below, save the workflow, and confirm the Body remains populated after the save.
+<pre class="code" data-lang="json">{
+  "status": "rejected",
+  "reason": "Invalid order"
+}</pre></div><p>Run:</p><pre class="code">Invoke-OrderWorkflow -Payload @{
+  orderId = ''
+  customerId = 'C-42'
+  quantity = 0
+  availableStock = 3
+}</pre><p>The output should show <code>StatusCode : 400</code> and <code>ResponseBody : {"status":"rejected","reason":"Invalid order"}</code>. If the status is 400 but the body is still empty, reopen the rejected run in local run history and inspect the False-branch Response action's inputs to confirm that its Body was saved.</p><p>After each request, inspect the host terminal for the new run. You can also open the workflow's local run history from the Logic Apps extension to inspect action inputs, outputs, skipped branches, and scope status.</p></section>
+<section id="validate" class="section-card reveal"><h2>Validation Checklist</h2><ul><li>The first payload returns <code>confirmed</code>.</li><li>The second payload returns <code>manual-review</code>.</li><li>The third payload returns HTTP 400.</li><li>Each completed response contains a unique run ID.</li><li>The failure scope remains skipped during successful tests.</li></ul><p>To exercise failure handling, temporarily add a Compose action with an invalid expression inside Try fulfillment, run once, confirm the 500 response, and then remove the deliberate fault.</p></section>
+<section id="troubleshoot" class="section-card reveal"><h2>Troubleshooting</h2><div class="table-wrap"><table><thead><tr><th>Symptom</th><th>Check</th></tr></thead><tbody><tr><td>F5 appears to do nothing</td><td>Save the workflow, make sure you are in the new VS Code window that contains <code>order-fulfillment-workspace</code>, then open <strong>View</strong> &gt; <strong>Terminal</strong> and check the generated task terminal for startup output.</td></tr><tr><td>Host does not start</td><td>Confirm Core Tools v4, extension prerequisites, and storage settings; start Azurite if configured.</td></tr><tr><td>Callback URL lookup fails</td><td>Confirm the workflow and trigger names match the names in <code>$managementUri</code>, and verify that the local host finished starting on port 7071. Review the host terminal for an earlier startup error.</td></tr><tr><td>HTTP 400 has an empty body</td><td>Open the False-branch Response action and restore its JSON Body. Save the workflow, confirm the Body remains populated, and run the rejected-order test again.</td></tr><tr><td>Designer cannot load</td><td>Open the workspace root rather than only the workflow folder, then restart the extension host.</td></tr><tr><td>Two responses try to run</td><td>Review run-after settings so success and failure responses are mutually exclusive.</td></tr></tbody></table></div></section>
+<section id="cleanup" class="section-card reveal"><h2>Cleanup and References</h2><p>Stop the local host and Azurite. Delete the generated project folder if you do not need it, and remove any deployed Standard resource created while extending the lab.</p><div class="callout"><strong>Microsoft Learn:</strong> <a href="https://learn.microsoft.com/azure/logic-apps/create-single-tenant-workflows-visual-studio-code">Create Standard workflows with VS Code</a> and <a href="https://learn.microsoft.com/azure/logic-apps/logic-apps-control-flow-run-steps-group-scopes">Run actions based on scope status</a>.</div></section>
+<nav class="pager" aria-label="Lab pagination"><a class="prev" href="lab02-timer-daily-report-portal.html"><small>Previous</small><strong>&larr; Lab 02: Timer Daily Report</strong></a><a class="next" href="lab04-event-grid-blob-processor-portal.html"><small>Next</small><strong>Lab 04: Event Grid Blob Processor &rarr;</strong></a></nav>
+</main><aside class="toc" aria-label="Table of contents"><h3>On This Page</h3><a href="#scenario">Scenario</a><a href="#architecture">Design</a><a href="#prerequisites">Prerequisites</a><a href="#project">Create Project</a><a href="#build">Build</a><a href="#run">Run Locally</a><a href="#validate">Validate</a><a href="#troubleshoot">Troubleshooting</a><a href="#cleanup">Cleanup</a></aside></div>
+</div><script type="module" src="../assets/site.js"></script></body></html>

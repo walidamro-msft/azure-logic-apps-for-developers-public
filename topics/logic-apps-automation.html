@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Logic Apps Automation &middot; Azure Logic Apps Workshop</title>
+  <meta name="description" content="Guidance on Azure Logic Apps Automation managed hosting, including stateful workflow scope, dedicated compute, VNet integration, and pricing model." />
+  <script>(function(){var t=localStorage.getItem("logic-apps-workshop-theme");document.documentElement.setAttribute("data-theme",(t==="light"||t==="dark")?t:(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"));})();</script>
+  <link rel="icon" type="image/svg+xml" href="../images/azure/02631-icon-service-Logic-Apps.svg" />
+  <link rel="stylesheet" href="../assets/site.css" />
+</head>
+<body data-root=".." data-active="logic-apps-automation">
+  <div class="page">
+    <nav class="breadcrumb" aria-label="Breadcrumb"><a href="../index.html">Home</a><span class="sep">/</span><a href="hosting-plans.html">Hosting Plans</a><span class="sep">/</span><span>Logic Apps Automation</span></nav>
+    <header class="hero">
+      <h1>Logic Apps Automation: Managed Hosting</h1>
+      <p class="subtitle">A managed consumption hosting option in Azure Logic Apps with dedicated compute, VNet integration, stateful-only workflows, and scale-to-zero pricing.</p>
+      <div class="audience"><span>Managed consumption</span><span>Stateful workflows</span><span>Dedicated compute</span><span>Scale to zero</span></div>
+    </header>
+    <div class="layout">
+      <main class="content">
+        <div class="callout warning"><strong>Important:</strong> Logic Apps Automation supports stateful workflows only. If your solution requires stateless execution, choose a Logic Apps Standard hosting option.</div>
+
+        <section id="hosting-position" class="card reveal">
+          <h2>Hosting Position</h2>
+          <div class="callout"><strong>Important:</strong> The hosting name is <strong>Logic Apps Automation</strong>. Treat it as its own managed consumption option and do not assume Workflow Service Plan limits or pricing apply.</div>
+          <p>Logic Apps Automation is positioned as a managed consumption service with dedicated compute, VNet integration, and scale-to-zero behavior. It is distinct from the regular shared Consumption hosting model.</p>
+          <p>Official reference: <a href="https://learn.microsoft.com/en-us/azure/logic-apps/automation/dynamic-workflow-automation-introduction?WT.mc_id=AZ-MVP-5003556">Overview - Azure Logic Apps Automation</a>.</p>
+        </section>
+
+        <section id="model" class="card reveal">
+          <h2>Portal Hosting Model</h2>
+          <div class="table-wrap"><table aria-label="Logic Apps Automation hosting model">
+            <thead><tr><th>Area</th><th>Current portal description</th><th>Design implication</th></tr></thead>
+            <tbody>
+              <tr><td>Host</td><td>Logic Apps Automation (Managed consumption)</td><td>Treat as a separate hosting decision from regular Consumption and Workflow Service Plan</td></tr>
+              <tr><td>Workflow type</td><td>Stateful only</td><td>Choose this option when your scenario requires state persistence</td></tr>
+              <tr><td>Compute</td><td>Dedicated</td><td>Capacity is isolated from regular shared Consumption compute</td></tr>
+              <tr><td>Networking</td><td>VNet integration</td><td>Evaluate private backend access and outbound routing requirements</td></tr>
+              <tr><td>Scaling</td><td>Scale to zero</td><td>Idle compute can stop when no work is running</td></tr>
+              <tr><td>Pricing shape</td><td>Base charge plus per-vCPU-second usage</td><td>Model both the fixed baseline and active compute duration</td></tr>
+            </tbody>
+          </table></div>
+        </section>
+
+        <section id="why" class="card reveal">
+          <h2>Why This Hosting Plan Is Needed</h2>
+          <p>Logic Apps Automation addresses workloads that need more isolation and networking control than regular shared Consumption, but do not need an always-running Workflow Service Plan. It combines dedicated, Azure-managed compute with VNet integration and the ability to scale to zero when no work is running.</p>
+          <div class="cheat">
+            <article class="cheat-item"><h3>Reduce idle compute</h3><p>Intermittent automation can avoid keeping reserved Workflow Service Plan instances active throughout quiet periods.</p></article>
+            <article class="cheat-item"><h3>Keep dedicated execution</h3><p>Projects can use dedicated compute instead of sharing the regular Consumption runtime.</p></article>
+            <article class="cheat-item"><h3>Use stateful-only hosting</h3><p>This option is designed for stateful workflows and should be selected only when stateful behavior is required.</p></article>
+            <article class="cheat-item"><h3>Reach private systems</h3><p>VNet integration supports workflows that must call private APIs, databases, and line-of-business services.</p></article>
+            <article class="cheat-item"><h3>Limit platform ownership</h3><p>Azure manages the compute environment, avoiding the Kubernetes and SQL Server responsibilities required by Hybrid hosting.</p></article>
+          </div>
+        </section>
+
+        <section id="pricing" class="card reveal">
+          <h2>Pricing Availability</h2>
+          <p>Logic Apps Automation uses a <strong>base + per vCPU-second with scale-to-zero</strong> billing shape. Model both the fixed base cost and active compute time.</p>
+          <div class="formula">Estimated charge shape = published base charge + (active vCPU-seconds &times; published vCPU-second rate) + dependent services</div>
+          <p>Do not substitute Workflow Standard, Hybrid, or regular Consumption rates. Obtain the applicable base and vCPU-second rates for your subscription and region, then apply them to measured active vCPU-seconds.</p>
+          <div class="callout"><strong>No invented sample:</strong> this page intentionally omits a numeric estimate and focuses on the documented pricing structure.</div>
+        </section>
+
+        <section id="evaluation" class="card reveal">
+          <h2>Evaluation Checklist</h2>
+          <div class="cheat">
+            <article class="cheat-item"><h3>Availability</h3><p>Verify that Logic Apps Automation can be created in the target subscription and region.</p></article>
+            <article class="cheat-item"><h3>Pricing</h3><p>Capture the portal's base and vCPU-second rates and confirm how scale-to-zero periods are billed.</p></article>
+            <article class="cheat-item"><h3>Workflow model</h3><p>Confirm that all required flows are stateful and align with the stateful-only hosting scope.</p></article>
+            <article class="cheat-item"><h3>Feature parity</h3><p>Test required triggers, actions, deployment tooling, limits, and monitoring.</p></article>
+            <article class="cheat-item"><h3>Networking</h3><p>Validate VNet integration, DNS, private endpoints, outbound routing, and connector dependencies.</p></article>
+            <article class="cheat-item"><h3>Support</h3><p>Review support terms, SLA status, upgrade path, and production-use policy.</p></article>
+            <article class="cheat-item"><h3>Fallback</h3><p>Keep an alternate hosting design available if availability, capabilities, or support terms do not meet the workload requirement.</p></article>
+          </div>
+        </section>
+
+        <section id="fit" class="card reveal">
+          <h2>Projects That Are a Good Fit</h2>
+          <div class="cheat">
+            <article class="cheat-item"><h3>Scheduled business automation</h3><p>Nightly reconciliation, periodic report generation, invoice processing, and scheduled data synchronization with long idle periods.</p></article>
+            <article class="cheat-item"><h3>Bursty event processing</h3><p>Projects that process occasional batches or event bursts and need dedicated capacity only while work is active.</p></article>
+            <article class="cheat-item"><h3>Private application integration</h3><p>Workflows that connect cloud services to private APIs, databases, or enterprise systems through a VNet.</p></article>
+            <article class="cheat-item"><h3>Departmental automation</h3><p>Groups of related operational workflows that benefit from dedicated compute and independent scaling.</p></article>
+            <article class="cheat-item"><h3>Modernized enterprise processes</h3><p>Integration projects moving from scripts or scheduled middleware jobs that need managed orchestration without an always-on host.</p></article>
+            <article class="cheat-item"><h3>Stateful integration workflows</h3><p>Workloads that require persisted state and benefit from dedicated managed consumption compute.</p></article>
+          </div>
+          <h3 style="margin-top:16px;">When Another Hosting Option Fits Better</h3>
+          <div class="table-wrap"><table aria-label="When to choose another Logic Apps hosting option">
+            <thead><tr><th>Requirement</th><th>Better starting point</th><th>Reason</th></tr></thead>
+            <tbody>
+              <tr><td>Stateless workflow execution</td><td><a href="workflow-service-plan.html">Workflow Service Plan</a></td><td>Standard supports both stateful and stateless workflows; Consumption and Logic Apps Automation are stateful-only</td></tr>
+              <tr><td>Continuous or predictable enterprise traffic</td><td><a href="workflow-service-plan.html">Workflow Service Plan</a></td><td>Established Standard capacity and pricing for always-active workloads</td></tr>
+              <tr><td>Fully isolated App Service infrastructure</td><td><a href="app-service-environment-v3.html">ASE v3</a></td><td>Dedicated App Service environment and network boundary</td></tr>
+              <tr><td>Execution on customer-managed infrastructure</td><td><a href="hybrid-plans.html">Hybrid</a></td><td>Runs the Standard runtime on Azure Arc-enabled Kubernetes</td></tr>
+            </tbody>
+          </table></div>
+          <p>Use Logic Apps Automation when you need managed consumption with stateful-only execution, dedicated compute, VNet integration, and scale-to-zero behavior.</p>
+        </section>
+
+        <nav class="pager" aria-label="Workshop pagination"><a class="prev" href="hybrid-plans.html"><small>Previous</small><strong>&larr; Hybrid</strong></a><a class="next" href="design-best-practices.html"><small>Next</small><strong>Design Guidance &rarr;</strong></a></nav>
+      </main>
+      <aside class="toc" aria-label="Table of contents"><h3>On This Page</h3><a href="#hosting-position">Hosting Position</a><a href="#model">Hosting Model</a><a href="#why">Why This Plan</a><a href="#pricing">Pricing Availability</a><a href="#evaluation">Evaluation Checklist</a><a href="#fit">Good-Fit Projects</a></aside>
+    </div>
+  </div>
+  <script type="module" src="../assets/site.js"></script>
+</body>
+</html>

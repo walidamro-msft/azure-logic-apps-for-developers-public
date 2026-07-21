@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workflow Testing &middot; Azure Logic Apps Workshop</title>
+  <meta name="description" content="Test Azure Logic Apps workflows with static results and mock outputs without touching live systems." />
+  <script>
+    (function () {
+      var t = localStorage.getItem("logic-apps-workshop-theme");
+      document.documentElement.setAttribute("data-theme",
+        (t === "light" || t === "dark") ? t : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
+    })();
+  </script>
+  <link rel="icon" type="image/svg+xml" href="../images/azure/02631-icon-service-Logic-Apps.svg" />
+  <link rel="stylesheet" href="../assets/site.css" />
+  <style>
+    .screenshot-grid {
+      margin-top: 10px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 12px;
+    }
+
+    .screenshot-card {
+      margin: 0;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface-2);
+      padding: 10px;
+    }
+
+    .screenshot-thumb {
+      width: 100%;
+      height: 190px;
+      object-fit: contain;
+      object-position: center;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      cursor: zoom-in;
+      background: var(--surface-1);
+      display: block;
+    }
+
+    .screenshot-caption {
+      margin-top: 8px;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    .screenshot-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 120;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: rgba(8, 14, 23, 0.75);
+      backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
+    }
+
+    .screenshot-modal.open {
+      display: flex;
+    }
+
+    .screenshot-modal-content {
+      position: relative;
+      max-width: min(1200px, 94vw);
+      max-height: 88vh;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-lg);
+      background: var(--surface-1);
+      padding: 6px;
+    }
+
+    .screenshot-modal-content img {
+      display: block;
+      max-width: 100%;
+      max-height: calc(88vh - 12px);
+      border-radius: 8px;
+    }
+
+    .screenshot-modal-close {
+      position: absolute;
+      top: -12px;
+      right: -12px;
+      width: 32px;
+      height: 32px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--surface-1);
+      color: var(--text-primary);
+      font-size: 1.1rem;
+      line-height: 1;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+    }
+
+    .screenshot-modal-close:hover {
+      background: var(--surface-2);
+    }
+  </style>
+</head>
+<body data-root=".." data-active="workflow-testing">
+  <div class="page">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../index.html">Home</a><span class="sep">/</span><span>Topics</span><span class="sep">/</span><span>Workflow Testing</span>
+    </nav>
+
+    <header class="hero">
+      <h1>Workflow Testing</h1>
+      <p class="subtitle">Use mock outputs (static results) to test workflow branches, responses, and error handling without calling production services.</p>
+      <div class="badge-row"><span class="badge">Consumption + Standard</span><span class="badge">Safe validation</span></div>
+    </header>
+
+    <div class="layout">
+      <main class="content">
+        <section id="what-it-does" class="section-card reveal">
+          <h2>What Static Results Do</h2>
+          <p>Static results let you return test outputs from an action so the action doesn't call the target system. This approach helps you validate control flow and data handling while protecting live dependencies.</p>
+          <ul>
+            <li>Simulate success and failure paths on demand.</li>
+            <li>Test workflow expressions and branch conditions with known payloads.</li>
+            <li>Exercise retry and error scopes without generating real downstream effects.</li>
+            <li>Validate response shaping before integration cutover.</li>
+          </ul>
+        </section>
+
+        <section id="prerequisites" class="section-card reveal">
+          <h2>Prerequisites and Limits</h2>
+          <ul>
+            <li>Have an Azure subscription and an existing logic app workflow.</li>
+            <li>Select the action you want to test in the designer.</li>
+            <li>Static results apply to actions, not triggers.</li>
+            <li>Enable and disable static results manually per action.</li>
+          </ul>
+          <div class="speaker-note">
+            <h3>Important</h3>
+            <p>An action with static results enabled shows a test beaker icon in the designer and run details.</p>
+          </div>
+        </section>
+
+        <section id="setup" class="section-card reveal">
+          <h2>Set Up Mock Outputs on an Action</h2>
+          <ol style="margin:8px 0 0 18px; color:var(--text-secondary);">
+            <li>Open your workflow in the Azure portal designer.</li>
+            <li>Select the target action, then open the <strong>Testing</strong> tab.</li>
+            <li>Select <strong>Enable Static Result</strong>.</li>
+            <li>Pick the response fields you want to mock.</li>
+            <li>Set values for status, output, or error based on your test case.</li>
+            <li>Save and run the workflow to validate behavior.</li>
+          </ol>
+          <p style="margin-top:12px;">Click any screenshot to open the full-size image:</p>
+          <div class="screenshot-grid" style="margin-top:10px;">
+            <figure class="screenshot-card">
+              <img
+                class="screenshot-thumb"
+                src="https://learn.microsoft.com/en-us/azure/logic-apps/testing-framework/media/test-logic-apps-mock-data-static-results/enable-static-result-standard.png"
+                alt="Testing tab with Enable Static Result selected"
+                loading="lazy"
+                data-full="https://learn.microsoft.com/en-us/azure/logic-apps/testing-framework/media/test-logic-apps-mock-data-static-results/enable-static-result-standard.png"
+              />
+              <figcaption class="screenshot-caption">Enable static result in the action Testing tab.</figcaption>
+            </figure>
+            <figure class="screenshot-card">
+              <img
+                class="screenshot-thumb"
+                src="https://learn.microsoft.com/en-us/azure/logic-apps/testing-framework/media/test-logic-apps-mock-data-static-results/static-result-enabled.png"
+                alt="Action card showing the static result indicator icon"
+                loading="lazy"
+                data-full="https://learn.microsoft.com/en-us/azure/logic-apps/testing-framework/media/test-logic-apps-mock-data-static-results/static-result-enabled.png"
+              />
+              <figcaption class="screenshot-caption">Designer indicator that static results are enabled.</figcaption>
+            </figure>
+          </div>
+        </section>
+
+        <section id="field-guide" class="section-card reveal">
+          <h2>Field Selection Guide (HTTP Action Example)</h2>
+          <div class="table-wrap">
+            <table aria-label="Mock output field guidance">
+              <thead>
+                <tr><th>Field</th><th>When required</th><th>Use it for</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Status</td><td>Always</td><td>Choose <strong>Succeeded</strong> or <strong>Failed</strong> to drive branch logic.</td></tr>
+                <tr><td>Outputs</td><td>When status is Succeeded</td><td>Return status code, headers, and test body payload.</td></tr>
+                <tr><td>Error</td><td>When status is Failed</td><td>Return test error message and optional error code.</td></tr>
+                <tr><td>Code</td><td>Optional</td><td>Inject specific code values to test condition checks and handling.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="validate-runs" class="section-card reveal">
+          <h2>Validate and Inspect Test Runs</h2>
+          <ul>
+            <li>Run the workflow and inspect the action output and downstream branches.</li>
+            <li>For Consumption workflows, use run history and check the <strong>Static Results</strong> column.</li>
+            <li>Open run details and confirm which actions used static results.</li>
+            <li>Compare outputs against expected payload contracts before enabling live integration.</li>
+          </ul>
+        </section>
+
+        <section id="disable" class="section-card reveal">
+          <h2>Disable Static Results Safely</h2>
+          <ol style="margin:8px 0 0 18px; color:var(--text-secondary);">
+            <li>Select the action in the designer.</li>
+            <li>Open the <strong>Testing</strong> tab.</li>
+            <li>Select <strong>Disable Static Result</strong> and save.</li>
+          </ol>
+          <p style="margin-top:10px;">Turning the setting off does not erase your previously configured mock values, so you can re-enable and reuse them later.</p>
+        </section>
+
+        <section id="best-practices" class="section-card reveal">
+          <h2>Testing Best Practices</h2>
+          <ul>
+            <li>Keep a small set of named test scenarios for happy path, transient fault, and hard failure.</li>
+            <li>Mock at integration boundaries where side effects are expensive or risky.</li>
+            <li>Avoid leaving static results enabled after test validation in shared environments.</li>
+            <li>Pair static-result tests with at least one live-endpoint verification before release.</li>
+          </ul>
+          <div class="callout"><strong>Hands-on practice:</strong> Apply this guidance in <a href="../labs/lab05-logic-app-testing-portal.html">Lab 05: Logic App Testing</a>, which walks through success and failure static results for an HTTP action.</div>
+        </section>
+
+        <nav class="pager" aria-label="Workshop pagination">
+          <a class="prev" href="monitoring-troubleshooting.html"><small>Previous</small><strong>&larr; Monitoring &amp; Troubleshooting</strong></a>
+          <a class="next" href="use-cases.html"><small>Next</small><strong>Use Cases &rarr;</strong></a>
+        </nav>
+      </main>
+
+      <aside class="toc" aria-label="Table of contents">
+        <h3>On This Page</h3>
+        <a href="#what-it-does">What Static Results Do</a>
+        <a href="#prerequisites">Prerequisites and Limits</a>
+        <a href="#setup">Set Up Mock Outputs</a>
+        <a href="#field-guide">Field Selection Guide</a>
+        <a href="#validate-runs">Validate Runs</a>
+        <a href="#disable">Disable Static Results</a>
+        <a href="#best-practices">Best Practices</a>
+      </aside>
+    </div>
+  </div>
+
+  <div id="screenshot-modal" class="screenshot-modal" aria-hidden="true">
+    <div class="screenshot-modal-content" role="dialog" aria-modal="true" aria-label="Screenshot preview">
+      <button id="screenshot-modal-close" class="screenshot-modal-close" type="button" aria-label="Close screenshot preview">&times;</button>
+      <img id="screenshot-modal-image" src="" alt="" />
+    </div>
+  </div>
+
+  <script type="module" src="../assets/site.js"></script>
+  <script>
+    (function () {
+      var modal = document.getElementById("screenshot-modal");
+      var modalImage = document.getElementById("screenshot-modal-image");
+      var closeBtn = document.getElementById("screenshot-modal-close");
+      var thumbs = document.querySelectorAll(".screenshot-thumb");
+
+      if (!modal || !modalImage || !closeBtn || !thumbs.length) return;
+
+      function openModal(src, alt) {
+        modalImage.src = src;
+        modalImage.alt = alt || "Screenshot preview";
+        modal.classList.add("open");
+        modal.setAttribute("aria-hidden", "false");
+        document.body.style.overflow = "hidden";
+      }
+
+      function closeModal() {
+        modal.classList.remove("open");
+        modal.setAttribute("aria-hidden", "true");
+        modalImage.src = "";
+        document.body.style.overflow = "";
+      }
+
+      thumbs.forEach(function (thumb) {
+        thumb.addEventListener("click", function () {
+          openModal(thumb.getAttribute("data-full") || thumb.src, thumb.alt);
+        });
+      });
+
+      closeBtn.addEventListener("click", closeModal);
+
+      modal.addEventListener("click", function (event) {
+        if (event.target === modal) closeModal();
+      });
+
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape" && modal.classList.contains("open")) {
+          closeModal();
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

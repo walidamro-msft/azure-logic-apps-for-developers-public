@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Use Cases &middot; Azure Logic Apps Workshop</title>
+  <meta name="description" content="Business process, data integration, real-time event, and scheduled-task use cases for Azure Logic Apps." />
+  <script>
+    (function () {
+      var t = localStorage.getItem("logic-apps-workshop-theme");
+      document.documentElement.setAttribute("data-theme",
+        (t === "light" || t === "dark") ? t : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
+    })();
+  </script>
+  <link rel="icon" type="image/svg+xml" href="../images/azure/02631-icon-service-Logic-Apps.svg" />
+  <link rel="stylesheet" href="../assets/site.css" />
+</head>
+<body data-root=".." data-active="use-cases">
+  <div class="page">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../index.html">Home</a><span class="sep">/</span><span>Topics</span><span class="sep">/</span><span>Use Cases</span>
+    </nav>
+
+    <header class="hero">
+      <h1>Use Cases</h1>
+      <p class="subtitle">The deck closes with scenarios because Logic Apps is easiest to understand when connected to real business flow.</p>
+      <div class="badge-row"><span class="badge">Scenario-driven</span><span class="badge">Outcome focused</span></div>
+    </header>
+
+    <div class="layout">
+      <main class="content">
+        <section id="business-process" class="section-card reveal">
+          <h2>Automating Business Processes</h2>
+          <div class="plan-grid">
+            <div class="plan-box"><h3>Order processing</h3><ul><li>Receive order data.</li><li>Validate and enrich the request.</li><li>Send confirmation and downstream routing events.</li></ul></div>
+            <div class="plan-box"><h3>Employee onboarding</h3><ul><li>Coordinate HR, IT, and facilities tasks.</li><li>Track milestones and exceptions across departments.</li></ul></div>
+            <div class="plan-box"><h3>Approvals</h3><ul><li>Route requests to approvers.</li><li>Track responses, escalations, and notifications.</li></ul></div>
+          </div>
+        </section>
+
+        <section id="application-data" class="section-card reveal">
+          <h2>Integrating Applications and Data</h2>
+          <ul>
+            <li>Synchronize customer or order data between ERP, CRM, and marketing systems.</li>
+            <li>Move files between SharePoint, SFTP, Blob Storage, and internal repositories.</li>
+            <li>Bridge cloud services with legacy or on-premises systems using connectors and the data gateway.</li>
+          </ul>
+        </section>
+
+        <section id="real-time" class="section-card reveal">
+          <h2>Real-Time Event Processing</h2>
+          <p>Use Logic Apps when an event should fan out into multiple coordinated actions without building a bespoke orchestration service.</p>
+          <ul>
+            <li>IoT alerting and operational notifications.</li>
+            <li>Security and incident-response signaling.</li>
+            <li>Social or customer-service message routing.</li>
+          </ul>
+        </section>
+
+        <section id="scheduled" class="section-card reveal">
+          <h2>Scheduled and Recurring Tasks</h2>
+          <ul>
+            <li>Cleanup jobs that remove stale records or archive old artifacts.</li>
+            <li>Regular report generation and scheduled distribution.</li>
+            <li>Routine maintenance and verification tasks that benefit from a visual, governed workflow.</li>
+          </ul>
+          <div class="speaker-note">
+            <h3>Emphasis</h3>
+            <p>Not every workflow starts from an inbound event. Scheduled automations remain a major entry point for real Logic Apps adoption.</p>
+          </div>
+        </section>
+
+        <nav class="pager" aria-label="Workshop pagination">
+          <a class="prev" href="workflow-testing.html"><small>Previous</small><strong>&larr; Workflow Testing</strong></a>
+          <a class="next" href="agentic-workflows.html"><small>Next</small><strong>Agentic Workflows &rarr;</strong></a>
+        </nav>
+      </main>
+
+      <aside class="toc" aria-label="Table of contents">
+        <h3>On This Page</h3>
+        <a href="#business-process">Business Processes</a>
+        <a href="#application-data">Applications and Data</a>
+        <a href="#real-time">Real-Time Events</a>
+        <a href="#scheduled">Scheduled Tasks</a>
+      </aside>
+    </div>
+  </div>
+
+  <script type="module" src="../assets/site.js"></script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hybrid Hosting &middot; Azure Logic Apps Workshop</title>
+  <meta name="description" content="Architecture, East US vCPU pricing, prerequisites, scaling, and workload guidance for Azure Logic Apps Standard Hybrid hosting." />
+  <script>(function(){var t=localStorage.getItem("logic-apps-workshop-theme");document.documentElement.setAttribute("data-theme",(t==="light"||t==="dark")?t:(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"));})();</script>
+  <link rel="icon" type="image/svg+xml" href="../images/azure/02631-icon-service-Logic-Apps.svg" />
+  <link rel="stylesheet" href="../assets/site.css" />
+</head>
+<body data-root=".." data-active="hybrid-plans">
+  <div class="page">
+    <nav class="breadcrumb" aria-label="Breadcrumb"><a href="../index.html">Home</a><span class="sep">/</span><a href="hosting-plans.html">Hosting Plans</a><span class="sep">/</span><a href="standard-plans.html">Standard</a><span class="sep">/</span><span>Hybrid</span></nav>
+    <header class="hero">
+      <h1>Logic Apps Standard Hybrid Hosting</h1>
+      <p class="subtitle">Run the Standard runtime on customer-managed Azure Arc-enabled Kubernetes for on-premises, edge, and partially connected integration.</p>
+      <div class="audience"><span>Standard runtime</span><span>Azure Arc</span><span>Kubernetes</span><span>Per vCPU-hour</span></div>
+    </header>
+    <div class="layout">
+      <main class="content">
+        <section id="architecture" class="card reveal">
+          <h2>Customer-Managed Runtime</h2>
+          <p>Hybrid hosting deploys the Logic Apps Standard runtime through the Azure Container Apps extension on Azure Arc-enabled Kubernetes. Workflow execution and data can remain close to local systems while Azure provides the control-plane experience.</p>
+          <div class="diagram-wrap"><pre class="mermaid">
+flowchart LR
+    AZ[Azure control plane] --> ARC[Azure Arc-enabled Kubernetes]
+    ARC --> EXT[Container Apps extension]
+    EXT --> LA[Logic Apps Hybrid runtime]
+    LA --> SQL[SQL Server]
+    LA --> LOCAL[Local systems]
+    classDef host fill:#f3edfb,stroke:#8764b8,stroke-width:2,color:#35234f;
+    class ARC,EXT,LA host;
+          </pre></div>
+        </section>
+
+        <section id="prerequisites" class="card reveal">
+          <h2>Platform Prerequisites</h2>
+          <div class="table-wrap"><table aria-label="Hybrid hosting responsibilities">
+            <thead><tr><th>Area</th><th>Requirement or responsibility</th></tr></thead>
+            <tbody>
+              <tr><td>Kubernetes</td><td>Customer-managed Azure Arc-enabled Kubernetes cluster</td></tr>
+              <tr><td>Extension</td><td>Azure Container Apps extension configured for the cluster</td></tr>
+              <tr><td>Data</td><td>Supported SQL Server deployment for runtime metadata and state</td></tr>
+              <tr><td>Operations</td><td>You own cluster capacity, upgrades, availability, networking, and observability</td></tr>
+              <tr><td>Connectivity</td><td>Plan Azure control-plane access and behavior for partially connected environments</td></tr>
+            </tbody>
+          </table></div>
+        </section>
+
+        <section id="pricing" class="card reveal">
+          <h2>East US Pricing</h2>
+          <p>The public Logic Apps Hybrid meter is $0.18 per allocated vCPU-hour in East US. Configure 0.25 to 2 vCPUs per replica; each replica is limited to 2 vCPUs.</p>
+          <div class="formula">Logic Apps charge = allocated vCPU per replica &times; replica count &times; active hours &times; $0.18</div>
+          <div class="table-wrap"><table aria-label="Logic Apps Hybrid East US examples">
+            <thead><tr><th>Allocation</th><th>Replicas</th><th>730-hour Logic Apps charge</th></tr></thead>
+            <tbody>
+              <tr><td>0.5 vCPU</td><td>1</td><td><strong>$65.70</strong></td></tr>
+              <tr><td>1 vCPU</td><td>1</td><td><strong>$131.40</strong></td></tr>
+              <tr><td>1 vCPU</td><td>2</td><td><strong>$262.80</strong></td></tr>
+              <tr><td>2 vCPU</td><td>2</td><td><strong>$525.60</strong></td></tr>
+            </tbody>
+          </table></div>
+        </section>
+
+        <section id="additional-costs" class="card reveal">
+          <h2>Additional Costs</h2>
+          <p>The Hybrid vCPU meter is only the Logic Apps software charge. Add the Kubernetes nodes and supporting infrastructure, SQL Server infrastructure and licensing, storage, networking, monitoring, backup, and operations. Shared managed connector calls remain separately metered.</p>
+          <div class="callout"><strong>Cost comparison:</strong> compare the complete customer-managed platform cost with Workflow Service Plan or ASE v3, not only the $0.18 Logic Apps vCPU rate.</div>
+        </section>
+
+        <section id="fit" class="card reveal">
+          <h2>When to Choose It</h2>
+          <div class="cheat">
+            <article class="cheat-item"><h3>Strong fit</h3><p>Data processing must stay on premises, latency to local systems is critical, or cloud connectivity is constrained.</p></article>
+            <article class="cheat-item"><h3>Platform fit</h3><p>Your organization already operates Kubernetes, Azure Arc, SQL Server, and the required reliability and security controls.</p></article>
+            <article class="cheat-item"><h3>Weak fit</h3><p>You want Azure to manage compute and platform availability. Workflow Service Plan is usually simpler.</p></article>
+            <article class="cheat-item"><h3>Capacity warning</h3><p>Replica counts and vCPU allocations affect both Logic Apps charges and the cluster capacity you must supply.</p></article>
+          </div>
+        </section>
+
+        <nav class="pager" aria-label="Workshop pagination"><a class="prev" href="app-service-environment-v3.html"><small>Previous</small><strong>&larr; App Service Environment v3</strong></a><a class="next" href="logic-apps-automation.html"><small>Next</small><strong>Logic Apps Automation &rarr;</strong></a></nav>
+      </main>
+      <aside class="toc" aria-label="Table of contents"><h3>On This Page</h3><a href="#architecture">Architecture</a><a href="#prerequisites">Prerequisites</a><a href="#pricing">East US Pricing</a><a href="#additional-costs">Additional Costs</a><a href="#fit">When to Choose</a></aside>
+    </div>
+  </div>
+  <script type="module" src="../assets/site.js"></script>
+</body>
+</html>

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Detailed Training Guide &middot; Azure Logic Apps Workshop</title>
+  <meta name="description" content="Detailed trainer guide for delivering the Azure Logic Apps workshop based on the deck notes." />
+  <script>
+    (function () {
+      var t = localStorage.getItem("logic-apps-workshop-theme");
+      document.documentElement.setAttribute("data-theme",
+        (t === "light" || t === "dark") ? t : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
+    })();
+  </script>
+  <link rel="icon" type="image/svg+xml" href="../images/azure/02631-icon-service-Logic-Apps.svg" />
+  <link rel="stylesheet" href="../assets/site.css" />
+</head>
+<body data-root=".." data-active="trainer">
+  <div class="page">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../index.html">Workshop Home</a><span class="sep">/</span><a href="index.html">Trainer Hub</a><span class="sep">/</span><span>Detailed Training Guide</span>
+    </nav>
+
+    <header class="hero">
+      <h1>Detailed Training Guide</h1>
+      <p class="subtitle">A condensed talk track based on the attached deck guidance. Use it as a facilitation script, not as attendee-facing reading material.</p>
+      <div class="badge-row"><span class="badge">Trainer-only</span><span class="badge">Facilitation guide</span></div>
+    </header>
+
+    <div class="layout">
+      <main class="content">
+        <section id="overview" class="section-card reveal">
+          <h2>Overview Talk Track</h2>
+          <ul>
+            <li>Explain Logic Apps as workflow automation across systems, not simply as a connector gallery.</li>
+            <li>Stress the value of eliminating manual handoffs and reducing bespoke integration code.</li>
+            <li>Use the workflow-structure slide to anchor trigger first, then action chain, then control flow.</li>
+          </ul>
+        </section>
+
+        <section id="core" class="section-card reveal">
+          <h2>Core Concepts Talk Track</h2>
+          <ul>
+            <li>Triggers define when a workflow starts and therefore drive both responsiveness and cost.</li>
+            <li>Actions are the units of business work; connectors are the units of external reach.</li>
+            <li>When covering stateful versus stateless, tie the choice to durability, performance, and run-history needs.</li>
+            <li>Distinguish Local Functions from external Function Apps: local .NET functions deploy with a Standard logic app and need no separate service plan, while external Function Apps use Azure Functions pricing.</li>
+            <li>Power Automate is subject to license-based Power Platform request limits. Logic Apps does not use those allocations, although Consumption throughput limits and connector or downstream throttling still apply.</li>
+          </ul>
+        </section>
+
+        <section id="patterns" class="section-card reveal">
+          <h2>Advanced Patterns Talk Track</h2>
+          <ul>
+            <li>Conditions and loops make workflows adaptive rather than linear.</li>
+            <li>Retry and failure routing are first-class design responsibilities, not afterthoughts.</li>
+            <li>Azure Functions and Service Bus should be presented as extension points, not competing products.</li>
+            <li>Built-in connectors run within the Logic Apps compute environment and generally have lower latency than managed connectors. Connector Namespace exposes managed connectors only.</li>
+          </ul>
+        </section>
+
+        <section id="plans" class="section-card reveal">
+          <h2>Pricing and Plans Talk Track</h2>
+          <ul>
+            <li>Start with the deck's mental model: Consumption is pay-per-execution, Standard is fixed compute.</li>
+            <li>Update the room with the current Learn framing: Standard also means single-tenant hosting, multiple workflows, stronger networking, and local engineering workflows.</li>
+            <li>Be explicit that exact limits and pricing should always be revalidated before architecture decisions.</li>
+          </ul>
+        </section>
+
+        <section id="monitoring" class="section-card reveal">
+          <h2>Operations Talk Track</h2>
+          <ul>
+            <li>Teach run history first because it is concrete and immediate.</li>
+            <li>Then connect that local debugging view to Azure Monitor and Application Insights for platform-scale observability.</li>
+            <li>Reinforce that idempotency matters because integration platforms are naturally at-least-once.</li>
+          </ul>
+        </section>
+
+        <section id="security" class="section-card reveal">
+          <h2>Security and Governance Talk Track</h2>
+          <ul>
+            <li>Frame RBAC around separation of design, operations, and audit roles.</li>
+            <li>Use limits to explain why workflow architecture is not only about business logic.</li>
+            <li>Position Standard as the likely answer when networking and private access dominate requirements.</li>
+          </ul>
+        </section>
+
+        <section id="tooling" class="section-card reveal">
+          <h2>Tooling Talk Track</h2>
+          <ul>
+            <li>Use the portal screenshot to onboard the room visually.</li>
+            <li>Use the VS Code screenshot to show that Logic Apps also supports source-controlled engineering workflows.</li>
+            <li>Call out the separate Consumption and Standard extensions so attendees do not assume one tool path fits both models.</li>
+          </ul>
+        </section>
+
+        <nav class="pager" aria-label="Workshop pagination">
+          <a class="prev" href="index.html"><small>Previous</small><strong>&larr; Trainer Hub</strong></a>
+          <a class="next" href="../index.html"><small>Next</small><strong>Workshop Home &rarr;</strong></a>
+        </nav>
+      </main>
+
+      <aside class="toc" aria-label="Table of contents">
+        <h3>On This Page</h3>
+        <a href="#overview">Overview</a>
+        <a href="#core">Core Concepts</a>
+        <a href="#patterns">Advanced Patterns</a>
+        <a href="#plans">Pricing and Plans</a>
+        <a href="#monitoring">Operations</a>
+        <a href="#security">Security</a>
+        <a href="#tooling">Tooling</a>
+      </aside>
+    </div>
+  </div>
+
+  <script type="module" src="../assets/site.js"></script>
+</body>
+</html>

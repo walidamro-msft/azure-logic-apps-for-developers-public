@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agentic Workflows &middot; Azure Logic Apps Workshop</title>
+  <meta name="description" content="Build agentic workflows in Azure Logic Apps using agent loops, durable orchestration, and enterprise integration patterns." />
+  <script>
+    (function () {
+      var t = localStorage.getItem("logic-apps-workshop-theme");
+      document.documentElement.setAttribute("data-theme",
+        (t === "light" || t === "dark") ? t : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
+    })();
+  </script>
+  <link rel="icon" type="image/svg+xml" href="../images/azure/02631-icon-service-Logic-Apps.svg" />
+  <link rel="stylesheet" href="../assets/site.css" />
+</head>
+<body data-root=".." data-active="agentic-workflows">
+  <div class="page">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../index.html">Home</a><span class="sep">/</span><span>Topics</span><span class="sep">/</span><span>Agentic Workflows</span>
+    </nav>
+
+    <header class="hero">
+      <h1>Agentic Workflows</h1>
+      <p class="subtitle">Use Azure Logic Apps to orchestrate conversational and autonomous agents with durable execution, connectors, governance, and observability.</p>
+      <div class="badge-row"><span class="badge">Consumption + Standard</span><span class="badge">AI orchestration</span></div>
+    </header>
+
+    <div class="layout">
+      <main class="content">
+        <section id="what-is-agentic" class="section-card reveal">
+          <h2>What Agentic Workflows Add</h2>
+          <p>Agentic workflows combine AI reasoning with workflow orchestration. In this model, an agent can assess context, choose tools, execute actions, and iterate toward an outcome while Logic Apps provides integration, control flow, and reliability.</p>
+          <ul>
+            <li>Embed model reasoning and tool use inside operational workflows.</li>
+            <li>Coordinate long-running tasks with durable state and checkpoints.</li>
+            <li>Connect agent decisions to enterprise systems through managed connectors.</li>
+            <li>Apply security, networking, and governance controls from the platform layer.</li>
+          </ul>
+        </section>
+
+        <section id="why-logic-apps" class="section-card reveal">
+          <h2>Why Use Logic Apps for Agentic Orchestration</h2>
+          <div class="plan-grid">
+            <div class="plan-box">
+              <h3>Integration depth</h3>
+              <p>Use built-in connectors, custom connectors, and HTTP actions to reach SaaS APIs, data stores, and on-premises systems.</p>
+            </div>
+            <div class="plan-box">
+              <h3>Durable execution</h3>
+              <p>Persist workflow progress so agent-driven runs can resume after restarts, retries, or transient dependency failures.</p>
+            </div>
+            <div class="plan-box">
+              <h3>Operations and governance</h3>
+              <p>Use Azure Monitor, RBAC, managed identities, and network controls to run and audit agent flows safely.</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="agent-loop" class="section-card reveal">
+          <h2>Agent Loop Pattern in Logic Apps</h2>
+          <p>An agent loop repeats a simple cycle: receive input, decide the next action, call tools, evaluate results, and continue until completion criteria are met.</p>
+          <div class="speaker-note">
+            <h3>How to model it</h3>
+            <p>Implement loop control in workflow actions and conditions, then keep tool boundaries explicit so you can trace and govern each external call.</p>
+          </div>
+          <ol style="margin:8px 0 0 18px; color:var(--text-secondary);">
+            <li>Start from a trigger (chat, event, schedule, or API call).</li>
+            <li>Invoke an agent action to decide intent or next tool.</li>
+            <li>Run connector and API actions for tool execution.</li>
+            <li>Store context and branch for follow-up reasoning or completion.</li>
+          </ol>
+        </section>
+
+        <section id="sku-comparison" class="section-card reveal">
+          <h2>Consumption vs Standard for Agentic Workloads</h2>
+          <div class="table-wrap">
+            <table aria-label="Consumption and Standard comparison for agentic workflows">
+              <thead>
+                <tr>
+                  <th>Capability area</th>
+                  <th>Consumption</th>
+                  <th>Standard</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Model hosting pattern</td>
+                  <td>Hosted model experience in supported regions.</td>
+                  <td>Bring your own model from Azure AI resources.</td>
+                </tr>
+                <tr>
+                  <td>Network isolation</td>
+                  <td>Limited virtual network options for agent features.</td>
+                  <td>Stronger VNET and private networking support.</td>
+                </tr>
+                <tr>
+                  <td>Local development</td>
+                  <td>Primarily cloud-first workflow authoring.</td>
+                  <td>Local development support through Visual Studio Code.</td>
+                </tr>
+                <tr>
+                  <td>Workload fit</td>
+                  <td>Fast onboarding and lighter scenarios.</td>
+                  <td>Performance, control, and compliance-focused scenarios.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p style="margin-top:10px;">Important: platform capabilities and pricing evolve quickly. Revalidate regional support and billing details before production decisions.</p>
+        </section>
+
+        <section id="agent-types" class="section-card reveal">
+          <h2>Conversational vs Autonomous Agents</h2>
+          <div class="plan-grid">
+            <div class="plan-box">
+              <h3>Conversational</h3>
+              <ul>
+                <li>User-driven and session-oriented.</li>
+                <li>Commonly triggered by a chat session start event.</li>
+                <li>Optimized for guided interactions and iterative user prompts.</li>
+              </ul>
+            </div>
+            <div class="plan-box">
+              <h3>Autonomous</h3>
+              <ul>
+                <li>Event-driven or schedule-driven operation.</li>
+                <li>Can run longer and act without continuous user input.</li>
+                <li>Needs stronger guardrails, error handling, and rollback patterns.</li>
+              </ul>
+            </div>
+          </div>
+          <p>Both models benefit from durable state, retries, secure connector access, and clear observability with structured telemetry.</p>
+        </section>
+
+        <section id="adoption-path" class="section-card reveal">
+          <h2>Suggested Adoption Path</h2>
+          <ol style="margin:8px 0 0 18px; color:var(--text-secondary);">
+            <li>Start with one conversational workflow that calls a small, safe toolset.</li>
+            <li>Add observability and alerting before broadening action scope.</li>
+            <li>Introduce autonomous patterns for high-volume or always-on tasks.</li>
+            <li>Expand to multi-agent coordination only after single-agent controls are stable.</li>
+          </ol>
+        </section>
+
+        <section id="learn-more" class="section-card reveal">
+          <h2>Learn More</h2>
+          <p>If you want to go deeper into the full agentic course content and module flow, review <a href="https://azure.github.io/logicapps-labs/docs/logicapps-ai-course/overview" target="_blank" rel="noopener">Overview | Logic Apps Labs</a>.</p>
+        </section>
+
+        <nav class="pager" aria-label="Workshop pagination">
+          <a class="prev" href="use-cases.html"><small>Previous</small><strong>&larr; Use Cases</strong></a>
+          <a class="next" href="build-and-manage.html"><small>Next</small><strong>Build &amp; Manage &rarr;</strong></a>
+        </nav>
+      </main>
+
+      <aside class="toc" aria-label="Table of contents">
+        <h3>On This Page</h3>
+        <a href="#what-is-agentic">What Agentic Workflows Add</a>
+        <a href="#why-logic-apps">Why Logic Apps</a>
+        <a href="#agent-loop">Agent Loop Pattern</a>
+        <a href="#sku-comparison">Consumption vs Standard</a>
+        <a href="#agent-types">Conversational vs Autonomous</a>
+        <a href="#adoption-path">Suggested Adoption Path</a>
+        <a href="#learn-more">Learn More</a>
+      </aside>
+    </div>
+  </div>
+
+  <script type="module" src="../assets/site.js"></script>
+</body>
+</html>

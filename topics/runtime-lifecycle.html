@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Azure Logic Apps Runtime Lifecycle Deep Dive &middot; Azure Logic Apps Workshop</title>
+  <meta name="description" content="Low-level deep dive into Azure Logic Apps runtime internals: workflow loading, trigger dispatch, stateful and stateless execution, connectors, scaling, and billing behavior." />
+  <script>
+    (function () {
+      var t = localStorage.getItem("logic-apps-workshop-theme");
+      document.documentElement.setAttribute("data-theme",
+        (t === "light" || t === "dark") ? t : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
+    })();
+  </script>
+  <link rel="icon" type="image/svg+xml" href="../images/azure/02631-icon-service-Logic-Apps.svg" />
+  <link rel="stylesheet" href="../assets/site.css" />
+</head>
+<body data-root=".." data-active="runtime-lifecycle">
+  <div class="page">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../index.html">Home</a><span class="sep">/</span><span>Topics</span><span class="sep">/</span><span>Runtime Lifecycle</span>
+    </nav>
+
+    <header class="hero">
+      <h1>Azure Logic Apps Runtime Lifecycle Deep Dive</h1>
+      <p class="subtitle">
+        A low-level look at how Logic Apps loads workflow definitions, activates triggers,
+        schedules action jobs, persists state, calls connectors, scales workers, and turns
+        execution behavior into cost and operational signals.
+      </p>
+      <div class="badge-row">
+        <span class="badge">Audience: Integration Architects</span>
+        <span class="badge">Audience: Platform Engineers</span>
+        <span class="badge">Scope: Runtime internals</span>
+        <span class="badge">Updated from Microsoft Learn</span>
+      </div>
+      <div class="legend" aria-label="Lifecycle color legend">
+        <div class="legend-item"><span class="swatch s-azure"></span> Logic Apps runtime and Azure platform</div>
+        <div class="legend-item"><span class="swatch s-success"></span> Ready, completed, and durable state</div>
+        <div class="legend-item"><span class="swatch s-scale"></span> Scaling and dispatch operations</div>
+        <div class="legend-item"><span class="swatch s-cold"></span> Latency, throttling, or retry-sensitive path</div>
+      </div>
+    </header>
+
+    <div class="layout">
+      <main class="content">
+        <section id="introduction" class="section-card reveal">
+          <h2>Introduction</h2>
+          <p>
+            Logic Apps is orchestration-first. The visible designer is only the authoring surface;
+            at runtime, every workflow becomes trigger listeners, action jobs, state checkpoints,
+            connector calls, and telemetry records. Understanding that lifecycle helps teams tune
+            throughput, avoid unnecessary executions, choose Standard versus Consumption deliberately,
+            and decide when stateful durability is worth the storage overhead.
+          </p>
+          <p>
+            Current Microsoft Learn guidance distinguishes multitenant Consumption workflows from
+            Standard workflows running on the redesigned single-tenant Logic Apps runtime. Standard
+            is hosted as an extension on the Azure Functions runtime, supports multiple workflows in
+            one app, and gives deeper control over host settings, storage, networking, and scale.
+          </p>
+        </section>
+
+        <section id="lifecycle-overview" class="section-card reveal">
+          <h2>Logic Apps Execution Lifecycle</h2>
+          <p>
+            The runtime path starts before the trigger fires. Workflow artifacts must load, trigger
+            handlers must activate, and the run engine must turn workflow JSON into executable jobs.
+          </p>
+          <div class="diagram-wrap">
+            <pre class="mermaid">
+flowchart LR
+  DEF[workflow.json] --> LOAD[Runtime loads workflow]
+  LOAD --> TRIG[Trigger listener or schedule]
+  TRIG --> RUN[Create workflow run]
+  RUN --> DAG[Build job sequencer]
+  DAG --> ACT[Dispatch action jobs]
+  ACT --> CONN[Connector or built-in operation]
+  CONN --> STATE[Persist state or keep in memory]
+  STATE --> HIST[Run history and telemetry]
+
+  classDef azure fill:#e6f2fb,stroke:#0078d4,stroke-width:2,color:#0f1722;
+  classDef success fill:#e7f5e7,stroke:#107c10,stroke-width:2,color:#103010;
+  classDef scale fill:#fff3e3,stroke:#ff8c00,stroke-width:2,color:#4a2a0a;
+
+  class DEF,LOAD,TRIG,RUN azure;
+  class DAG,ACT scale;
+  class CONN,STATE,HIST success;
+            </pre>
+          </div>
+        </section>
+
+        <section id="standard-runtime-startup" class="section-card reveal">
+          <h2>Standard Runtime Startup</h2>
+          <p>
+            In Standard, the Logic Apps runtime is packaged with the workflow app and hosted on the
+            Azure Functions runtime. Startup loads host settings, connection metadata, artifacts, and
+            each workflow folder that contains a workflow definition.
+          </p>
+          <div class="diagram-wrap">
+            <pre class="mermaid">
+flowchart TD
+  A[Start workflow app] --> B[Azure Functions host starts]
+  B --> C[Load Logic Apps extension bundle]
+  C --> D[Read host.json runtime settings]
+  D --> E[Read connections.json and app settings]
+  E --> F[Enumerate workflow folders]
+  F --> G[Load each workflow.json]
+  G --> H{Definition valid?}
+  H -- No --> I[Emit startup error logs]
+  H -- Yes --> J[Prepare trigger handler]
+  J --> K[Workflow ready]
+
+  classDef azure fill:#e6f2fb,stroke:#0078d4,stroke-width:2,color:#0f1722;
+  classDef success fill:#e7f5e7,stroke:#107c10,stroke-width:2,color:#103010;
+  classDef cold fill:#fdebe9,stroke:#d83b01,stroke-width:2,color:#3a1f1c;
+
+  class A,B,C,D,E,F,G,J azure;
+  class K success;
+  class H,I cold;
+            </pre>
+          </div>
+          <ul>
+            <li><strong>workflow.json</strong> defines the trigger and actions for one workflow.</li>
+            <li><strong>connections.json</strong> stores connection metadata used by managed and built-in connector calls.</li>
+            <li><strong>host.json</strong> sets runtime-wide throughput, timeout, retry, content, storage, and concurrency behavior.</li>
+          </ul>
+        </section>
+
+        <section id="trigger-activation" class="section-card reveal">
+          <h2>Trigger Activation</h2>
+          <p>
+            A trigger is the runtime entry point. Request and webhook triggers use the HTTP request
+            processing path; polling and service-provider triggers maintain listeners or trigger state;
+            recurrence-based triggers schedule future checks.
+          </p>
+          <div class="diagram-wrap">
+            <pre class="mermaid">
+flowchart TD
+  A[Trigger condition met] --> B{Trigger type}
+  B -->|Request or webhook| C[HTTP endpoint receives call]
+  B -->|Service Bus, Event Hubs, storage, SFTP| D[Built-in listener detects work]
+  B -->|Recurrence or polling| E[Schedule checks source]
+  C --> F[Create run]
+  D --> F
+  E --> F
+  F --> G[Apply trigger concurrency and waiting-run limits]
+  G --> H[Dispatch workflow run]
+
+  classDef azure fill:#e6f2fb,stroke:#0078d4,stroke-width:2,color:#0f1722;
+  classDef scale fill:#fff3e3,stroke:#ff8c00,stroke-width:2,color:#4a2a0a;
+  classDef success fill:#e7f5e7,stroke:#107c10,stroke-width:2,color:#103010;
+
+  class A,B,C,D,E,F azure;
+  class G scale;
+  class H success;
+            </pre>
+          </div>
+          <p>
+            Practical implication: trigger design controls both cost and pressure. Filtering early,
+            setting concurrency deliberately, and avoiding failed service-provider triggers prevents
+            unnecessary runs and needless scale activity.
+          </p>
+        </section>
+
+        <section id="job-orchestration" class="section-card reveal">
+          <h2>Job Orchestration Engine</h2>
+          <p>
+            When a workflow starts, the runtime maps the trigger and actions into a directed graph of
+            jobs called a job sequencer. Dispatchers pick up runnable jobs, execute them, and schedule
+            downstream jobs when dependencies, conditions, retry policies, and scopes allow progress.
+          </p>
+          <div class="diagram-wrap">
+            <pre class="mermaid">
+flowchart LR
+  RUN[Workflow run] --> SEQ[Job sequencer]
+  SEQ --> A1[Action job: parse data]
+  SEQ --> A2[Action job: call API]
+  A1 --> A3[Condition job]
+  A2 --> A3
+  A3 -->|true| A4[Approval branch]
+  A3 -->|false| A5[Auto-process branch]
+  A4 --> OUT[Checkpoint result]
+  A5 --> OUT
+
+  classDef azure fill:#e6f2fb,stroke:#0078d4,stroke-width:2,color:#0f1722;
+  classDef scale fill:#fff3e3,stroke:#ff8c00,stroke-width:2,color:#4a2a0a;
+  classDef success fill:#e7f5e7,stroke:#107c10,stroke-width:2,color:#103010;
+
+  class RUN,SEQ azure;
+  class A1,A2,A3,A4,A5 scale;
+  class OUT success;
+            </pre>
+          </div>
+          <div class="callout">
+            <strong>Runtime lens:</strong> loops, parallel branches, scopes, retries, and child workflows all expand into more jobs.
+            A visually simple workflow can still create heavy job pressure if it debatches large arrays or fans out aggressively.
+          </div>
+        </section>
+
+        <section id="stateful-stateless" class="section-card reveal">
+          <h2>Stateful vs. Stateless Execution</h2>
+          <p>
+            Standard workflows can be stateful or stateless. The choice is made when the workflow is
+            created and changes the persistence model, recovery behavior, performance envelope, and
+            supported trigger/action patterns.
+          </p>
+          <p>Stateful execution writes checkpoints that let interrupted runs resume. Stateless execution keeps state in memory for lower-latency, short-running work and requires callers to resubmit after interruption. The next section follows the stateful storage path through the runtime.</p>
+          <div class="callout"><strong>Design reference:</strong> See <a href="standard-plans.html#workflow-types">Stateful and Stateless Workflows</a> for the full reliability, duration, trigger, performance, and payload comparison.</div>
+        </section>
+
+        <section id="storage-checkpoints" class="section-card reveal">
+          <h2>Storage and Checkpoints</h2>
+          <p>
+            Stateful Standard workflows use Azure Storage as part of the runtime: Table Storage for
+            persistent runtime data, Blob Storage for run history and larger content, and Queue Storage
+            for scheduling work. Smaller inputs and outputs can be stored inline; larger values move to blobs.
+          </p>
+          <div class="diagram-wrap">
+            <pre class="mermaid">
+flowchart TD
+  JOB[Action job executes] --> SIZE{Content size}
+  SIZE -->|Small| TABLE[Inline state in Table Storage]
+  SIZE -->|Large| BLOB[Content in Blob Storage]
+  JOB --> QUEUE[Queue Storage schedules next jobs]
+  TABLE --> HIST[Run history]
+  BLOB --> HIST
+  QUEUE --> DISP[Job dispatchers]
+
+  classDef azure fill:#e6f2fb,stroke:#0078d4,stroke-width:2,color:#0f1722;
+  classDef success fill:#e7f5e7,stroke:#107c10,stroke-width:2,color:#103010;
+  classDef scale fill:#fff3e3,stroke:#ff8c00,stroke-width:2,color:#4a2a0a;
+
+  class JOB,SIZE azure;
+  class TABLE,BLOB,HIST success;
+  class QUEUE,DISP scale;
+            </pre>
+          </div>
+          <p>
+            For high-throughput Standard workloads, storage can become a scaling dimension. Microsoft
+            guidance recommends spreading heavy workloads across workflows, apps, and when needed up
+            to multiple storage accounts configured as runtime scale units.
+          </p>
+        </section>
+
+        <section id="connector-runtime" class="section-card reveal">
+          <h2>Connector Runtime Paths</h2>
+          <p>
+            Connector placement matters. Built-in connector operations run natively with the Logic Apps
+            runtime. Managed connectors run through the Azure-hosted connector service and provide the
+            broadest ecosystem reach.
+          </p>
+          <div class="diagram-wrap">
+            <pre class="mermaid">
+flowchart LR
+  WF[Workflow action job] --> B{Connector type}
+  B -->|Built-in| SP[Service provider in runtime process]
+  B -->|Managed| MC[Azure managed connector service]
+  SP --> T1[Target service]
+  MC --> T2[Target service]
+  SP --> P1[Lower latency and local packaging]
+  MC --> P2[1,400+ connector ecosystem]
+
+  classDef azure fill:#e6f2fb,stroke:#0078d4,stroke-width:2,color:#0f1722;
+  classDef success fill:#e7f5e7,stroke:#107c10,stroke-width:2,color:#103010;
+  classDef scale fill:#fff3e3,stroke:#ff8c00,stroke-width:2,color:#4a2a0a;
+
+  class WF,B,MC azure;
+  class SP,P1 success;
+  class T1,T2,P2 scale;
+            </pre>
+          </div>
+          <ul>
+            <li>Use built-in connectors for latency-sensitive Standard workflows when the operation exists and fits the authentication model.</li>
+            <li>Use managed connectors for breadth, SaaS reach, and connector features that are not available as built-in operations.</li>
+            <li>Monitor connector-specific throttling separately from workflow runtime throttling.</li>
+          </ul>
+        </section>
+
+        <section id="scale-controller" class="section-card reveal">
+          <h2>Scaling Internals</h2>
+          <p>
+            Standard Logic Apps uses compute and storage as runtime resources. The scaler evaluates
+            trigger pressure and workflow job execution delay, then adds, removes, or maintains worker
+            instances within the app's configured hosting plan behavior.
+          </p>
+          <div class="diagram-wrap">
+            <pre class="mermaid">
+flowchart LR
+  SB[Queue or event backlog] --> SC[Scaler]
+  HTTP[Request latency trend] --> SC
+  JOB[Workflow job execution delay] --> SC
+  MINMAX[Min/max worker settings] --> SC
+  SC --> KEEP[Maintain workers]
+  SC --> OUT[Scale out workers]
+  SC --> IN[Scale in workers]
+
+  classDef azure fill:#e6f2fb,stroke:#0078d4,stroke-width:2,color:#0f1722;
+  classDef scale fill:#fff3e3,stroke:#ff8c00,stroke-width:2,color:#4a2a0a;
+  classDef success fill:#e7f5e7,stroke:#107c10,stroke-width:2,color:#103010;
+
+  class SB,HTTP,JOB,MINMAX,SC azure;
+  class OUT,IN scale;
+  class KEEP success;
+            </pre>
+          </div>
+          <p>
+            Scale-out is not instantaneous. Microsoft guidance notes the scaler commonly evaluates at
+            roughly 15-30 second intervals, so large jumps from a small worker count to a very high count
+            need ramp-up time, load testing, and sometimes prewarmed instances or workload partitioning.
+          </p>
+        </section>
+
+        <section id="billing-internals" class="section-card reveal">
+          <h2>Billing Internals</h2>
+          <p>
+            Billing follows the hosting option. Consumption is event-oriented pay-per-execution.
+            Standard is plan-based, with cost tied to the selected hosting plan and resource usage;
+            stateful workflows also use external storage. Connector charges and integration account
+            costs can still matter depending on the operations used.
+          </p>
+          <div class="table-wrap">
+            <table aria-label="Logic Apps runtime billing behavior">
+              <thead>
+                <tr><th>Runtime choice</th><th>Primary billing signal</th><th>Operational implication</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Consumption</td><td>Trigger and action executions, connector usage, and related platform meters.</td><td>Filter early and avoid noisy polling or unnecessary action fan-out.</td></tr>
+                <tr><td>Standard stateful</td><td>Hosting plan plus storage-backed runtime state and run history.</td><td>Right-size compute, retention, storage throughput, and workflow grouping.</td></tr>
+                <tr><td>Standard stateless</td><td>Hosting plan with in-memory execution and less storage overhead.</td><td>Use for short, small-payload, high-throughput synchronous paths.</td></tr>
+                <tr><td>Managed connectors</td><td>Connector-specific meters and throttling rules.</td><td>Separate connector limits from runtime capacity during performance analysis.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="comparison-table" class="section-card reveal">
+          <h2>Runtime Comparison Table</h2>
+          <div class="table-wrap">
+            <table aria-label="Logic Apps runtime mode comparison">
+              <thead>
+                <tr>
+                  <th>Mode</th>
+                  <th>Runtime Host</th>
+                  <th>State Model</th>
+                  <th>Scaling Characteristic</th>
+                  <th>Best Fit</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Consumption</td>
+                  <td>Multitenant Azure Logic Apps</td>
+                  <td>Managed by the service</td>
+                  <td>Fully managed event-driven scale</td>
+                  <td>Simple pay-per-use workflows and broad connector coverage</td>
+                </tr>
+                <tr>
+                  <td>Standard stateful</td>
+                  <td>Single-tenant runtime on Azure Functions host</td>
+                  <td>External storage checkpoints and run history</td>
+                  <td>Workers scale based on trigger pressure and job delay</td>
+                  <td>Durable, auditable, long-running integrations</td>
+                </tr>
+                <tr>
+                  <td>Standard stateless</td>
+                  <td>Single-tenant runtime on Azure Functions host</td>
+                  <td>In-memory execution by default</td>
+                  <td>Worker scale without per-step storage persistence</td>
+                  <td>Low-latency, small-payload, synchronous processing</td>
+                </tr>
+                <tr>
+                  <td>ASE v3</td>
+                  <td>Isolated App Service Environment</td>
+                  <td>Same Standard workflow model</td>
+                  <td>Scale through App Service plan rules</td>
+                  <td>Network-isolated enterprise workloads</td>
+                </tr>
+                <tr>
+                  <td>Hybrid Standard</td>
+                  <td>Logic Apps runtime hosted on your infrastructure</td>
+                  <td>Same Standard workflow model</td>
+                  <td>Depends on local platform capacity</td>
+                  <td>Partially connected and local-processing scenarios</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="key-takeaways" class="section-card reveal">
+          <h2>Key Takeaways</h2>
+          <ul>
+            <li>Think in jobs, not just designer shapes: each action, retry, loop, and branch adds runtime work.</li>
+            <li>Use Standard stateful workflows when durability, run history, and long-running recovery matter.</li>
+            <li>Use Standard stateless workflows for short, small-payload paths where in-memory speed is the goal.</li>
+            <li>Prefer built-in connectors for Standard workloads when local runtime execution improves latency or throughput.</li>
+            <li>Tune trigger concurrency, waiting runs, retention, timeout, content, and storage settings as runtime controls.</li>
+            <li>Scale analysis must include trigger pressure, job queue delay, connector throttling, storage throughput, and worker ramp-up.</li>
+          </ul>
+        </section>
+
+        <nav class="pager" aria-label="Workshop pagination">
+          <a class="prev" href="logic-apps-structure.html"><small>Previous</small><strong>&larr; Logic Apps Structure</strong></a>
+          <a class="next" href="core-concepts.html"><small>Next</small><strong>Core Concepts &rarr;</strong></a>
+        </nav>
+      </main>
+
+      <aside class="toc" aria-label="Table of contents">
+        <h3>On This Page</h3>
+        <a href="#introduction">Introduction</a>
+        <a href="#lifecycle-overview">Execution Lifecycle</a>
+        <a href="#standard-runtime-startup">Standard Startup</a>
+        <a href="#trigger-activation">Trigger Activation</a>
+        <a href="#job-orchestration">Job Orchestration</a>
+        <a href="#stateful-stateless">Stateful vs. Stateless</a>
+        <a href="#storage-checkpoints">Storage and Checkpoints</a>
+        <a href="#connector-runtime">Connector Runtime Paths</a>
+        <a href="#scale-controller">Scaling Internals</a>
+        <a href="#billing-internals">Billing Internals</a>
+        <a href="#comparison-table">Comparison Table</a>
+        <a href="#key-takeaways">Key Takeaways</a>
+      </aside>
+    </div>
+  </div>
+
+  <script type="module" src="../assets/site.js"></script>
+</body>
+</html>

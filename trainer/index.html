@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trainer Hub &middot; Azure Logic Apps Workshop</title>
+  <meta name="description" content="Trainer-only materials for the Azure Logic Apps workshop, including delivery flow and deck-note synthesis." />
+  <script>
+    (function () {
+      var t = localStorage.getItem("logic-apps-workshop-theme");
+      if (t === "light" || t === "dark") {
+        document.documentElement.setAttribute("data-theme", t);
+      } else {
+        document.documentElement.setAttribute("data-theme",
+          window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      }
+    })();
+  </script>
+  <link rel="icon" type="image/svg+xml" href="../images/azure/02631-icon-service-Logic-Apps.svg" />
+  <link rel="stylesheet" href="../assets/site.css" />
+</head>
+<body data-root=".." data-active="trainer">
+  <div class="page">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../index.html">Workshop Home</a><span class="sep">/</span><span>Trainer Hub</span>
+    </nav>
+
+    <header class="hero reveal">
+      <h1>Trainer Hub</h1>
+      <p class="subtitle">Private delivery notes that turn the deck's speaker notes into a facilitation guide for this HTML workshop.</p>
+      <div class="audience">
+        <span>Trainers</span>
+        <span>Facilitators</span>
+        <span>Workshop Owners</span>
+      </div>
+    </header>
+
+    <section class="section-card reveal" id="invite-template">
+      <h2>Attendee Invite Body (Copy/Paste)</h2>
+      <p>Use this in your calendar invite or email to set expectations clearly.</p>
+      <pre class="code" aria-label="Workshop invite body template">Azure Logic Apps Developer Workshop
+
+You are invited to a hands-on Azure Logic Apps workshop focused on designing, building, and operating automated workflows and integration solutions.
+
+What we will cover:
+- Azure Logic Apps fundamentals: workflows, triggers, actions, connectors, and control flow
+- Logic App structure and deployment boundaries across Consumption and Standard
+- Runtime lifecycle: trigger dispatch, workflow execution, state management, scaling, and billing
+- Hosting plan selection: Consumption versus Standard tradeoffs for performance, cost, networking, and operations
+- Advanced integration patterns using conditions, loops, scopes, APIs, Service Bus, and Azure Functions
+- Security and governance: managed identities, RBAC, secrets, network access, and policy controls
+- Monitoring and troubleshooting with run history, metrics, logs, and Application Insights
+- Workflow design, testing, deployment, and CI/CD practices
+- Building and managing workflows with the Azure portal and Visual Studio Code
+
+Who should attend:
+- Cloud architects, integration developers, application developers, platform engineers, and DevOps engineers
+
+Prerequisites:
+- Basic Azure knowledge
+- Familiarity with APIs, events, or workflow automation concepts
+- Azure subscription access for hands-on labs (recommended)
+
+Outcome:
+By the end of this workshop, attendees will be able to choose the right Logic Apps hosting model, design secure and observable workflows, and build and deploy production-ready integration solutions.</pre>
+    </section>
+
+    <section class="section-card reveal" id="delivery-flow">
+      <h2>Recommended Delivery Flow</h2>
+      <ol style="margin:8px 0 0 18px; color:var(--text-secondary);">
+        <li>Open the workshop home page and explain the module structure.</li>
+        <li>Spend most of the time on Overview, Logic Apps Structure, Runtime Lifecycle, Core Concepts, Hosting Plans, and Build &amp; Manage.</li>
+        <li>Use Advanced Patterns, Security, and Design Guidance as depth modules based on audience maturity.</li>
+        <li>Close with the Use Cases page so attendees leave with applied scenarios, not just platform features.</li>
+      </ol>
+    </section>
+
+    <section class="section-card reveal" id="module-links">
+      <h2>Trainer Shortcuts</h2>
+      <ul>
+        <li><a href="../topics/overview.html">Overview</a></li>
+        <li><a href="../topics/logic-apps-structure.html">Logic Apps Structure</a></li>
+        <li><a href="../topics/runtime-lifecycle.html">Runtime Lifecycle</a></li>
+        <li><a href="../topics/hosting-plans.html">Hosting Plans</a></li>
+        <li><a href="../topics/build-and-manage.html">Build &amp; Manage</a></li>
+        <li><a href="detailed-training-guide.html">Detailed training guide</a></li>
+      </ul>
+    </section>
+
+    <section class="section-card reveal" id="guidance-usage">
+      <h2>How Delivery Guidance Was Integrated</h2>
+      <p>Guidance from the attached deck was integrated into:</p>
+      <ul>
+        <li>Emphasis callouts embedded directly inside attendee pages where pacing or clarity benefits.</li>
+        <li>A longer trainer-only guide that preserves the talk track at module level.</li>
+        <li>Decision cues where the deck content is time-sensitive and needed current-product verification.</li>
+      </ul>
+    </section>
+  </div>
+
+  <script type="module" src="../assets/site.js"></script>
+</body>
+</html>

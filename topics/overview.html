@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Overview &middot; Azure Logic Apps Workshop</title>
+  <meta name="description" content="Azure Logic Apps overview: what the service is, why teams use it, and how workflows are structured." />
+  <script>
+    (function () {
+      var t = localStorage.getItem("logic-apps-workshop-theme");
+      document.documentElement.setAttribute("data-theme",
+        (t === "light" || t === "dark") ? t : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
+    })();
+  </script>
+  <link rel="icon" type="image/svg+xml" href="../images/azure/02631-icon-service-Logic-Apps.svg" />
+  <link rel="stylesheet" href="../assets/site.css" />
+</head>
+<body data-root=".." data-active="overview">
+  <div class="page">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../index.html">Home</a><span class="sep">/</span><span>Topics</span><span class="sep">/</span><span>Overview</span>
+    </nav>
+
+    <header class="hero">
+      <h1>Overview</h1>
+      <p class="subtitle">Start with the platform definition, then ground the room in the workflow-centric mental model that all later modules reuse.</p>
+      <div class="badge-row"><span class="badge">Language-agnostic</span><span class="badge">Start here</span><span class="badge">~15 min</span></div>
+    </header>
+
+    <div class="layout">
+      <main class="content">
+        <section id="what-is" class="section-card reveal">
+          <h2>What Is Azure Logic Apps?</h2>
+          <div class="quote-card">
+            <p>Azure Logic Apps is a cloud platform for creating and running automated workflows that integrate apps, data, services, and systems across cloud, on-premises, and hybrid environments.</p>
+          </div>
+          <p>Microsoft positions Logic Apps as workflow integration and automation for the enterprise: a low-code/no-code platform that can support everything from zero-code workflows to more customized integration solutions. It reduces how much custom code teams need when they must connect SaaS products, Azure services, APIs, data sources, and on-premises systems. The service is especially strong when the problem is not a single computation, but the managed sequence around that computation.</p>
+          <p>Use Logic Apps when the main job is orchestration: receiving an event, applying business rules, calling services, shaping data, and moving the result to the next system without building custom plumbing for every step. Workflows start with one trigger and continue with actions, while conditions, switches, loops, scopes, and parallel branches control the path through the process.</p>
+          <figure class="media-panel">
+            <img src="../images/custom/logic-apps-overview.png" alt="Azure Logic Apps overview visual showing the service's workflow integration model and connected systems." />
+            <figcaption>Azure Logic Apps connects applications, services, and data sources into one managed workflow so teams can automate business processes without building every integration from scratch.</figcaption>
+          </figure>
+          <figure class="media-panel">
+            <img src="../images/custom/example-enterprise-workflow.png" alt="Example Azure Logic Apps enterprise workflow showing a trigger, actions, conditions, and approval routing." />
+            <figcaption>This example shows the Logic Apps designer model in practice: a trigger starts the workflow, actions do the work, and conditions or approvals guide the next step.</figcaption>
+          </figure>
+          <div class="cheat">
+            <div class="cheat-item"><h3>Designer-first workflowing</h3><p>Teams can build in the visual designer, then manage the underlying JSON definition and deployment artifacts like any other Azure resource.</p></div>
+            <div class="cheat-item"><h3>Connector-driven integration</h3><p>Logic Apps includes a large connector ecosystem plus built-in operations for HTTP, data manipulation, control flow, scheduling, and custom extensibility.</p></div>
+            <div class="cheat-item"><h3>Flexible hosting models</h3><p>Workflows can run in multitenant Consumption or single-tenant Standard environments, depending on scale, networking, isolation, and operational requirements.</p></div>
+          </div>
+          <div class="callout"><strong>Learn more:</strong> <a href="https://learn.microsoft.com/en-us/azure/logic-apps/logic-apps-overview">Azure Logic Apps overview</a></div>
+        </section>
+
+        <section id="benefits" class="section-card reveal">
+          <h2>Why Teams Use Logic Apps</h2>
+          <div class="cheat">
+            <div class="cheat-item"><h3>Integrate quickly with 1,400+ connectors</h3><p>Connect SaaS apps, Azure services, databases, file systems, and enterprise platforms without building one-off integration adapters for every system.</p></div>
+            <div class="cheat-item"><h3>Use built-in and managed operations</h3><p>Built-in operations run natively in the Logic Apps runtime for workflow control and data handling, while managed connectors provide Microsoft-hosted access to external services and systems.</p></div>
+            <div class="cheat-item"><h3>Reduce connector maintenance work for pro-developers</h3><p>Instead of constantly updating custom integration code as external providers change APIs and connector behavior, teams can rely on the Logic Apps platform and managed connectors to handle most of that ongoing integration maintenance.</p></div>
+            <div class="cheat-item"><h3>Start low-code/no-code, extend with code</h3><p>Many workflows can be built with zero code, and teams can still add inline code or call Azure Functions when scenarios require custom logic.</p></div>
+            <div class="cheat-item"><h3>No-code updates are easier for non-developers</h3><p>Simple workflow changes can be made in the visual designer, which helps business and operations teams understand and maintain automation without deep programming skills.</p></div>
+            <div class="cheat-item"><h3>Bring more roles into development</h3><p>Logic Apps lets architects, analysts, and operations contributors participate alongside pro-developers, which reduces bottlenecks and frees pro-developers for complex engineering work.</p></div>
+            <div class="cheat-item"><h3>Run on a fully managed serverless platform</h3><p>Azure handles hosting, scaling, and platform operations so teams can focus on business workflows rather than infrastructure management.</p></div>
+          </div>
+          <div class="speaker-note">
+            <h3>Emphasis</h3>
+            <p>Anchor this section on Learn's value story: broad integration reach, faster delivery through prebuilt operations, and a low-code/no-code model that still supports engineered extensions when needed.</p>
+          </div>
+        </section>
+
+        <section id="key-terms" class="section-card reveal">
+          <h2>Key Logic Apps Terms</h2>
+          <p>These terms help you read documentation and design workflows with consistent language across teams.</p>
+          <div class="cheat">
+            <div class="cheat-item"><h3>Logic app</h3><p>The Azure resource you create to host workflows. Common resource types include Consumption (single workflow) and Standard (multiple workflows in single-tenant hosting options).</p></div>
+            <div class="cheat-item"><h3>Workflow</h3><p>A sequence of operations that automates a business process or task. Every workflow starts with one trigger and then runs one or more actions.</p></div>
+            <div class="cheat-item"><h3>Trigger</h3><p>The first operation that starts a workflow when conditions are met, such as a schedule, HTTP request, new file, or message event.</p></div>
+            <div class="cheat-item"><h3>Action</h3><p>Any operation that runs after the trigger, for example data transformation, API calls, notifications, approvals, or routing logic.</p></div>
+            <div class="cheat-item"><h3>Built-in connector</h3><p>Operations that run natively with the Logic Apps runtime for control flow, scheduling, data handling, and selected service integrations.</p></div>
+            <div class="cheat-item"><h3>Managed connector</h3><p>Microsoft-hosted connectors that wrap external service APIs. Most require creating a connection and authenticating before use.</p></div>
+            <div class="cheat-item"><h3>Integration account</h3><p>An Azure resource used for B2B artifacts such as trading partners, agreements, schemas, and maps for standards like AS2, X12, and EDIFACT.</p></div>
+          </div>
+          <div class="callout"><strong>Learn more:</strong> <a href="https://learn.microsoft.com/en-us/azure/logic-apps/logic-apps-overview#key-terms">Azure Logic Apps key terms</a></div>
+        </section>
+
+        <section id="use-case-overview" class="section-card reveal">
+          <h2>Common Entry Scenarios</h2>
+          <ul>
+            <li>Business process automation such as order routing, approvals, and employee onboarding.</li>
+            <li>Application and data integration between SaaS, Azure services, and on-premises systems.</li>
+            <li>Event-driven workflows that react to webhooks, HTTP requests, queue messages, files, or schedules.</li>
+            <li>B2B integration workloads that need integration accounts, schemas, maps, or partner exchanges.</li>
+          </ul>
+        </section>
+
+        <section id="workflow-structure" class="section-card reveal">
+          <h2>Understanding Workflow Structure</h2>
+          <p>Every Logic App workflow begins with one trigger and continues with one or more actions. From there, control flow constructs such as conditions, switches, loops, scopes, and parallel branches shape the execution path.</p>
+          <p>Read the workflow from top to bottom: one trigger starts the process, each action handles a step, and branches allow the workflow to respond differently based on the data it receives.</p>
+          <figure class="media-panel">
+            <img src="../images/custom/logic-apps-workflow-structure.png" alt="Logic Apps workflow structure showing a trigger, actions, and branching control flow." />
+          </figure>
+          <div class="callout"><strong>Key teaching point:</strong> frame Logic Apps as an orchestration engine. The value is not one action by itself; it is the managed sequence, branching, and integration between actions.</div>
+        </section>
+
+        <section id="biztalk-history" class="section-card reveal">
+          <h2>From BizTalk Server to Logic Apps</h2>
+          <p>To understand why Azure Logic Apps exists, it helps to look at Microsoft BizTalk Server. For more than 25 years, BizTalk was Microsoft's flagship enterprise integration platform for connecting diverse systems, automating business processes, handling B2B exchanges, and orchestrating message-based workflows across line-of-business applications.</p>
+          <p>BizTalk's core model centered on a messaging engine, adapters, pipelines, and orchestrations. A message could arrive through a receive port, pass through a pipeline, land in the MessageBox database, and then route to an orchestration or send port based on subscriptions and context properties. That design made BizTalk strong for enterprise application integration and B2B integration long before cloud-native integration platforms became common.</p>
+          <div class="cheat">
+            <div class="cheat-item"><h3>What carried forward</h3><p>Logic Apps keeps the orchestration mindset: triggers start work, actions perform work, and the platform manages long-running, stateful integration flows across many systems.</p></div>
+            <div class="cheat-item"><h3>What changed</h3><p>Instead of server-centric middleware built around Visual Studio projects, host instances, and shared databases, Logic Apps Standard shifts to a cloud-native, Visual Studio Code-friendly model with connectors, workflow files, Azure-native security, and modern deployment pipelines.</p></div>
+            <div class="cheat-item"><h3>What still matters</h3><p>Many familiar BizTalk concerns still exist: schemas, maps, rules, tracking, B2B artifacts, hybrid connectivity, and durable message processing. The platform shape changed, but the enterprise integration problems did not.</p></div>
+          </div>
+          <p>Microsoft now describes Azure Logic Apps Standard as the successor to BizTalk Server for these scenarios. The migration guidance specifically calls out feature continuity around business rules, EDI and B2B support, mappings, reusable artifacts, hybrid deployment options, and enterprise-grade workflow orchestration.</p>
+          <div class="callout"><strong>Important:</strong> Microsoft states that BizTalk Server 2020 is the final BizTalk Server release, which is one reason many integration teams are planning a phased move to Azure Logic Apps Standard.</div>
+          <div class="callout"><strong>Learn more:</strong> <a href="https://learn.microsoft.com/en-us/biztalk/core/introducing-biztalk-server">Introducing BizTalk Server</a> and <a href="https://learn.microsoft.com/en-us/azure/logic-apps/biztalk-server-migration-overview">Why move from BizTalk Server to Azure Logic Apps Standard?</a></div>
+        </section>
+
+        <section id="platform-fit" class="section-card reveal">
+          <h2>Where Logic Apps Fits in Azure</h2>
+          <div class="diagram-wrap">
+            <pre class="mermaid">
+flowchart LR
+    USER[Business event] --> TRIG[Trigger]
+    TRIG --> WF[Logic App workflow]
+    WF --> SAAS[SaaS app]
+    WF --> AZ[Azure service]
+    WF --> ONP[On-prem system]
+    WF --> TEAM[Notification or downstream team]
+
+    classDef azure fill:#e6f2fb,stroke:#0078d4,stroke-width:2,color:#0f1722;
+    classDef success fill:#e7f5e7,stroke:#107c10,stroke-width:2,color:#103010;
+    class USER,TRIG,WF azure;
+    class SAAS,AZ,ONP,TEAM success;
+            </pre>
+          </div>
+          <p>Compared with Azure Functions, Logic Apps is orchestration-first. Functions is code-first. They often complement each other, especially when a workflow needs a custom computation step.</p>
+        </section>
+
+        <section id="power-automate" class="section-card reveal">
+          <h2 class="service-heading"><img src="../images/azure/PowerAutomate_scalable.svg" alt="" width="36" height="36" />Logic Apps and Power Automate</h2>
+          <p>Microsoft Power Automate is a low-code automation service in the Power Platform. It helps business users, office workers, and citizen developers automate repetitive work across Microsoft 365, Dynamics 365, Power Apps, SaaS applications, and other services. Cloud flows can start automatically, on demand, or on a schedule, while desktop flows add robotic process automation for web and desktop applications.</p>
+          <p>Power Automate and Azure Logic Apps are both designer-first workflow platforms. They share similar concepts and some connectors, but they are designed around different owners and operating models. Power Automate brings automation close to business teams and individual productivity. Logic Apps brings workflow integration into Azure engineering, operations, security, and deployment practices.</p>
+          <div class="table-wrap">
+            <table aria-label="Azure Logic Apps and Power Automate comparison">
+              <thead>
+                <tr><th>Consideration</th><th>Azure Logic Apps</th><th>Power Automate</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Primary audience</td><td>Professional developers, integration specialists, IT teams, and Azure administrators.</td><td>Business users, office workers, citizen developers, and Power Platform makers.</td></tr>
+                <tr><td>Best fit</td><td>Enterprise integration, system-to-system orchestration, B2B workflows, and complex or high-volume processes.</td><td>Personal and team productivity, Microsoft 365 approvals, business-led automation, and desktop task automation.</td></tr>
+                <tr><td>Management model</td><td>Azure resources managed through Azure subscriptions, resource groups, RBAC, Azure Monitor, and Azure governance.</td><td>Flows managed in Power Platform environments with Power Platform administration, policies, and licensing.</td></tr>
+                <tr><td>Development lifecycle</td><td>Portal and Visual Studio Code development, workflow files, source control, infrastructure as code, and CI/CD automation.</td><td>Browser-based visual authoring with solutions and Power Platform application lifecycle management for team delivery.</td></tr>
+                <tr><td>Connectivity and hosting</td><td>Azure and enterprise connectors plus built-in operations, virtual network integration, private endpoints, B2B capabilities, and Standard hosting options.</td><td>Power Platform connectors with strong Microsoft 365, Dynamics 365, Dataverse, Power Apps, cloud-flow, and desktop-flow integration.</td></tr>
+                <tr><td>Platform throttling</td><td>Not subject to Power Platform request allocations. Standard has no action-execution interval limit; Consumption throughput limits and connector or downstream-service throttling still apply.</td><td>Subject to license-based Power Platform request limits and throttling. Continuously throttled flows can be slowed or turned off.</td></tr>
+                <tr><td>Commercial model</td><td>Azure subscription pricing based on the selected Logic Apps hosting model.</td><td>Power Automate licensing based on the applicable user, process, hosted process, or Microsoft 365 entitlements.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="cheat">
+            <div class="cheat-item"><h3>Choose Power Automate</h3><p>Use it when the process is owned close to the business, centers on Microsoft 365 or Power Platform, needs user-driven approvals, or must automate interactions with a desktop application.</p></div>
+            <div class="cheat-item"><h3>Choose Azure Logic Apps</h3><p>Use it when the workflow is an Azure-managed integration workload that needs engineering ownership, source-controlled deployment, advanced networking, B2B support, or enterprise-scale operations.</p></div>
+            <div class="cheat-item"><h3>Use both</h3><p>A business-facing Power Automate flow can call a Logic Apps workflow, while Logic Apps can provide the governed integration layer behind business automation. Choose ownership boundaries deliberately instead of forcing the entire process into one service.</p></div>
+          </div>
+          <div class="callout"><strong>How to choose:</strong> start with who owns the automation and how it must be operated. Prefer Power Automate for business-owned productivity automation. Prefer Logic Apps for Azure-owned integration architecture. Reassess the choice when volume, security, networking, deployment, or support requirements change.</div>
+          <div class="callout"><strong>Learn more:</strong> <a href="https://learn.microsoft.com/en-us/power-automate/flow-types">What is Power Automate?</a>, <a href="https://learn.microsoft.com/en-us/power-automate/guidance/coding-guidelines/understand-limits">Understand Power Automate limits and throttling</a>, <a href="https://learn.microsoft.com/en-us/azure/azure-functions/functions-compare-logic-apps-ms-flow-webjobs">Choose the right integration and automation service</a>, and <a href="https://learn.microsoft.com/en-us/azure/logic-apps/power-automate-migration#compare-capability-details">Compare Logic Apps and Power Automate capabilities</a></div>
+        </section>
+
+        <section id="biztalk-migration-agent" class="section-card reveal">
+          <h2>AI-Assisted BizTalk Migration</h2>
+          <p>Microsoft also provides an AI-powered migration path for teams moving from BizTalk to Azure Logic Apps Standard. The current offering is the <strong>Logic Apps Migration Agent</strong>, a Visual Studio Code extension that automates discovery, planning, conversion, validation, and deployment work for enterprise integration migrations.</p>
+          <p>For BizTalk specifically, the extension includes built-in parsers for projects, orchestrations, maps, schemas, pipelines, and bindings. Microsoft documents the tool as using GitHub Copilot together with the Visual Studio Code Language Model API so it can analyze source artifacts, generate migration plans, and help convert flows into Logic Apps Standard workflows while you stay in control of the process.</p>
+          <div class="cheat">
+            <div class="cheat-item"><h3>Five guided stages</h3><p>Discovery, Planning, Conversion, Validation, and Deployment. This structure fits Microsoft's broader recommendation to migrate BizTalk in waves rather than with one large cutover.</p></div>
+            <div class="cheat-item"><h3>BizTalk-aware analysis</h3><p>The agent inventories dependencies, groups related artifacts into flows, highlights gaps where no direct Logic Apps equivalent exists, and helps map BizTalk patterns to Logic Apps Standard patterns.</p></div>
+            <div class="cheat-item"><h3>Standard as the target</h3><p>The migration tool targets Azure Logic Apps Standard, which is the hosting model Microsoft recommends for BizTalk migration scenarios because it better supports reusable artifacts, hybrid connectivity, richer workflow organization, and enterprise integration features.</p></div>
+          </div>
+          <div class="callout"><strong>How to think about it:</strong> the agent does not make BizTalk and Logic Apps identical. It accelerates the hard parts of discovery and conversion, but teams still need architecture decisions around messaging, deployment, security, testing, and where to refactor rather than directly translate.</div>
+          <div class="callout"><strong>Learn more:</strong> <a href="https://learn.microsoft.com/en-us/azure/logic-apps/biztalk-server-migration-approaches">Migration approaches for BizTalk Server to Azure Logic Apps</a>, <a href="https://marketplace.visualstudio.com/items?itemName=ms-azuretools.logicapps-migration-agent">Logic Apps Migration Agent</a>, and <a href="https://github.com/Azure/logicapps-migration-agent">Azure/logicapps-migration-agent</a></div>
+        </section>
+
+        <nav class="pager" aria-label="Workshop pagination">
+          <a class="prev" href="../index.html"><small>Previous</small><strong>&larr; Home</strong></a>
+          <a class="next" href="logic-apps-structure.html"><small>Next</small><strong>Logic Apps Structure &rarr;</strong></a>
+        </nav>
+      </main>
+
+      <aside class="toc" aria-label="Table of contents">
+        <h3>On This Page</h3>
+        <a href="#what-is">What Is Azure Logic Apps?</a>
+        <a href="#benefits">Why Teams Use Logic Apps</a>
+        <a href="#key-terms">Key Logic Apps Terms</a>
+        <a href="#use-case-overview">Common Entry Scenarios</a>
+        <a href="#workflow-structure">Understanding Workflow Structure</a>
+        <a href="#biztalk-history">From BizTalk Server to Logic Apps</a>
+        <a href="#platform-fit">Where Logic Apps Fits in Azure</a>
+        <a href="#power-automate">Logic Apps and Power Automate</a>
+        <a href="#biztalk-migration-agent">AI-Assisted BizTalk Migration</a>
+      </aside>
+    </div>
+  </div>
+
+  <script type="module" src="../assets/site.js"></script>
+</body>
+</html>

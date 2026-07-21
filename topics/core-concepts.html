@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Core Concepts &middot; Azure Logic Apps Workshop</title>
+  <meta name="description" content="Core Logic Apps workflow concepts including triggers, actions, connectors, workflow logic, scopes, integration accounts, monitoring, run history, and stateful versus stateless workflows." />
+  <script>
+    (function () {
+      var t = localStorage.getItem("logic-apps-workshop-theme");
+      document.documentElement.setAttribute("data-theme",
+        (t === "light" || t === "dark") ? t : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
+    })();
+  </script>
+  <link rel="icon" type="image/svg+xml" href="../images/azure/02631-icon-service-Logic-Apps.svg" />
+  <link rel="stylesheet" href="../assets/site.css" />
+</head>
+<body data-root=".." data-active="core-concepts">
+  <div class="page">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../index.html">Home</a><span class="sep">/</span><span>Topics</span><span class="sep">/</span><span>Core Concepts</span>
+    </nav>
+
+    <header class="hero">
+      <h1>Core Concepts</h1>
+      <p class="subtitle">These are the building blocks that show up in every workflow: how work starts, how steps execute, how integrations connect, how failures are handled, and how operations teams observe runs.</p>
+      <div class="badge-row"><span class="badge">Core module</span><span class="badge">Architecture fundamentals</span></div>
+    </header>
+
+    <div class="layout">
+      <main class="content">
+        <section id="triggers" class="section-card reveal">
+          <h2>Triggers Start Every Workflow</h2>
+          <p>Every workflow starts with exactly one trigger. In the <strong>Add a trigger</strong> pane, you choose the operation that defines when a run begins, then add actions after that trigger.</p>
+          <p>Use this sequence to inspect the trigger experience in the designer:</p>
+          <ul>
+            <li><strong>Select Add a trigger</strong> to open the first required step in a new workflow.</li>
+            <li><strong>Open From Azure and Other</strong> to compare browsing connector galleries with searching directly.</li>
+            <li><strong>Search by name</strong> with examples such as Outlook, Schedule, or HTTP.</li>
+            <li><strong>Filter by connector type</strong>: compare <strong>Built-in</strong>, <strong>Shared</strong>, and <strong>Custom</strong> options.</li>
+            <li><strong>Open Recurrence</strong> and inspect interval, frequency, time zone, and start time choices.</li>
+            <li><strong>Open When an HTTP request is received</strong> and inspect method selection, request schema, and callback URL generation after save.</li>
+            <li><strong>Save the workflow</strong> to finalize trigger configuration and endpoint behavior.</li>
+          </ul>
+          <div class="trigger-examples">
+            <div class="trigger-example">
+              <h3>Connector event trigger</h3>
+              <p>Start when something changes in a connected service, such as a new email in Office 365 Outlook, a file in SharePoint, a blob in Azure Storage, or an event from another Azure service.</p>
+            </div>
+            <div class="trigger-example">
+              <h3>Recurrence trigger</h3>
+              <p>Run on a schedule, such as every few minutes, hourly, daily, or on a business calendar. Use this for polling, cleanup, reporting, and batch synchronization.</p>
+            </div>
+            <div class="trigger-example">
+              <h3>HTTP request trigger</h3>
+              <p>Expose the workflow as an endpoint that another app, webhook, approval flow, or integration process can call when work needs to start immediately. The request URL is generated after the workflow is saved.</p>
+            </div>
+          </div>
+          <h3>Trigger Examples</h3>
+          <div class="table-wrap">
+            <table aria-label="Logic Apps trigger examples for training labs">
+              <thead>
+                <tr><th>Trigger</th><th>Where to find it</th><th>Typical usage scenario</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>When an HTTP request is received</td><td>Built-in &gt; Request</td><td>Expose a workflow endpoint that a system or webhook can call.</td></tr>
+                <tr><td>Recurrence</td><td>Built-in &gt; Schedule</td><td>Run every N minutes/hours for polling, cleanup, or report jobs.</td></tr>
+                <tr><td>Sliding Window</td><td>Built-in &gt; Schedule</td><td>Process time windows without missing intervals.</td></tr>
+                <tr><td>When a new email arrives (V3)</td><td>Office 365 Outlook (Shared)</td><td>Auto-create tickets from incoming support mail.</td></tr>
+                <tr><td>When a new email arrives</td><td>Outlook.com (Shared)</td><td>Personal mailbox automation examples.</td></tr>
+                <tr><td>When a file is created (properties only)</td><td>SharePoint (Shared)</td><td>Start document approval workflows.</td></tr>
+                <tr><td>When a file is created or modified (properties only)</td><td>SharePoint (Shared)</td><td>Re-validate documents after updates.</td></tr>
+                <tr><td>When a blob is added or modified (properties only)</td><td>Azure Blob Storage (Shared)</td><td>Process newly uploaded files.</td></tr>
+                <tr><td>When one or more rows are present in a table</td><td>SQL Server (Shared)</td><td>Sync changed database rows to another system.</td></tr>
+                <tr><td>When a message is received in a queue (peek-lock)</td><td>Azure Service Bus (Shared)</td><td>Queue-driven background processing.</td></tr>
+                <tr><td>When events are available in Event Hub</td><td>Azure Event Hubs (Shared)</td><td>Ingest telemetry batches.</td></tr>
+                <tr><td>When a resource event occurs</td><td>Azure Event Grid (Shared)</td><td>React to Azure resource lifecycle events.</td></tr>
+                <tr><td>When an HTTP request is received by APIM</td><td>Azure API Management (Shared/Built-in based on environment)</td><td>Gateway-based integration scenarios.</td></tr>
+                <tr><td>When a response to an Azure Monitor alert is triggered</td><td>Azure Monitor (Shared)</td><td>Operations and incident automation.</td></tr>
+                <tr><td>When a chat message is received</td><td>Microsoft Teams (Shared)</td><td>ChatOps workflow kickoff from Teams.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p><strong>Note:</strong> exact trigger names can vary slightly by connector version and tenant configuration, but these are the common trigger patterns you should recognize.</p>
+          <div class="callout"><strong>How to choose a trigger:</strong> if the process starts on a schedule, use <strong>Recurrence</strong>. If another system needs to call the workflow, use <strong>HTTP</strong>. If the workflow starts when something changes elsewhere, use a connector event trigger.</div>
+        </section>
+
+        <section id="trigger-conditions" class="section-card reveal">
+          <h2>Configure Trigger Conditions Deliberately</h2>
+          <p>Trigger conditions are filters that Logic Apps evaluates before a run starts. They avoid unnecessary workflow runs and reduce operational noise, but a polling trigger still checks its endpoint on schedule.</p>
+          <ul>
+            <li>Set schedule intervals intentionally rather than defaulting to aggressive polling.</li>
+            <li>Use trigger conditions and filters so only relevant events create workflow runs.</li>
+            <li>In Consumption, polling trigger checks are metered even when the trigger is skipped, so use an appropriate interval or a push trigger when cost matters.</li>
+            <li>Standard stateless workflows support push triggers only. Recurrence and managed connector polling triggers require a stateful workflow.</li>
+          </ul>
+          <div class="speaker-note">
+            <h3>Example</h3>
+            <p>Imagine a support mailbox where you only want Logic Apps to start when an incoming email subject contains <strong>Urgent</strong>. You can add a trigger condition so the workflow ignores every other message.</p>
+            <pre class="code"><code>@contains(triggerBody()?['subject'], 'Urgent')</code></pre>
+            <p>The workflow still watches the mailbox, but it creates a run only when the condition returns true. That is the difference between <em>seeing every event</em> and <em>starting only on the events you care about</em>.</p>
+          </div>
+        </section>
+
+        <section id="actions" class="section-card reveal">
+          <h2>Actions Perform the Work</h2>
+          <p>After the trigger fires, actions execute the workflow's business steps. An action might call an API, transform payloads, insert a record, send a message, or branch based on data.</p>
+          <div class="plan-grid">
+            <div class="plan-box"><h3>Data operations</h3><ul><li>Compose, select, filter, parse, and transform payloads.</li><li>Normalize data before pushing it downstream.</li></ul></div>
+            <div class="plan-box"><h3>Control actions</h3><ul><li>Conditions, switches, loops, scopes, and parallel branches.</li><li>Model workflow logic without custom orchestration code.</li></ul></div>
+            <div class="plan-box"><h3>Integration actions</h3><ul><li>Call Microsoft services, third-party APIs, databases, queues, and enterprise systems.</li><li>Mix built-in and managed connectors as needed.</li></ul></div>
+          </div>
+          <h3>Action Examples</h3>
+          <div class="table-wrap">
+            <table aria-label="Logic Apps action examples for training labs">
+              <thead>
+                <tr><th>Action</th><th>Category</th><th>Example use</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Send an email (V2/V3)</td><td>Connector action</td><td>Notify a support team when a high-priority incident arrives.</td></tr>
+                <tr><td>HTTP</td><td>Built-in integration</td><td>Call an internal API to create or update a record.</td></tr>
+                <tr><td>Compose</td><td>Data operation</td><td>Shape a payload before sending it to another system.</td></tr>
+                <tr><td>Parse JSON</td><td>Data operation</td><td>Extract strongly named fields from an inbound request body.</td></tr>
+                <tr><td>Create blob</td><td>Storage connector</td><td>Archive an inbound document or webhook payload.</td></tr>
+                <tr><td>Post message in a chat or channel</td><td>Teams connector</td><td>Push workflow updates into an operations channel.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="speaker-note">
+            <h3>Example</h3>
+            <p>A simple workflow might start with an HTTP trigger, use <strong>Parse JSON</strong> to extract an order number, call an <strong>HTTP</strong> action to look up order details, then use <strong>Send an email</strong> or <strong>Post message in Teams</strong> to notify the next team.</p>
+          </div>
+        </section>
+
+        <section id="workflow-logic" class="section-card reveal">
+          <h2>Workflow Logic Controls the Path</h2>
+          <p>Workflow logic is where Logic Apps stops being just a sequence of steps and becomes orchestration. This area includes conditions, switch cases, and loop controls that decide what happens next.</p>
+          <div class="plan-grid">
+            <div class="plan-box">
+              <h3>If-then with Condition</h3>
+              <ul>
+                <li>Use a <strong>Condition</strong> when you need a true/false decision.</li>
+                <li>Typical example: if an order total is greater than a threshold, route to approval; otherwise, continue automatically.</li>
+              </ul>
+            </div>
+            <div class="plan-box">
+              <h3>Case logic with Switch</h3>
+              <ul>
+                <li>Use a <strong>Switch</strong> when one field can map to multiple outcomes.</li>
+                <li>Typical example: route requests differently for <strong>HR</strong>, <strong>Finance</strong>, and <strong>IT</strong>.</li>
+              </ul>
+            </div>
+            <div class="plan-box">
+              <h3>Repetition with loops</h3>
+              <ul>
+                <li>Use <strong>For each</strong> for arrays and <strong>Until</strong> for polling or waiting on state changes.</li>
+                <li>Typical example: send one message per uploaded file, or keep checking an API until status becomes <strong>Completed</strong>.</li>
+              </ul>
+            </div>
+          </div>
+          <h3>Logic Pattern Examples</h3>
+          <div class="table-wrap">
+            <table aria-label="Workflow logic examples">
+              <thead>
+                <tr><th>Pattern</th><th>When to use it</th><th>Example</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Condition</td><td>Binary decision</td><td>If the subject contains <strong>Urgent</strong>, create a Sev2 ticket; else log and exit.</td></tr>
+                <tr><td>Switch</td><td>Multiple branches</td><td>Route region values such as <strong>US</strong>, <strong>EMEA</strong>, or <strong>APAC</strong> to different downstream systems.</td></tr>
+                <tr><td>For each</td><td>Process array items</td><td>Loop through email attachments and save each file to Blob Storage.</td></tr>
+                <tr><td>Until</td><td>Wait for state change</td><td>Call a provisioning API until the response body reports <strong>Completed</strong>.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout"><strong>Important:</strong> <strong>For each</strong> loops run in parallel by default. If a loop updates shared variables or must process records in order, turn on sequential execution.</div>
+        </section>
+
+        <section id="inline-code" class="section-card reveal">
+          <h2>Inline Code and Script Actions</h2>
+          <p>Azure Logic Apps now refers to this area as <strong>Inline Code</strong> or <strong>Inline Code Operations</strong>, depending on the workflow experience. This capability lets you run small code snippets directly inside a workflow when expressions, data operations, and built-in actions are not enough.</p>
+          <div class="table-wrap">
+            <table aria-label="Inline code and script actions in Azure Logic Apps">
+              <thead>
+                <tr><th>Action</th><th>Language</th><th>Where it applies</th><th>Typical use</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Execute JavaScript Code</td><td>JavaScript</td><td>Consumption and Standard</td><td>Lightweight parsing, reshaping, pattern matching, or custom payload manipulation.</td></tr>
+                <tr><td>Execute CSharp Script Code</td><td>C# script / .NET</td><td>Standard only</td><td>More advanced transformation, file processing, package reuse, or richer custom logic.</td></tr>
+                <tr><td>Execute PowerShell Code</td><td>PowerShell</td><td>Standard only</td><td>Administrative automation, Azure operations, scripting with modules, or managed identity driven tasks.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="plan-grid">
+            <div class="plan-box">
+              <h3>JavaScript snippets</h3>
+              <ul>
+                <li>Best for short inline transformations inside a workflow step.</li>
+                <li>Common example: extract email addresses, normalize JSON, or compute derived values before a later action.</li>
+              </ul>
+            </div>
+            <div class="plan-box">
+              <h3>C# scripts</h3>
+              <ul>
+                <li>Best for Standard workflows that need richer code structure, .csx files, or NuGet-backed logic.</li>
+                <li>Common example: unzip content, encrypt data, aggregate multi-step outputs, or implement logic that is awkward in expressions.</li>
+              </ul>
+            </div>
+            <div class="plan-box">
+              <h3>PowerShell scripts</h3>
+              <ul>
+                <li>Best for Standard workflows that automate Azure or script-friendly tasks.</li>
+                <li>Common example: connect with managed identity, inspect another resource, run module-based commands, and push results back to the workflow.</li>
+              </ul>
+            </div>
+          </div>
+          <h3>Local Functions in a Logic Apps Workspace</h3>
+          <p>Standard logic apps can also include .NET custom functions in the same Visual Studio Code workspace and deployment as the workflows that call them. Use the built-in <strong>Call a local function in this logic app</strong> action to keep workflow orchestration and reusable custom code together.</p>
+          <div class="callout"><strong>Cost boundary:</strong> local functions that run inside the Logic Apps workspace are included in the Logic Apps hosting cost and do not create a separate Azure Functions charge. A function hosted in a separate Azure Function App is an external dependency and follows the Azure Functions pricing model for its hosting plan.</div>
+          <div class="callout"><strong>Learn more:</strong> <a href="https://learn.microsoft.com/en-us/azure/logic-apps/create-run-custom-code-functions">Create and run .NET custom functions from Standard workflows</a></div>
+          <h3>Quick Examples</h3>
+          <pre class="code"><code>// Execute JavaScript Code
+const subject = workflowContext.trigger.outputs.body.subject;
+return { isUrgent: subject.includes("Urgent") };</code></pre>
+          <pre class="code"><code>// Execute CSharp Script Code
+public static async Task&lt;Results&gt; Run(WorkflowContext context)
+{
+    var triggerOutputs = (await context.GetTriggerResults().ConfigureAwait(false)).Outputs;
+    return new Results { Message = "Hello from CSharp action" };
+}
+
+public class Results
+{
+    public string Message { get; set; }
+}</code></pre>
+          <pre class="code"><code># Execute PowerShell Code
+$trigger = Get-TriggerOutput
+$result = [PSCustomObject]@{ Message = "Hello from PowerShell!" }
+Push-WorkflowOutput -Output $result</code></pre>
+          <div class="speaker-note">
+            <h3>When to use this feature</h3>
+            <p>Use inline code when the requirement is still workflow-local and relatively small. If the logic becomes shared, long-running, independently versioned, or needs its own scaling model, move that code into a separate service such as Azure Functions instead of growing the workflow into an application host.</p>
+          </div>
+          <div class="callout"><strong>Important distinctions:</strong> <strong>Execute JavaScript Code</strong> works in both Consumption and Standard. <strong>Execute CSharp Script Code</strong> and <strong>Execute PowerShell Code</strong> are Standard workflow capabilities. PowerShell returns values with <strong>Push-WorkflowOutput</strong>, while C# scripts use a predefined <strong>Run</strong> method.</div>
+        </section>
+
+        <section id="connectors" class="section-card reveal">
+          <h2>Connectors: Built-In vs. Managed</h2>
+          <div class="table-wrap">
+            <table aria-label="Connector comparison">
+              <thead>
+                <tr><th>Connector type</th><th>Where it runs</th><th>Strengths</th><th>Typical tradeoff</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Built-in</td><td>Native to the Logic Apps runtime</td><td>Lower latency, higher throughput, tighter packaging with Standard projects</td><td>Availability differs by workflow type and hosting model</td></tr>
+                <tr><td>Managed</td><td>Hosted Azure connector service</td><td>Broad ecosystem coverage across Microsoft, SaaS, and enterprise products</td><td>May add per-action cost and external connection management</td></tr>
+                <tr><td>Custom</td><td>A custom managed connector in Consumption or a custom built-in connector in Standard</td><td>Lets you standardize access to APIs that do not have a suitable built-in or managed connector</td><td>The connector model, deployment, limits, and billing differ by hosting model</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Azure Logic Apps includes a broad connector ecosystem, and Standard also offers more built-in service provider connectors for scale-sensitive workloads.</p>
+          <h3>When and Why to Use Each Type</h3>
+          <div class="table-wrap">
+            <table aria-label="When to use built-in versus managed connectors">
+              <thead>
+                <tr><th>Connector type</th><th>Use it when</th><th>Why it fits</th><th>Cost signal</th><th>Examples</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Built-in</td><td>You run Standard workflows and need lower latency, higher throughput, local connectivity, or tighter deployment packaging.</td><td>Built-in operations run in the same Logic Apps runtime as the workflow, so they usually reduce network hops and simplify deployment for scale-sensitive workloads.</td><td>Often the better cost choice at scale in Standard because execution stays close to the runtime, but you are still paying for the Standard hosting plan.</td><td>HTTP, Service Bus, SQL Server, Event Hubs, Azure Blob in Standard</td></tr>
+                <tr><td>Managed</td><td>You need fast access to Microsoft 365, SaaS, or enterprise products where Azure provides the hosted connector experience.</td><td>Managed connectors give you broad ecosystem coverage and a simpler path to services that are not best handled as runtime-local operations.</td><td>Can add per-action or connector-related cost depending on the plan and connector family, so convenience can cost more than built-in patterns.</td><td>Office 365 Outlook, SharePoint, Teams, Salesforce, Dynamics 365</td></tr>
+                <tr><td>Custom</td><td>You need to connect to an internal API, partner API, or line-of-business system that does not already have a suitable connector.</td><td>Consumption supports custom managed connectors. Standard supports custom built-in connectors that run with the single-tenant runtime.</td><td>Consumption custom managed operations use managed connector pricing. Standard custom built-in operations are included in Standard compute.</td><td>Internal approvals API, partner order API, private line-of-business REST service</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout"><strong>Cost tip:</strong> if a Standard workflow can use a built-in connector and the scenario is high-volume or latency-sensitive, built-in is often the more economical long-term choice. Managed connectors are often worth the extra cost when they significantly reduce integration effort. Custom connectors make sense when reuse and abstraction justify the added build and maintenance overhead.</div>
+          <div class="callout"><strong>Go deeper:</strong> use <a href="connectors-and-integration-accounts.html">Connectors and Integration Accounts</a> for plan-aware examples of common built-in connectors, managed connectors, and Integration Account patterns.</div>
+          <h3>Connector Decision Tree</h3>
+          <div class="diagram-wrap">
+            <pre class="mermaid">
+flowchart TD
+    A[Choose a connector strategy] --> B{Is there a built-in connector<br/>for this system in your target workflow type?}
+    B -->|Yes| C{Is the workflow Standard and<br/>is cost, latency, or scale a priority?}
+    B -->|No| D{Is there a Microsoft-managed<br/>connector that already fits?}
+    C -->|Yes| E[Use Built-in Connector]
+    C -->|No| F{Do you need Microsoft 365,<br/>SaaS breadth, or the fastest setup?}
+    F -->|Yes| G[Use Managed Connector]
+    F -->|No| E
+    D -->|Yes| G
+    D -->|No| H[Use Custom Connector]
+
+    E --> E1[Best when you want<br/>lower latency and often better cost at scale]
+    G --> G1[Best when convenience and existing SaaS integration<br/>matter more than the extra connector cost]
+    H --> H1[Best when no suitable connector exists<br/>and reuse justifies build and maintenance effort]
+
+    class A root;
+    class B,C,D decision;
+    class E,E1 success;
+    class G,G1 scale;
+    class H,H1 premium;
+            </pre>
+          </div>
+          <h3>Connector Examples</h3>
+          <div class="trigger-examples">
+            <div class="trigger-example">
+              <h3>Built-in connector example</h3>
+              <p>Use the built-in <strong>Service Bus</strong>, <strong>SQL Server</strong>, or <strong>HTTP</strong> operations in Standard when you want lower latency and tighter packaging with the workflow runtime.</p>
+            </div>
+            <div class="trigger-example">
+              <h3>Managed connector example</h3>
+              <p>Use <strong>Office 365 Outlook</strong>, <strong>SharePoint</strong>, <strong>Teams</strong>, <strong>Salesforce</strong>, or <strong>Dynamics 365</strong> when you need SaaS integration with provider-managed connectivity.</p>
+            </div>
+            <div class="trigger-example">
+              <h3>Custom connector example</h3>
+              <p>Use a custom connector when your organization has an internal API or a vendor API that is not represented well by a built-in or managed connector.</p>
+            </div>
+          </div>
+          <div class="speaker-note">
+            <h3>How to think about the choice</h3>
+            <p>Connectors answer two practical questions: <em>What system am I talking to?</em> and <em>Where does that integration run?</em> Built-in connectors are usually the first choice for high-throughput Standard workloads; managed connectors are often the fastest route to SaaS integration breadth.</p>
+          </div>
+        </section>
+
+        <section id="scopes" class="section-card reveal">
+          <h2>Scopes Group Related Steps</h2>
+          <p>A <strong>Scope</strong> is a logical container for related actions. After all actions inside the scope finish, the scope itself gets a status such as <strong>Succeeded</strong>, <strong>Failed</strong>, <strong>Skipped</strong>, or <strong>TimedOut</strong>. That makes scopes useful for grouping primary work, cleanup, and exception handling.</p>
+          <ul>
+            <li>Use a scope to treat several actions as one unit of work.</li>
+            <li>Check the scope status instead of placing separate failure handling after every action.</li>
+            <li>Separate business logic from cleanup or compensation logic.</li>
+          </ul>
+          <h3>Scope Flow</h3>
+          <div class="diagram-wrap">
+            <pre class="mermaid">
+flowchart TD
+    A[Trigger starts workflow] --> B[Scope: Process order]
+    B --> B1[Validate order]
+    B1 --> B2[Fulfill order]
+    B2 --> B3[Complete order]
+    B3 --> C{What is the scope status?}
+    C -->|Succeeded| D[Continue success path]
+    C -->|Failed or TimedOut| E[Run failure handling]
+
+    class A root;
+    class B,B1,B2,B3 app;
+    class C decision;
+    class D success;
+    class E cold;
+            </pre>
+          </div>
+          <div class="speaker-note">
+            <h3>Example</h3>
+            <p>Create a scope named <strong>Process order</strong> with actions such as <strong>Validate order</strong>, <strong>Fulfill order</strong>, and <strong>Complete order</strong>. Then add a condition after the scope that checks whether <strong>actions('Process_order')?['status']</strong> equals <strong>Failed</strong>. If true, run the failure branch. If false, continue with the success path.</p>
+          </div>
+          <div class="callout"><strong>Why scopes matter:</strong> they are the cleanest way to build a try/catch style design in Logic Apps. The first scope performs work; a later action or scope runs when the first scope fails, times out, or is skipped.</div>
+        </section>
+
+        <section id="integration-account" class="section-card reveal">
+          <h2>Integration Accounts for B2B and Artifact Reuse</h2>
+          <p>An <strong>integration account</strong> is the Azure resource that stores and manages B2B artifacts used by Azure Logic Apps, especially for enterprise integration scenarios. It acts as the container for partners, agreements, maps, schemas, and certificates.</p>
+          <h3>What it stores</h3>
+          <div class="table-wrap">
+            <table aria-label="Integration account artifacts">
+              <thead>
+                <tr><th>Artifact</th><th>What it is</th><th>Example use</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Partners</td><td>Business parties that exchange messages</td><td>Define Contoso and Fabrikam as trading partners.</td></tr>
+                <tr><td>Agreements</td><td>Rules for partner communication</td><td>Model X12 or AS2 exchange rules between two organizations.</td></tr>
+                <tr><td>Schemas</td><td>Expected message structure</td><td>Validate inbound purchase orders against an XSD.</td></tr>
+                <tr><td>Maps</td><td>Transformation definitions</td><td>Convert an EDI purchase order into your internal XML or JSON format.</td></tr>
+                <tr><td>Certificates</td><td>Security and partner trust material</td><td>Support signed or encrypted B2B message exchange.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <h3>When to use an integration account</h3>
+          <ul>
+            <li>When you implement B2B protocols such as <strong>AS2</strong>, <strong>X12</strong>, or <strong>EDIFACT</strong>.</li>
+            <li>When multiple workflows need to reuse the same maps, schemas, or certificates.</li>
+            <li>When you need governed partner management instead of embedding transformation assets separately in every workflow.</li>
+          </ul>
+          <div class="speaker-note">
+            <h3>Practical example</h3>
+            <p>An order-processing workflow receives X12 messages from a supplier. The logic app uses an integration account to store the X12 agreement, the XML schema for validation, and the map that converts the partner message into the company's canonical order format before routing the data to ERP.</p>
+          </div>
+          <div class="callout"><strong>Important distinction:</strong> in Standard workflows, some XML and Liquid artifacts can live directly in the logic app project, so you do not always need an integration account. Use one when you need enterprise B2B features, shared artifact governance, or protocol support across workflows.</div>
+        </section>
+
+        <section id="error-handling" class="section-card reveal">
+          <h2>Error Handling Is a Design Activity</h2>
+          <p>Logic Apps gives you multiple layers of failure handling. The core mechanisms are retry policies, <strong>run after</strong> conditions, and scope-based exception handling.</p>
+          <div class="plan-grid">
+            <div class="plan-box">
+              <h3>Retry policies</h3>
+              <ul>
+                <li>Use retries for transient HTTP, connector, or network failures.</li>
+                <li>Common policies are <strong>Default</strong>, <strong>None</strong>, <strong>Fixed interval</strong>, and <strong>Exponential interval</strong>.</li>
+              </ul>
+            </div>
+            <div class="plan-box">
+              <h3>Run after</h3>
+              <ul>
+                <li>Change successor actions so they run after <strong>Failed</strong>, <strong>TimedOut</strong>, or <strong>Skipped</strong> instead of only after <strong>Succeeded</strong>.</li>
+                <li>This is the simplest branch-level error path.</li>
+              </ul>
+            </div>
+            <div class="plan-box">
+              <h3>Scopes</h3>
+              <ul>
+                <li>Group primary actions inside a scope, then add follow-up handling based on the scope result.</li>
+                <li>This is the usual pattern for centralized exception handling.</li>
+              </ul>
+            </div>
+          </div>
+          <h3>Example handling flow</h3>
+          <ol style="margin:8px 0 0 18px; color:var(--text-secondary);">
+            <li>Call a downstream order API with an HTTP action.</li>
+            <li>Allow retries for 429 and 5xx style transient failures.</li>
+            <li>If the call still fails, run a follow-up action using <strong>run after = Failed</strong>.</li>
+            <li>Log the failure, capture the correlation ID, and notify the operations team.</li>
+          </ol>
+          <pre class="code"><code>"runAfter": {
+  "Create_Order": ["Failed", "TimedOut"]
+}</code></pre>
+          <div class="callout"><strong>Important:</strong> use retries only for idempotent or safe-to-repeat operations. If an action creates money movement, inventory changes, or external side effects, careless retries can create duplicates.</div>
+        </section>
+
+        <section id="monitoring" class="section-card reveal">
+          <h2>Monitoring Answers “Is the Workflow Healthy?”</h2>
+          <p>Monitoring in Logic Apps spans three layers: portal run inspection, Azure Monitor metrics and alerts, and diagnostics logs routed to Log Analytics, Storage, or Event Hubs.</p>
+          <div class="cheat">
+            <div class="cheat-item"><h3>Portal view</h3><p>Use trigger history and run history first when debugging one workflow execution.</p></div>
+            <div class="cheat-item"><h3>Metrics and alerts</h3><p>Use Azure Monitor to detect failed triggers, rising latency, throttling, and unusual failure rates.</p></div>
+            <div class="cheat-item"><h3>Diagnostics logs</h3><p>Use Log Analytics for queries across many runs, workflows, and correlated Azure services.</p></div>
+          </div>
+          <h3>What to monitor</h3>
+          <ul>
+            <li>Trigger failures and skipped triggers.</li>
+            <li>Workflow run success and failure rates.</li>
+            <li>Action latency, retries, and throttling behavior.</li>
+            <li>Connection health and downstream service availability.</li>
+          </ul>
+          <div class="speaker-note">
+            <h3>Concrete example</h3>
+            <p>Set an alert when more than one trigger fails in a five-minute window, then use Log Analytics to query whether the failures came from the same connector, the same workflow version, or the same downstream API.</p>
+          </div>
+          <p>For a deeper operations walkthrough, see the dedicated <a href="monitoring-troubleshooting.html">Monitoring &amp; Troubleshooting</a> page.</p>
+        </section>
+
+        <section id="run-history" class="section-card reveal">
+          <h2>Run History Is Your First Debugging Surface</h2>
+          <p>Run history shows what actually happened for each workflow instance: status, action sequence, inputs, outputs, retries, and any errors. Trigger history complements it by showing every trigger attempt, even when a run never started.</p>
+          <div class="table-wrap">
+            <table aria-label="Trigger history versus run history">
+              <thead>
+                <tr><th>View</th><th>What it tells you</th><th>When to use it</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Trigger history</td><td>Whether the trigger fired, skipped, or failed, plus trigger inputs and outputs</td><td>Use when the workflow did not start as expected.</td></tr>
+                <tr><td>Run history</td><td>Whether the workflow run succeeded, failed, timed out, or is waiting, plus step details</td><td>Use when the workflow started but behaved incorrectly.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <h3>What to inspect</h3>
+          <ul>
+            <li>Run status such as <strong>Succeeded</strong>, <strong>Failed</strong>, <strong>Timed out</strong>, or <strong>Waiting</strong>.</li>
+            <li>Action-level inputs, outputs, and retry details.</li>
+            <li>Whether an action was <strong>Skipped</strong> because its <strong>runAfter</strong> criteria were not met.</li>
+            <li>Correlation IDs when working with support teams or external APIs.</li>
+          </ul>
+          <div class="callout"><strong>Important:</strong> stateful workflows store run history by default. Stateless workflows do not store run history by default, although Standard can temporarily enable run history for stateless debugging when needed.</div>
+        </section>
+
+        <section id="workflow-types" class="section-card reveal">
+          <h2>Stateful vs. Stateless Workflows</h2>
+          <p>This decision matters most in Standard workflows. Stateful workflows persist run state externally for resiliency and longer-running processes. Stateless workflows keep state in memory for faster, shorter-lived executions.</p>
+          <div class="table-wrap">
+            <table aria-label="Stateful versus stateless workflows">
+              <thead>
+                <tr><th>Dimension</th><th>Stateful</th><th>Stateless</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Run history</td><td>Stored by default</td><td>Not stored by default</td></tr>
+                <tr><td>Best fit</td><td>Long-running, auditable, resilient orchestrations</td><td>Short, high-throughput, in-memory processing</td></tr>
+                <tr><td>Trigger support</td><td>Broad trigger support including recurrence and managed polling triggers</td><td>Push triggers only; no Recurrence or managed connector polling triggers</td></tr>
+                <tr><td>Operational tradeoff</td><td>More durable but more storage overhead</td><td>Faster but less suited for large payloads and long durations</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="speaker-note">
+            <h3>Key takeaway</h3>
+            <p>Stateful workflows are the better fit for long-running monitored processes, while stateless workflows fit lightweight high-frequency tasks.</p>
+          </div>
+          <h3>Example Use Cases</h3>
+          <div class="trigger-examples">
+            <div class="trigger-example">
+              <h3>Choose stateful</h3>
+              <p>Use stateful for document approvals, B2B message exchange, long-running order orchestration, delayed follow-up, large payload handling, and any workflow where run history, resumability, or auditability matter.</p>
+            </div>
+            <div class="trigger-example">
+              <h3>Choose stateless</h3>
+              <p>Use stateless for short API mediation, lightweight webhook processing, fast request-response enrichment, or high-throughput message handling where the work usually completes within minutes and the payload stays relatively small.</p>
+            </div>
+            <div class="trigger-example">
+              <h3>Decision shortcut</h3>
+              <p>If you need recurrence triggers, long waits, large content, asynchronous polling, or durable history, choose <strong>stateful</strong>. If you need the fastest in-memory execution with push triggers and short-lived processing, choose <strong>stateless</strong>.</p>
+            </div>
+          </div>
+        </section>
+
+        <nav class="pager" aria-label="Workshop pagination">
+          <a class="prev" href="runtime-lifecycle.html"><small>Previous</small><strong>&larr; Runtime Lifecycle</strong></a>
+          <a class="next" href="advanced-patterns.html"><small>Next</small><strong>Advanced Patterns &rarr;</strong></a>
+        </nav>
+      </main>
+
+      <aside class="toc" aria-label="Table of contents">
+        <h3>On This Page</h3>
+        <a href="#triggers">Triggers</a>
+        <a href="#trigger-conditions">Trigger Conditions</a>
+        <a href="#actions">Actions</a>
+        <a href="#workflow-logic">Workflow Logic</a>
+        <a href="#inline-code">Inline Code</a>
+        <a href="#connectors">Connectors</a>
+        <a href="#scopes">Scopes</a>
+        <a href="#integration-account">Integration Account</a>
+        <a href="#error-handling">Error Handling</a>
+        <a href="#monitoring">Monitoring</a>
+        <a href="#run-history">Run History</a>
+        <a href="#workflow-types">Stateful vs. Stateless</a>
+      </aside>
+    </div>
+  </div>
+
+  <script type="module" src="../assets/site.js"></script>
+</body>
+</html>

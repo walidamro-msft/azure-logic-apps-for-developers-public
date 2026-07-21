@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Standard Hosting Overview &middot; Azure Logic Apps Workshop</title>
+  <meta name="description" content="Shared runtime concepts and hosting-option guidance for Azure Logic Apps Standard." />
+  <script>(function(){var t=localStorage.getItem("logic-apps-workshop-theme");document.documentElement.setAttribute("data-theme",(t==="light"||t==="dark")?t:(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"));})();</script>
+  <link rel="icon" type="image/svg+xml" href="../images/azure/02631-icon-service-Logic-Apps.svg" />
+  <link rel="stylesheet" href="../assets/site.css" />
+</head>
+<body data-root=".." data-active="standard-plans">
+  <div class="page">
+    <nav class="breadcrumb" aria-label="Breadcrumb"><a href="../index.html">Home</a><span class="sep">/</span><a href="hosting-plans.html">Hosting Plans</a><span class="sep">/</span><span>Standard</span></nav>
+    <header class="hero">
+      <h1>Azure Logic Apps Standard Hosting</h1>
+      <p class="subtitle">One single-tenant runtime model with three deployment choices: managed Workflow Service Plan, fully isolated App Service Environment v3, or customer-managed Hybrid infrastructure.</p>
+      <div class="audience"><span>Three hosting options</span><span>Multiple workflows</span><span>Single-tenant runtime</span><span>Private networking</span></div>
+    </header>
+    <div class="layout">
+      <main class="content">
+        <section id="hosting-options" class="card reveal">
+          <h2>Standard Hosting Options</h2>
+          <div class="table-wrap"><table aria-label="Logic Apps Standard hosting options">
+            <thead><tr><th>Hosting option</th><th>Runs where</th><th>Use when</th><th>Billing basis</th></tr></thead>
+            <tbody>
+              <tr><td><a href="workflow-service-plan.html">Workflow Service Plan</a></td><td>Single-tenant Azure Logic Apps</td><td>You need the normal managed Standard experience</td><td>WS1, WS2, or WS3 vCPU and memory</td></tr>
+              <tr><td><a href="app-service-environment-v3.html">App Service Environment v3</a></td><td>Dedicated ASE v3, Windows plans only</td><td>You need fully isolated App Service infrastructure</td><td>Isolated v2 App Service Plan instances</td></tr>
+              <tr><td><a href="hybrid-plans.html">Hybrid</a></td><td>Your Azure Arc-enabled Kubernetes infrastructure</td><td>Processing must remain on premises or in a partially connected environment</td><td>Allocated Logic Apps vCPU plus your infrastructure and SQL Server</td></tr>
+            </tbody>
+          </table></div>
+          <div class="callout"><strong>Current support:</strong> Functions Premium, ASE v1, and ASE v2 are not supported hosting plans for the public Standard model.</div>
+        </section>
+
+        <section id="tiers" class="card reveal">
+          <h2>Workflow Standard Tiers</h2>
+          <p>WS1, WS2, and WS3 are fixed vCPU-and-memory sizes that apply only to Workflow Service Plan. Compute is billed while each plan instance is enabled, and scale-out adds another complete tier instance.</p>
+          <div class="callout"><strong>Pricing reference:</strong> See <a href="workflow-service-plan.html#pricing">Workflow Service Plan pricing</a> for tier capacities, the current East US teaching example, and the monthly calculation.</div>
+        </section>
+
+        <section id="workflow-types" class="card reveal">
+          <h2>Stateful and Stateless Workflows</h2>
+          <div class="table-wrap"><table aria-label="Stateful versus stateless Standard workflows">
+            <thead><tr><th>Characteristic</th><th>Stateful</th><th>Stateless</th></tr></thead>
+            <tbody>
+              <tr><td>Persistence</td><td>Inputs, outputs, state, and run history stored externally</td><td>State remains in memory; run history is off by default</td></tr>
+              <tr><td>Reliability</td><td>Interrupted runs can resume from persisted state</td><td>Caller must resubmit after interruption</td></tr>
+              <tr><td>Duration</td><td>Long-running workflows, 90-day default</td><td>Short synchronous workflows, typically under 5 minutes</td></tr>
+              <tr><td>Performance</td><td>Durable orchestration with storage overhead</td><td>Lower latency and higher throughput for small payloads</td></tr>
+              <tr><td>Connector triggers</td><td>Built-in and managed connector triggers</td><td>Push triggers; managed polling triggers are not supported</td></tr>
+              <tr><td>Best payload fit</td><td>Larger or durable messages</td><td>Small messages, ideally under 64 KB total</td></tr>
+            </tbody>
+          </table></div>
+          <p>Workflow type is selected at creation. Changing a workflow between stateful and stateless afterward causes runtime errors.</p>
+        </section>
+
+        <section id="connectors" class="card reveal">
+          <h2>Built-in and Shared Connector Billing</h2>
+          <p>Standard compute includes unlimited built-in operation executions. Built-in connectors run in the same process as the workflow runtime, often improving latency and throughput.</p>
+          <div class="table-wrap"><table aria-label="Standard connector billing">
+            <thead><tr><th>Connector type</th><th>Execution location</th><th>Billing</th></tr></thead>
+            <tbody>
+              <tr><td>Built-in</td><td>In-process on the single-tenant runtime</td><td>Included in Standard compute</td></tr>
+              <tr><td>Custom built-in</td><td>In-process extension</td><td>Included in Standard compute</td></tr>
+              <tr><td>Shared Standard managed connector</td><td>Shared global connector infrastructure</td><td>$0.000125 per call in the East US sample</td></tr>
+              <tr><td>Shared Enterprise managed connector</td><td>Shared global connector infrastructure</td><td>$0.001 per call in the East US sample</td></tr>
+            </tbody>
+          </table></div>
+          <p>Unlike Consumption, Standard meters paid managed connector operations <strong>per call</strong>. Pagination or chunking can therefore produce multiple billable calls. Prefer an appropriate built-in connector when feature parity, authentication, and operational requirements allow.</p>
+        </section>
+
+        <section id="networking" class="card reveal">
+          <h2>Networking, Isolation, and Data Residency</h2>
+          <div class="cheat">
+            <article class="cheat-item"><h3>VNet integration</h3><p>Reach private backends directly from the single-tenant runtime and control outbound routing.</p></article>
+            <article class="cheat-item"><h3>Private endpoints</h3><p>Expose the logic app through private inbound connectivity instead of a public endpoint.</p></article>
+            <article class="cheat-item"><h3>Regional data</h3><p>Workflow data stays in the region where the Standard logic app is deployed.</p></article>
+            <article class="cheat-item"><h3>ASE v3</h3><p>Use Windows Isolated v2 App Service Plans when fully isolated dedicated hosting is required.</p></article>
+          </div>
+          <p>Shared managed connectors still run outside the single-tenant process. Include their FQDNs, service tags, and connection behavior in strict firewall designs.</p>
+        </section>
+
+        <section id="development" class="card reveal">
+          <h2>Development and Deployment Model</h2>
+          <p>A Standard logic app is an application project containing the runtime configuration, workflows, connections, and artifacts. You can run and debug locally with the Azure Logic Apps (Standard) VS Code extension, package the project, and deploy application artifacts separately from infrastructure.</p>
+          <div class="diagram-wrap"><pre class="mermaid">
+flowchart LR
+    D[Local project] --> T[Test and debug]
+    T --> P[Package workflows and artifacts]
+    I[Deploy infrastructure] --> A[Standard logic app]
+    P --> A
+    A --> W1[Stateful workflow]
+    A --> W2[Stateless workflow]
+    A --> W3[Additional workflows]
+    classDef standard fill:#fff3e3,stroke:#ff8c00,stroke-width:2,color:#4b2a05;
+    class A,W1,W2,W3 standard;
+          </pre></div>
+        </section>
+
+        <section id="storage" class="card reveal">
+          <h2>Storage and Additional Cost</h2>
+          <p>Stateful Standard workflows use your Azure Storage account for runtime state, scheduling, and run history. Storage capacity and transactions are billed separately under Azure Storage pricing. Shared managed connectors, integration accounts, networking, and dependent services are also outside the WS compute estimate.</p>
+          <div class="callout"><strong>Cost check:</strong> compare total Standard compute + instance count + storage + shared connectors against Consumption operation volume. Compute alone is not the complete comparison.</div>
+        </section>
+
+        <section id="fit" class="card reveal">
+          <h2>When Standard Fits</h2>
+          <div class="cheat">
+            <article class="cheat-item"><h3>Strong fit</h3><p>Private networking, several related workflows, sustained throughput, built-in connector volume, local development, and regional data residency.</p></article>
+            <article class="cheat-item"><h3>Capacity warning</h3><p>Reserved compute is paid while enabled. Load test CPU, memory, storage transactions, trigger latency, and scale-out behavior before selecting WS1, WS2, or WS3.</p></article>
+            <article class="cheat-item"><h3>Connector warning</h3><p>Do not assume all operations are included. Shared managed connector calls remain separately metered even on Standard.</p></article>
+          </div>
+        </section>
+
+        <nav class="pager" aria-label="Workshop pagination"><a class="prev" href="consumption-plans.html"><small>Previous</small><strong>&larr; Consumption Plan</strong></a><a class="next" href="workflow-service-plan.html"><small>Next</small><strong>Workflow Service Plan &rarr;</strong></a></nav>
+      </main>
+      <aside class="toc" aria-label="Table of contents"><h3>On This Page</h3><a href="#hosting-options">Hosting Options</a><a href="#tiers">WS Tiers</a><a href="#workflow-types">Workflow Types</a><a href="#connectors">Connector Billing</a><a href="#networking">Networking</a><a href="#development">Development</a><a href="#storage">Storage</a><a href="#fit">When It Fits</a></aside>
+    </div>
+  </div>
+  <script type="module" src="../assets/site.js"></script>
+</body>
+</html>

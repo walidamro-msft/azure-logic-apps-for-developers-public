@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Monitoring &amp; Troubleshooting &middot; Azure Logic Apps Workshop</title>
+  <meta name="description" content="Monitoring and troubleshooting guidance for Azure Logic Apps using Azure Monitor, Application Insights, logs, and run history." />
+  <script>
+    (function () {
+      var t = localStorage.getItem("logic-apps-workshop-theme");
+      document.documentElement.setAttribute("data-theme",
+        (t === "light" || t === "dark") ? t : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
+    })();
+  </script>
+  <link rel="icon" type="image/svg+xml" href="../images/azure/02631-icon-service-Logic-Apps.svg" />
+  <link rel="stylesheet" href="../assets/site.css" />
+</head>
+<body data-root=".." data-active="monitoring-troubleshooting">
+  <div class="page">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../index.html">Home</a><span class="sep">/</span><span>Topics</span><span class="sep">/</span><span>Monitoring &amp; Troubleshooting</span>
+    </nav>
+
+    <header class="hero">
+      <h1>Monitoring &amp; Troubleshooting</h1>
+      <p class="subtitle">Operate workflows with evidence from Azure Monitor, run history, diagnostic logs, alerts, and plan-appropriate telemetry.</p>
+      <div class="badge-row"><span class="badge">Consumption + Standard</span><span class="badge">Operations</span><span class="badge">Reliability</span></div>
+    </header>
+
+    <div class="layout">
+      <main class="content">
+        <section id="azure-monitor" class="section-card reveal">
+          <h2>Azure Monitor as the Operations Baseline</h2>
+          <p>Start with Azure Monitor for platform metrics, alerting, diagnostic routing, and cross-resource analysis. Keep each telemetry surface distinct so you know what is collected automatically and what requires configuration.</p>
+          <div class="table-wrap">
+            <table aria-label="Logic Apps monitoring surfaces">
+              <thead><tr><th>Surface</th><th>Collection</th><th>Use it for</th></tr></thead>
+              <tbody>
+                <tr><td>Platform metrics</td><td>Collected automatically</td><td>Near-real-time health, rates, latency, throughput, and metric alerts.</td></tr>
+                <tr><td>Resource logs</td><td>Require a diagnostic setting and destination</td><td>Workflow runtime events, Log Analytics queries, archival, and external monitoring integration.</td></tr>
+                <tr><td>Activity Log</td><td>Collected automatically at subscription level</td><td>Control-plane changes such as deployment, configuration, authorization, and resource operations.</td></tr>
+                <tr><td>Run and trigger history</td><td>Stored for Consumption and Standard stateful workflows</td><td>Investigating one execution, including trigger or action status, duration, inputs, and outputs.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <ul>
+            <li>Track success and failure rates at the trigger and action level.</li>
+            <li>Measure latency, throughput, and workflow run distribution.</li>
+            <li>Correlate workflow evidence with dependent APIs, functions, messaging services, and platform changes.</li>
+          </ul>
+        </section>
+
+        <section id="diagnostic-settings" class="section-card reveal">
+          <h2>Configure Diagnostic Settings</h2>
+          <p>Resource logs are not retained or queryable until you create a diagnostic setting. On the logic app resource, open <strong>Monitoring &gt; Diagnostic settings</strong>, add a setting, and select the workflow runtime log category and <strong>AllMetrics</strong>.</p>
+          <div class="cheat">
+            <div class="cheat-item"><h3>Consumption</h3><p>Select <strong>Workflow runtime diagnostic events</strong>.</p></div>
+            <div class="cheat-item"><h3>Standard</h3><p>Select <strong>Workflow Runtime Logs</strong>.</p></div>
+            <div class="cheat-item"><h3>Destinations</h3><p>Send data to Log Analytics, archive it to Storage, stream it through Event Hubs, or route it to a supported partner solution.</p></div>
+          </div>
+          <div class="callout"><strong>Important:</strong> Azure Monitor resource logs use a store-and-forward architecture. They can arrive several minutes late and are not guaranteed to be completely lossless, so do not use them as a transactional audit ledger.</div>
+        </section>
+
+        <section id="logs-metrics" class="section-card reveal">
+          <h2>Metrics, Logs, and Run History</h2>
+          <div class="cheat">
+            <div class="cheat-item"><h3>Metrics</h3><p>Use them to spot rates, saturation, spikes, and sustained failure patterns.</p></div>
+            <div class="cheat-item"><h3>Resource logs</h3><p>Use runtime events and tracked properties for queries, trends, correlation, and long-term routing.</p></div>
+            <div class="cheat-item"><h3>Run history</h3><p>Use it to inspect the status, duration, inputs, outputs, exceptions, retries, and connector responses for one execution.</p></div>
+          </div>
+          <div class="table-wrap">
+            <table aria-label="Run history behavior by workflow type">
+              <thead><tr><th>Workflow type</th><th>Run history behavior</th><th>Operational note</th></tr></thead>
+              <tbody>
+                <tr><td>Consumption</td><td>Stored by default</td><td>Review run and trigger history from the logic app Overview page.</td></tr>
+                <tr><td>Standard stateful</td><td>Stored by default</td><td>Review history at the workflow level, not only at the Logic App resource level.</td></tr>
+                <tr><td>Standard stateless</td><td>Not stored by default</td><td>Enable run history temporarily for debugging when necessary, then disable it because storage adds a performance cost.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout"><strong>Retention:</strong> Run history defaults to 90 days. Confirm the configured retention against audit requirements, and route diagnostic data to an appropriate long-term destination when evidence must be kept longer.</div>
+        </section>
+
+        <section id="app-insights" class="section-card reveal">
+          <h2>Application Insights for Standard Workflows</h2>
+          <p>Application Insights enhanced telemetry is an optional capability for <strong>Standard</strong> logic apps when the subscription and app settings support it. It provides near-real-time Live Metrics, trace diagnostics, trigger and action events, retry visibility, exceptions, and workflow metrics. Consumption workflows should use Azure Monitor platform metrics, diagnostic settings, run history, and Log Analytics instead.</p>
+          <div class="callout"><strong>Note:</strong> Application Insights can help connect "what failed" with related application behavior, but end-to-end correlation depends on consistently propagating operation or client tracking identifiers across workflow and service boundaries.</div>
+        </section>
+
+        <section id="alerts" class="section-card reveal">
+          <h2>Build an Actionable Alert Baseline</h2>
+          <p>Create Azure Monitor metric or log alerts and connect them to action groups for email, SMS, push notifications, ITSM integration, webhooks, or automated remediation. Start with symptoms that require action rather than alerting on every event.</p>
+          <div class="table-wrap">
+            <table aria-label="Recommended Logic Apps alert baseline">
+              <thead><tr><th>Signal</th><th>Why it matters</th><th>Example response</th></tr></thead>
+              <tbody>
+                <tr><td>Failed runs or failure rate</td><td>Detects broken workflows and downstream failures.</td><td>Notify the owning team and link to run history or a Log Analytics query.</td></tr>
+                <tr><td>Failed triggers</td><td>Detects authentication, endpoint, and polling failures before work starts.</td><td>Check trigger outputs, connection health, and the downstream endpoint.</td></tr>
+                <tr><td>Latency or run duration</td><td>Detects degradation before timeouts or backlogs become failures.</td><td>Inspect slow actions, retries, throttling, and dependency latency.</td></tr>
+                <tr><td>Abnormal run volume</td><td>Detects silent inactivity, trigger duplication, and unexpected load.</td><td>Compare against expected schedules and business volume.</td></tr>
+                <tr><td>Throttling or waiting runs</td><td>Detects connector limits, concurrency pressure, and capacity constraints.</td><td>Review retry behavior, concurrency, connector limits, and hosting capacity.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout"><strong>Plan difference:</strong> Alert signal names differ between Consumption and Standard. Select signals from the deployed resource's metric namespace rather than copying a rule name from another hosting model.</div>
+        </section>
+
+        <section id="correlation" class="section-card reveal">
+          <h2>Make Runs Searchable</h2>
+          <p>Add business-safe tracked properties to important actions so operators can search by identifiers such as an order, shipment, tenant, or message ID. Use a consistent <strong>client tracking ID</strong> or correlation ID across workflows and downstream services.</p>
+          <ul>
+            <li>Choose identifiers that support an operator's investigation without exposing payload contents.</li>
+            <li>Propagate the same identifier through HTTP headers, messages, and dependent services where supported.</li>
+            <li>For B2B workflows, consider AS2, X12, or custom tracking schemas for business-message tracking.</li>
+          </ul>
+          <div class="callout"><strong>Important:</strong> Tracked properties are telemetry. Never place secrets, credentials, access tokens, personal data, or regulated payloads in them.</div>
+        </section>
+
+        <section id="secure-telemetry" class="section-card reveal">
+          <h2>Protect Operational Data</h2>
+          <p>Run history can contain request bodies, response bodies, headers, secrets, and personal data. Treat monitoring access and retention as part of the workflow's security design.</p>
+          <ul>
+            <li>Enable <strong>Secure Inputs</strong> and <strong>Secure Outputs</strong> on supported triggers and actions that handle sensitive values.</li>
+            <li>Check downstream actions too. Obscuring one operation does not guarantee that later operations will hide the same value.</li>
+            <li>Use least-privilege Azure RBAC and restrict access to run-history content and monitoring destinations.</li>
+            <li>Keep secrets in Azure Key Vault or secured parameters rather than hard-coding them in workflow definitions.</li>
+            <li>Set retention and archive access policies that match privacy, security, and audit requirements.</li>
+          </ul>
+        </section>
+
+        <section id="troubleshooting" class="section-card reveal">
+          <h2>Structured Troubleshooting Flow</h2>
+          <ol style="margin:8px 0 0 18px; color:var(--text-secondary);">
+            <li>Confirm the workflow and trigger are enabled, then distinguish <strong>Skipped</strong>, <strong>Failed</strong>, <strong>Waiting</strong>, <strong>Cancelled</strong>, and <strong>Aborted</strong> states.</li>
+            <li>Review trigger history. A skipped polling trigger might simply mean that no data met its criteria, while a failed trigger includes error details in its outputs.</li>
+            <li>Open the affected run and inspect the first failed or unexpectedly skipped action, including its inputs, outputs, retries, status code, duration, and tracking ID.</li>
+            <li>Validate connection health, credentials, managed identity permissions, connector limits, and downstream availability.</li>
+            <li>Review metrics and alerts for sustained failure rates, throttling, latency changes, abnormal volume, or waiting runs.</li>
+            <li>Check the Azure Activity Log for configuration changes and Azure Resource Health or Service Health for platform incidents.</li>
+            <li>If expected logs are absent, confirm the diagnostic setting, selected categories, destination, and ingestion delay.</li>
+            <li>Classify the issue as workflow logic, data, dependency, capacity, permissions, configuration, transient failure, or Azure platform health before choosing remediation.</li>
+          </ol>
+        </section>
+
+        <section id="recovery" class="section-card reveal">
+          <h2>Recover Without Creating a Second Incident</h2>
+          <ul>
+            <li>Cancel a stuck or obsolete run when it blocks concurrency or no longer has business value.</li>
+            <li>Resubmit a completed Consumption or Standard stateful run only after checking whether downstream effects are safe to repeat.</li>
+            <li>Remember that resubmission uses the workflow version from the original run, even if the current workflow definition has changed.</li>
+            <li>Use rerun-from-action only when the workflow structure and action support it; parallel paths, loops, and other complex control flow have limitations.</li>
+            <li>Record the original run ID, recovery decision, and resulting run ID when an audit trail is required.</li>
+          </ul>
+          <div class="callout"><strong>Important:</strong> Resubmission can create duplicate records, repeat notifications, or retry a destructive operation. Confirm idempotency or use a deduplication key before rerunning production work.</div>
+        </section>
+
+        <section id="reliability" class="section-card reveal">
+          <h2>Build Reliable Workflows</h2>
+          <ul>
+            <li>Use retry policies only where the operation is safe to retry.</li>
+            <li>Use timeouts, scopes, and <strong>run after</strong> paths to separate transient recovery from terminal failure handling.</li>
+            <li>Add conditional checks before expensive or destructive downstream actions.</li>
+            <li>Route failures into explicit logging, notification, or compensating actions.</li>
+            <li>Design idempotent downstream operations because Azure Logic Apps uses at-least-once message delivery and rare duplicate delivery is possible.</li>
+            <li>Monitor queues and dead-letter destinations when a messaging service participates in the workflow.</li>
+          </ul>
+        </section>
+
+        <section id="references" class="section-card reveal">
+          <h2>Microsoft Guidance</h2>
+          <ul>
+            <li><a href="https://learn.microsoft.com/azure/logic-apps/monitor-logic-apps-overview">Monitor workflows in Azure Logic Apps</a></li>
+            <li><a href="https://learn.microsoft.com/azure/logic-apps/monitor-workflows-collect-diagnostic-data">Collect diagnostic data for Logic Apps workflows</a></li>
+            <li><a href="https://learn.microsoft.com/azure/logic-apps/enable-enhanced-telemetry-standard-workflows">Enable enhanced Application Insights telemetry for Standard workflows</a></li>
+            <li><a href="https://learn.microsoft.com/azure/logic-apps/view-workflow-status-run-history">Check workflow status, run history, and alerts</a></li>
+            <li><a href="https://learn.microsoft.com/azure/logic-apps/logic-apps-securing-a-logic-app#access-to-run-history-data">Secure access to run-history data</a></li>
+            <li><a href="https://learn.microsoft.com/azure/logic-apps/logic-apps-limits-and-config#run-duration-and-history-retention-limits">Review run duration and history retention limits</a></li>
+          </ul>
+        </section>
+
+        <nav class="pager" aria-label="Workshop pagination">
+          <a class="prev" href="security-governance.html"><small>Previous</small><strong>&larr; Security &amp; Limits</strong></a>
+          <a class="next" href="workflow-testing.html"><small>Next</small><strong>Workflow Testing &rarr;</strong></a>
+        </nav>
+      </main>
+
+      <aside class="toc" aria-label="Table of contents">
+        <h3>On This Page</h3>
+        <a href="#azure-monitor">Azure Monitor</a>
+        <a href="#diagnostic-settings">Diagnostic Settings</a>
+        <a href="#logs-metrics">Logs and Metrics</a>
+        <a href="#app-insights">Application Insights</a>
+        <a href="#alerts">Alerts</a>
+        <a href="#correlation">Correlation</a>
+        <a href="#secure-telemetry">Secure Telemetry</a>
+        <a href="#troubleshooting">Troubleshooting Flow</a>
+        <a href="#recovery">Safe Recovery</a>
+        <a href="#reliability">Reliable Workflows</a>
+        <a href="#references">Microsoft Guidance</a>
+      </aside>
+    </div>
+  </div>
+
+  <script type="module" src="../assets/site.js"></script>
+</body>
+</html>

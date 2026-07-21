@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Advanced Patterns &middot; Azure Logic Apps Workshop</title>
+  <meta name="description" content="Advanced Logic Apps patterns including trigger strategy, resilience, transformations, B2B integration, hybrid access, and extensibility with Azure services." />
+  <script>
+    (function () {
+      var t = localStorage.getItem("logic-apps-workshop-theme");
+      document.documentElement.setAttribute("data-theme",
+        (t === "light" || t === "dark") ? t : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
+    })();
+  </script>
+  <link rel="icon" type="image/svg+xml" href="../images/azure/02631-icon-service-Logic-Apps.svg" />
+  <link rel="stylesheet" href="../assets/site.css" />
+</head>
+<body data-root=".." data-active="advanced-patterns">
+  <div class="page">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../index.html">Home</a><span class="sep">/</span><span>Topics</span><span class="sep">/</span><span>Advanced Patterns</span>
+    </nav>
+
+    <header class="hero">
+      <h1>Advanced Patterns</h1>
+      <p class="subtitle">This section turns the workflow designer into a real orchestration tool: branch, repeat, retry, parallelize, and extend.</p>
+      <div class="badge-row"><span class="badge">Patterns</span><span class="badge">Integration design</span></div>
+    </header>
+
+    <div class="layout">
+      <main class="content">
+        <section id="control-flow" class="section-card reveal">
+          <h2>Control Flow: Conditions, Loops, and Scopes</h2>
+          <p>Use conditions, switches, and loops to model the real business path rather than flattening every case into one linear sequence.</p>
+          <ul>
+            <li><strong>Condition:</strong> branch based on payload content, policy, or a prior action result.</li>
+            <li><strong>For each / Until:</strong> repeat work over arrays or until a workflow reaches a target state.</li>
+            <li><strong>Scope:</strong> group related work for readability, error handling, and modularity.</li>
+          </ul>
+        </section>
+
+        <section id="trigger-strategy" class="section-card reveal">
+          <h2>Trigger Strategy: Polling vs Push</h2>
+          <p>Choosing the trigger style is an advanced design decision because it changes latency, connector load, and cost behavior.</p>
+          <div class="plan-grid">
+            <div class="plan-box"><h3>Polling triggers</h3><ul><li>Use for systems that do not emit events reliably.</li><li>Tune recurrence carefully to balance freshness versus run frequency.</li></ul></div>
+            <div class="plan-box"><h3>Push and webhook triggers</h3><ul><li>Use Request or Webhook when event producers can call back directly.</li><li>Prefer for lower latency and fewer unnecessary checks.</li></ul></div>
+          </div>
+          <div class="callout"><strong>Important:</strong> If your workload can be event-driven, push-style triggers usually provide cleaner throughput and better cost efficiency.</div>
+        </section>
+
+        <section id="resilience" class="section-card reveal">
+          <h2>Error Handling and Resilience</h2>
+          <p>Reliable workflows assume transient failures will happen. Design explicit behavior for retries, compensations, and failure notifications.</p>
+          <div class="cheat">
+            <div class="cheat-item"><h3>Retry policies</h3><p>Good for transient HTTP, connector, or downstream service failures.</p></div>
+            <div class="cheat-item"><h3>Run-after rules</h3><p>Route failed or timed-out actions into cleanup, alerting, or fallback logic.</p></div>
+            <div class="cheat-item"><h3>Scopes as try/catch</h3><p>Group a block of work and attach handling branches to its outcome.</p></div>
+          </div>
+        </section>
+
+        <section id="parallelism" class="section-card reveal">
+          <h2>Parallel Actions and Throughput</h2>
+          <p>Independent work should run concurrently when order is not required. That shortens total run time, but concurrency must be balanced against destination limits and cost.</p>
+          <div class="diagram-wrap">
+            <pre class="mermaid">
+flowchart TD
+    T[Trigger] --> S[Scope]
+    S --> A[Validate order]
+    S --> B[Send customer email]
+    S --> C[Write audit record]
+    A --> D[Aggregate outcome]
+    B --> D
+    C --> D
+
+    classDef azure fill:#e6f2fb,stroke:#0078d4,stroke-width:2,color:#0f1722;
+    classDef success fill:#e7f5e7,stroke:#107c10,stroke-width:2,color:#103010;
+    class T,S,A,B,C azure;
+    class D success;
+            </pre>
+          </div>
+        </section>
+
+        <section id="external-apis" class="section-card reveal">
+          <h2>Integrating with External APIs</h2>
+          <p>Logic Apps can call REST or SOAP services directly. Use this when no first-class connector exists or when a custom API surface gives better control.</p>
+          <ul>
+            <li>Secure calls with Entra ID, OAuth, API keys, or gateway-managed policies.</li>
+            <li>Use API Management when you need centralized policy, observability, throttling, or external exposure.</li>
+            <li>Shape payloads before and after the call so your workflow does not leak partner-specific formats everywhere.</li>
+          </ul>
+        </section>
+
+        <section id="transformations" class="section-card reveal">
+          <h2>Content Types and Transformation Patterns</h2>
+          <p>Advanced integrations often fail at boundaries between formats rather than transport. Normalize data early and keep transformations explicit.</p>
+          <ul>
+            <li>Handle JSON, XML, binary, and multipart payloads deliberately at workflow boundaries.</li>
+            <li>Use workflow expressions to parse, reshape, and convert content between systems.</li>
+            <li>Define a canonical internal shape so downstream actions stay stable when partner schemas change.</li>
+          </ul>
+        </section>
+
+        <section id="extension-patterns" class="section-card reveal">
+          <h2>Extend Workflows with Azure Functions and Service Bus</h2>
+          <p>Logic Apps handles orchestration well. A Standard workspace can package local .NET functions with its workflows, with execution included in the Logic Apps cost model. A separately hosted Azure Function App adds independently deployed and scaled custom code, and follows its own Azure Functions pricing model. Service Bus adds durable asynchronous messaging for decoupled, multi-step processes.</p>
+          <div class="plan-grid">
+            <div class="plan-box"><h3>Use functions when</h3><ul><li>Use a local function when reusable .NET code should remain in the Standard Logic Apps workspace and deployment.</li><li>Use an external Function App when the code needs independent deployment, reuse, scaling, or a separate lifecycle.</li></ul></div>
+            <div class="plan-box"><h3>Use Service Bus when</h3><ul><li>You need queues or topics between systems.</li><li>You want reliable handoff between workflow stages or consumers.</li></ul></div>
+          </div>
+        </section>
+
+        <section id="hybrid" class="section-card reveal">
+          <h2>On-Premises Integration</h2>
+          <p>The on-premises data gateway remains the standard bridge for hybrid data access. Standard also broadens deployment options through single-tenant hosting and hybrid deployment paths, but gateway-based integration is still the common teaching path for enterprise workshops.</p>
+          <div class="callout"><strong>Note:</strong> Treat hybrid access as an enabler, not the default architecture. Keep workflows cloud-centric and isolate what truly must stay on premises.</div>
+        </section>
+
+        <section id="b2b" class="section-card reveal">
+          <h2>B2B and Enterprise Integration Patterns</h2>
+          <p>For partner ecosystems and regulated integrations, Logic Apps supports Enterprise Integration Pack capabilities through integration accounts.</p>
+          <ul>
+            <li>Model trading partners, agreements, schemas, maps, and certificates as managed artifacts.</li>
+            <li>Support common B2B standards such as AS2, X12, and EDIFACT for interoperable exchange.</li>
+            <li>Separate transport concerns from transformation and validation for clearer support boundaries.</li>
+          </ul>
+        </section>
+
+        <section id="reliability" class="section-card reveal">
+          <h2>Reliability and Disaster Recovery Patterns</h2>
+          <p>Mission-critical workflows need explicit resiliency design beyond basic retry settings.</p>
+          <div class="cheat">
+            <div class="cheat-item"><h3>Zone redundancy</h3><p>Use zone-redundant hosting where available to reduce single-zone failure risk.</p></div>
+            <div class="cheat-item"><h3>Cross-region strategy</h3><p>Plan failover and recovery for integration accounts and dependent services.</p></div>
+            <div class="cheat-item"><h3>Health-first operations</h3><p>Use health checks and telemetry to detect degradation before end-user impact.</p></div>
+          </div>
+        </section>
+
+        <nav class="pager" aria-label="Workshop pagination">
+          <a class="prev" href="core-concepts.html"><small>Previous</small><strong>&larr; Core Concepts</strong></a>
+          <a class="next" href="hosting-plans.html"><small>Next</small><strong>Hosting Plans &rarr;</strong></a>
+        </nav>
+      </main>
+
+      <aside class="toc" aria-label="Table of contents">
+        <h3>On This Page</h3>
+        <a href="#control-flow">Control Flow</a>
+        <a href="#trigger-strategy">Trigger Strategy</a>
+        <a href="#resilience">Error Handling</a>
+        <a href="#parallelism">Parallelism</a>
+        <a href="#external-apis">External APIs</a>
+        <a href="#transformations">Transformations</a>
+        <a href="#extension-patterns">Functions and Service Bus</a>
+        <a href="#hybrid">On-Premises Integration</a>
+        <a href="#b2b">B2B Integration</a>
+        <a href="#reliability">Reliability and DR</a>
+      </aside>
+    </div>
+  </div>
+
+  <script type="module" src="../assets/site.js"></script>
+</body>
+</html>

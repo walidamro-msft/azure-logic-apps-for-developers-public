@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Build &amp; Manage &middot; Azure Logic Apps Workshop</title>
+  <meta name="description" content="Create and manage Azure Logic Apps using the Azure portal and Visual Studio Code." />
+  <script>
+    (function () {
+      var t = localStorage.getItem("logic-apps-workshop-theme");
+      document.documentElement.setAttribute("data-theme",
+        (t === "light" || t === "dark") ? t : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
+    })();
+  </script>
+  <link rel="icon" type="image/svg+xml" href="../images/azure/02631-icon-service-Logic-Apps.svg" />
+  <link rel="stylesheet" href="../assets/site.css" />
+</head>
+<body data-root=".." data-active="build-and-manage">
+  <div class="page">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../index.html">Home</a><span class="sep">/</span><span>Topics</span><span class="sep">/</span><span>Build &amp; Manage</span>
+    </nav>
+
+    <header class="hero">
+      <h1>Build &amp; Manage</h1>
+      <p class="subtitle">Choose between the Azure portal for browser-based authoring and Visual Studio Code for a local, source-controlled Standard development workflow.</p>
+      <div class="badge-row"><span class="badge">Hands-on</span><span class="badge">Tooling</span></div>
+    </header>
+
+    <div class="layout">
+      <main class="content">
+        <section id="portal" class="section-card reveal">
+          <h2>Using the Azure Portal</h2>
+          <figure class="media-panel">
+            <img
+              src="https://learn.microsoft.com/en-us/azure/logic-apps/media/quickstart-create-example-consumption-workflow/quickstart-workflow-overview.png"
+              alt="Azure portal workflow designer showing an RSS trigger followed by an Office 365 Outlook action."
+            />
+            <figcaption>Microsoft Learn example of a completed Consumption workflow in the Azure portal designer.</figcaption>
+          </figure>
+          <p>The portal designer supports both Consumption and Standard workflows. Start by choosing the hosting model that fits the workload, because that choice affects the resource boundary, billing, networking, and available workflow types.</p>
+          <ul>
+            <li>Create or open a Logic App resource, then open the workflow designer.</li>
+            <li>Add one trigger, add actions, save, and test with a small payload before expanding the workflow.</li>
+            <li>Inspect run history, trigger history, inputs, and outputs after a test run.</li>
+            <li>Use the portal for rapid proof-of-concept work, operational inspection, and browser-based editing.</li>
+          </ul>
+          <div class="callout"><strong>Important:</strong> Saving in the portal publishes the workflow. Avoid making concurrent portal and local edits to the same Standard workflow because a later deployment can overwrite portal changes.</div>
+        </section>
+
+        <section id="portal-menus-subtopic" class="section-card reveal">
+          <h2>Subtopic: Portal Menus</h2>
+          <p>The Workflow Service Plan resource in Azure portal includes Logic Apps-specific pages and inherited App Service/ARM pages. Use this subtopic as a quick field guide when you need to decide where to inspect configuration, deployment, monitoring, and governance settings.</p>
+          <div class="cheat">
+            <article class="cheat-item"><h3>What it covers</h3><p>Menu-by-menu guidance for Workflows, Connections, Parameters, Artifacts, deployment features, settings, monitoring, and governance tools.</p></article>
+            <article class="cheat-item"><h3>How to use it</h3><p>Start from the menu group you are changing, then confirm scope: workflow-level behavior, app-level runtime, App Service platform settings, or Azure Resource Manager controls.</p></article>
+          </div>
+          <p><a href="portal-menus.html">Open Portal Menus subtopic &rarr;</a></p>
+        </section>
+        <section id="vscode" class="section-card reveal">
+          <h2>Using Visual Studio Code</h2>
+          <figure class="media-panel">
+            <img
+              src="../images/custom/vs-code-logic-apps-extensions.png"
+              alt="Visual Studio Code Extensions view showing Azure Logic Apps extensions for Consumption and Standard."
+            />
+            <figcaption>Visual Studio Code Extensions view showing the Azure Logic Apps extension options.</figcaption>
+          </figure>
+          <p>Microsoft Learn currently documents separate VS Code experiences for Consumption and Standard, and both extensions can be installed at the same time:</p>
+          <ul>
+            <li><strong>Azure Logic Apps (Consumption)</strong> for multitenant Consumption resources and workflows. The extension is still published, but its public repository is archived and updates are infrequent.</li>
+            <li><strong>Azure Logic Apps (Standard)</strong> for local Standard projects that you can design, run, debug, test, and deploy.</li>
+          </ul>
+          <div class="callout"><strong>Note:</strong> There is no publicly announced retirement notice for the Consumption extension at this time. For net-new local development, most active tooling investment is centered on the Standard extension.</div>
+          <div class="callout warning"><strong>Warning:</strong> Do not use the Consumption extension for new development. It depends on legacy extension dependencies, including Azure Account integration, and does not align with the current best-practice toolchain. Use the Standard extension for supported SDLC and CI/CD workflows.</div>
+          <div class="callout"><strong>Best practice:</strong> The primary reason to build Logic Apps Standard in VS Code is to follow SDLC and CI/CD practices. Keeping workflow artifacts in source control enables versioning, pull request reviews, release promotion, rollback, and repeatable deployments across environments.</div>
+          <p>A Standard project contains one folder per workflow with a <code>workflow.json</code> file, plus project-level files such as <code>host.json</code> and <code>connections.json</code>. Keep <code>local.settings.json</code> out of source control because it can contain local secrets and connection values.</p>
+        </section>
+
+        <section id="tool-choice" class="section-card reveal">
+          <h2>When to Use Portal vs. VS Code</h2>
+          <div class="table-wrap">
+            <table aria-label="Portal versus VS Code">
+              <thead>
+                <tr><th>Scenario</th><th>Best fit</th><th>Why</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>First workflow or quick prototype</td><td>Portal</td><td>Visual and immediate, with minimal local setup.</td></tr>
+                <tr><td>Standard engineering workflow with source control</td><td>VS Code (Standard extension)</td><td>Best-practice path for SDLC and CI/CD, including workflow versioning, pull request review, release promotion, and rollback.</td></tr>
+                <tr><td>Consumption workflow authoring</td><td>Portal</td><td>Use the portal as the primary authoring path. Avoid the Consumption extension for new development due to legacy dependencies and low maintenance activity.</td></tr>
+                <tr><td>Quick inspection of a deployed workflow</td><td>Portal</td><td>Fast access to run history, designer, and operational surfaces.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="debugging-workflows" class="section-card reveal">
+          <h2>Debugging Workflows</h2>
+          <p>You can debug Logic Apps in both experiences, but the debugging model is different:</p>
+          <div class="table-wrap">
+            <table aria-label="Debugging in portal versus VS Code">
+              <thead>
+                <tr><th>Tool</th><th>Debugging capability</th><th>Best use</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Azure portal</td><td>Operational debugging through run history, trigger history, action-level inputs/outputs, diagnostics logs, and run resubmission. For Standard stateless workflows, you can temporarily enable <strong>Debug state</strong> to view partial run history.</td><td>Investigating failures in deployed workflows, validating production behavior, and troubleshooting with telemetry.</td></tr>
+                <tr><td>VS Code (Standard extension)</td><td>Local developer debugging with breakpoints in <code>workflow.json</code> (actions), Start Debugging (F5), step inspection, and local run/test loops.</td><td>Pre-deployment development, step-through troubleshooting, and fast iteration during SDLC.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout"><strong>How to choose:</strong> Use VS Code for breakpoint-style debugging during development. Use the Azure portal for runtime diagnostics and run-history investigation after deployment.</div>
+        </section>
+
+        <section id="sample-definition" class="section-card reveal">
+          <h2>What the Underlying Definition Looks Like</h2>
+          <p>Even when you work in the designer, a workflow is backed by a JSON definition that can be versioned, reviewed, and deployed. This simplified Standard <code>workflow.json</code> example defines a stateful request-response workflow:</p>
+          <pre class="code" data-lang="json">{
+  "definition": {
+    "contentVersion": "1.0.0.0",
+    "triggers": {
+      "When_a_request_is_received": {
+        "type": "Request",
+        "kind": "Http"
+      }
+    },
+    "actions": {
+      "Send_response": {
+        "type": "Response",
+        "kind": "Http",
+        "inputs": {
+          "statusCode": 200,
+          "body": {
+            "message": "Workflow completed"
+          }
+        },
+        "runAfter": {}
+      }
+    },
+    "outputs": {}
+  },
+  "kind": "Stateful"
+}</pre>
+          <div class="callout"><strong>Source-control boundary:</strong> Version the complete Standard project, not only <code>workflow.json</code>. Connection metadata, parameters, host settings, schemas, maps, and deployment configuration can all affect runtime behavior.</div>
+        </section>
+
+        <section id="deployment-model" class="section-card reveal">
+          <h2>Separate Infrastructure from App Deployment</h2>
+          <p>Standard supports an application-style deployment model. Provision the Logic App resource and its dependencies with infrastructure as code, then package and deploy the workflow project as a versioned application artifact.</p>
+          <div class="table-wrap">
+            <table aria-label="Standard Logic Apps deployment responsibilities">
+              <thead><tr><th>Deployment layer</th><th>Typical contents</th><th>Release behavior</th></tr></thead>
+              <tbody>
+                <tr><td>Infrastructure</td><td>Hosting plan, Logic App resource, storage, monitoring, networking, identities, role assignments, API connections, and access policies</td><td>Deploy through reviewed infrastructure changes before the app depends on them.</td></tr>
+                <tr><td>Application</td><td>Workflow folders, <code>workflow.json</code>, <code>connections.json</code>, <code>host.json</code>, maps, schemas, assemblies, and other project artifacts</td><td>Build once, zip the project contents at the artifact root, and promote the same immutable package.</td></tr>
+                <tr><td>Environment configuration</td><td>Azure app settings, connection endpoints, resource IDs, feature settings, and Key Vault references</td><td>Inject values per environment; do not promote local credentials.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout"><strong>Local settings:</strong> <code>local.settings.json</code> is for local execution and can contain secrets. Exclude it from source control and supply equivalent Azure app settings through the deployment pipeline or infrastructure definition.</div>
+        </section>
+
+        <section id="environment-promotion" class="section-card reveal">
+          <h2>Parameterize Connections Across Environments</h2>
+          <p>Endpoints and resource IDs change between development, test, and production. Reference app settings from <code>connections.json</code> and workflow parameters instead of embedding environment-specific values in workflow definitions.</p>
+          <ul>
+            <li>Use managed identity in Azure where the connector supports it; local development can use short-lived development credentials.</li>
+            <li>Provision managed API connection resources before the app deployment and create the required access policy for the deployed Standard logic app identity.</li>
+            <li>Assign production RBAC separately and at the narrowest target scope. A successful deployment does not prove the workflow can access its downstream resources.</li>
+            <li>Keep connector authentication changes, Key Vault references, network rules, and DNS dependencies in the release checklist.</li>
+          </ul>
+        </section>
+
+        <section id="pipeline" class="section-card reveal">
+          <h2>Use a Verifiable Release Pipeline</h2>
+          <ol style="margin:8px 0 0 18px; color:var(--text-secondary);">
+            <li>Validate JSON, workflow definitions, infrastructure templates, and policy requirements.</li>
+            <li>Run local or isolated tests for expressions, branches, static results, and custom code.</li>
+            <li>Build one versioned zip artifact with project files at the archive root.</li>
+            <li>Deploy or update infrastructure, connections, access policies, identities, and environment settings.</li>
+            <li>Deploy the same app artifact to the target Standard logic app by using GitHub Actions, Azure Pipelines, or another controlled zip-deployment process.</li>
+            <li>Run smoke tests that exercise each trigger family, authentication path, and critical dependency, then verify telemetry and alerts.</li>
+          </ol>
+          <div class="callout"><strong>Rollback:</strong> retain the previous immutable app artifact and compatible infrastructure version. Before redeployment, decide how in-flight stateful runs and external side effects will be handled; restoring workflow files does not undo completed business actions.</div>
+        </section>
+
+        <section id="references" class="section-card reveal">
+          <h2>Microsoft Learn References</h2>
+          <ul>
+            <li><a href="https://learn.microsoft.com/en-us/azure/logic-apps/quickstart-create-example-consumption-workflow">Create a Consumption workflow in the Azure portal</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/logic-apps/create-standard-workflows-visual-studio-code">Create Standard workflows with Visual Studio Code</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/logic-apps/create-single-tenant-workflows-azure-portal">Create Standard workflows in the Azure portal (including run history and stateless debug state)</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/logic-apps/monitor-workflows-collect-diagnostic-data">Collect diagnostic data for workflow debugging and troubleshooting</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/logic-apps/create-workflow-with-trigger-or-action">Build workflows with triggers and actions</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/logic-apps/devops-deployment-single-tenant-azure-logic-apps">DevOps deployment overview for Standard workflows</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/logic-apps/set-up-devops-deployment-single-tenant-azure-logic-apps">Set up CI/CD deployment for Standard workflows</a></li>
+          </ul>
+        </section>
+
+        <nav class="pager" aria-label="Workshop pagination">
+          <a class="prev" href="agentic-workflows.html"><small>Previous</small><strong>&larr; Agentic Workflows</strong></a>
+          <a class="next" href="portal-menus.html"><small>Next</small><strong>Portal Menus &rarr;</strong></a>
+        </nav>
+      </main>
+
+      <aside class="toc" aria-label="Table of contents">
+        <h3>On This Page</h3>
+        <a href="#portal">Azure Portal</a>
+        <a href="#portal-menus-subtopic">Portal Menus Subtopic</a>
+        <a href="#vscode">Visual Studio Code</a>
+        <a href="#tool-choice">Tool Choice</a>
+        <a href="#debugging-workflows">Debugging Workflows</a>
+        <a href="#sample-definition">Workflow Definition</a>
+        <a href="#deployment-model">Deployment Model</a>
+        <a href="#environment-promotion">Environment Promotion</a>
+        <a href="#pipeline">Release Pipeline</a>
+        <a href="#references">References</a>
+      </aside>
+    </div>
+  </div>
+
+  <script type="module" src="../assets/site.js"></script>
+</body>
+</html>

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Consumption Plan &middot; Azure Logic Apps Workshop</title>
+  <meta name="description" content="Architecture, execution billing, connectors, limits, and workload guidance for Azure Logic Apps Consumption." />
+  <script>(function(){var t=localStorage.getItem("logic-apps-workshop-theme");document.documentElement.setAttribute("data-theme",(t==="light"||t==="dark")?t:(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"));})();</script>
+  <link rel="icon" type="image/svg+xml" href="../images/azure/02631-icon-service-Logic-Apps.svg" />
+  <link rel="stylesheet" href="../assets/site.css" />
+</head>
+<body data-root=".." data-active="consumption-plans">
+  <div class="page">
+    <nav class="breadcrumb" aria-label="Breadcrumb"><a href="../index.html">Home</a><span class="sep">/</span><a href="hosting-plans.html">Hosting Plans</a><span class="sep">/</span><span>Consumption</span></nav>
+    <header class="hero">
+      <h1>Azure Logic Apps Consumption Plan</h1>
+      <p class="subtitle">A fully managed, multitenant plan that scales automatically and charges for trigger and action executions rather than reserved compute.</p>
+      <div class="audience"><span>Pay per execution</span><span>One workflow per resource</span><span>Multitenant</span></div>
+    </header>
+    <div class="layout">
+      <main class="content">
+        <div class="callout warning"><strong>Important:</strong> All Consumption workflows are stateful. Consumption does not support stateless workflows. If your solution requires stateless execution, choose Logic Apps Standard.</div>
+
+        <section id="architecture" class="card reveal">
+          <h2>Architecture and Resource Model</h2>
+          <p>Each Consumption logic app resource contains one workflow. The Azure-managed multitenant runtime supplies compute, scale, storage, and regional service endpoints, so there is no instance size to select or idle compute charge.</p>
+          <div class="diagram-wrap"><pre class="mermaid">
+flowchart LR
+    E[Events and schedules] --> T[Trigger]
+    T --> W[One Consumption workflow]
+    W --> B[Built-in operations]
+    W --> S[Standard managed connectors]
+    W --> X[Enterprise managed connectors]
+    W --> H[Run history retention]
+    classDef root fill:#e7f6e9,stroke:#107c10,stroke-width:2,color:#0f2a15;
+    class W root;
+          </pre></div>
+        </section>
+
+        <section id="billing" class="card reveal">
+          <h2>Execution Billing</h2>
+          <p>Billing follows operation executions, not workflow duration. A trigger poll, action attempt, loop cycle, and retry can each add an execution. Failed and skipped trigger checks can still be metered.</p>
+          <div class="table-wrap"><table aria-label="Consumption operation billing">
+            <thead><tr><th>Operation class</th><th>East US sample</th><th>Important behavior</th></tr></thead>
+            <tbody>
+              <tr><td>Built-in</td><td>4,000/month included, then $0.000025 each</td><td>Grant is shared per subscription; HTTP, control flow, data operations, and other native operations use this meter</td></tr>
+              <tr><td>Standard managed connector</td><td>$0.000125 each</td><td>No built-in grant; custom managed connectors also use this class</td></tr>
+              <tr><td>Enterprise managed connector</td><td>$0.001 each</td><td>Preview Enterprise operations can follow Standard connector pricing</td></tr>
+              <tr><td>Data retention</td><td>$0.12/GB-month</td><td>Applies to retained run-history inputs and outputs</td></tr>
+            </tbody>
+          </table></div>
+          <p>Use the <a href="hosting-plans.html#consumption-calculator">Consumption calculator</a> to expand monthly workflow traffic into these meters.</p>
+        </section>
+
+        <section id="counting" class="card reveal">
+          <h2>Counting Patterns That Change Cost</h2>
+          <div class="cheat">
+            <article class="cheat-item"><h3>Polling</h3><p>Count every scheduled check, not only checks that start runs. One-minute polling is about 43,800 checks in a 30.4-day month.</p></article>
+            <article class="cheat-item"><h3>Split On</h3><p>An array returned by a trigger can create one workflow instance per item, multiplying downstream operations. Its limit is 100,000 items with trigger concurrency off, but only 100 items after concurrency is enabled.</p></article>
+            <article class="cheat-item"><h3>For each</h3><p>Count the loop operation plus each inner action for every item processed.</p></article>
+            <article class="cheat-item"><h3>Retries</h3><p>Count the initial attempt and every retry. Five retries means six executions.</p></article>
+            <article class="cheat-item"><h3>Conditions</h3><p>Count the condition and only actions on the branch that actually runs. Actions skipped because another branch was selected are not billed.</p></article>
+            <article class="cheat-item"><h3>Pagination and chunking</h3><p>Consumption normally meters the operation execution rather than each underlying call, even when pagination makes multiple calls.</p></article>
+          </div>
+        </section>
+
+        <section id="networking" class="card reveal">
+          <h2>Networking and Isolation</h2>
+          <p>Consumption uses shared multitenant endpoints and region-specific inbound/outbound addresses. It does not provide the direct VNet integration and private endpoint model of Standard. Managed connectors may run outside the workflow runtime and have their own service tags and outbound addresses.</p>
+          <div class="callout"><strong>Important:</strong> choose Standard when private access to VNet resources, predictable outbound networking, or single-tenant compute is a hard requirement.</div>
+        </section>
+
+        <section id="limits" class="card reveal">
+          <h2>Operational Characteristics</h2>
+          <div class="table-wrap"><table aria-label="Consumption operational characteristics">
+            <thead><tr><th>Area</th><th>Consumption behavior</th><th>Design implication</th></tr></thead>
+            <tbody>
+              <tr><td>Workflow packaging</td><td>One workflow per resource</td><td>Use naming and resource groups to organize related workflows</td></tr>
+              <tr><td>Run duration</td><td>Up to 90 days by default; retention controls duration</td><td>Keep retention longer than the longest possible run</td></tr>
+              <tr><td>Action throughput</td><td>100,000 executions per 5-minute rolling interval by default</td><td>Enable high-throughput mode or distribute workloads when required</td></tr>
+              <tr><td>Local development</td><td>Definition-centric tooling; no local single-tenant runtime</td><td>Use Standard for application-style local run and debug</td></tr>
+              <tr><td>State</td><td>Stateful workflow behavior</td><td>Use Standard for stateless low-latency workflows</td></tr>
+            </tbody>
+          </table></div>
+        </section>
+
+        <section id="fit" class="card reveal">
+          <h2>When Consumption Fits</h2>
+          <div class="cheat">
+            <article class="cheat-item"><h3>Strong fit</h3><p>Low or variable traffic, straightforward SaaS automation, event-driven integration, rapid setup, and no private-network requirement.</p></article>
+            <article class="cheat-item"><h3>Workflow model</h3><p>Choose Consumption only when stateful workflow behavior meets the requirement. All Consumption workflows are stateful; stateless workflows require Standard.</p></article>
+            <article class="cheat-item"><h3>Cost warning</h3><p>Frequent polling, large loops, retries, and high managed-connector volume can make per-execution pricing exceed Standard compute.</p></article>
+            <article class="cheat-item"><h3>Architecture warning</h3><p>Do not select Consumption when the solution requires multiple workflows per app, direct VNet integration, local runtime debugging, or regional-only workflow data.</p></article>
+          </div>
+          <h3>Enable High-Throughput Mode Deliberately</h3>
+          <p>Consumption defaults to 100,000 action executions per five-minute rolling interval. High-throughput mode raises that limit to 300,000 and is currently a preview capability. In the portal, open <strong>Workflow settings</strong> and turn on <strong>High throughput</strong>. For an ARM deployment, use:</p>
+          <pre class="code" data-lang="json">"runtimeConfiguration": {
+  "operationOptions": "OptimizedForHighThroughput"
+}</pre>
+          <div class="callout"><strong>Capacity check:</strong> High-throughput mode increases the workflow execution ceiling, but it does not raise connector-specific throttling limits or downstream capacity. Load test the complete path and distribute work across workflows when one workflow becomes the bottleneck.</div>
+        </section>
+
+        <nav class="pager" aria-label="Workshop pagination"><a class="prev" href="hosting-plans.html"><small>Previous</small><strong>&larr; Hosting Plans</strong></a><a class="next" href="standard-plans.html"><small>Next</small><strong>Standard Overview &rarr;</strong></a></nav>
+      </main>
+      <aside class="toc" aria-label="Table of contents"><h3>On This Page</h3><a href="#architecture">Architecture</a><a href="#billing">Execution Billing</a><a href="#counting">Counting Patterns</a><a href="#networking">Networking</a><a href="#limits">Limits and Throughput</a><a href="#fit">When It Fits</a></aside>
+    </div>
+  </div>
+  <script type="module" src="../assets/site.js"></script>
+</body>
+</html>

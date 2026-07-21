@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Choosing the Correct Hosting Plan &middot; Azure Logic Apps Workshop</title>
+  <meta name="description" content="Decision guidance, current East US pricing examples, and a Consumption cost calculator for every Azure Logic Apps hosting option." />
+  <script>
+    (function () {
+      var t = localStorage.getItem("logic-apps-workshop-theme");
+      document.documentElement.setAttribute("data-theme",
+        (t === "light" || t === "dark") ? t : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
+    })();
+  </script>
+  <link rel="icon" type="image/svg+xml" href="../images/azure/02631-icon-service-Logic-Apps.svg" />
+  <link rel="stylesheet" href="../assets/site.css" />
+</head>
+<body data-root=".." data-active="hosting-plans">
+  <div class="page">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../index.html">Home</a><span class="sep">/</span><span>Topics</span><span class="sep">/</span><span>Hosting Plans</span>
+    </nav>
+
+    <header class="hero">
+      <h1>Choosing the Correct Azure Logic Apps Hosting Plan</h1>
+      <p class="subtitle">Choose among Consumption, three Standard hosts, and Automation Project preview by evaluating tenancy, infrastructure ownership, networking, scaling, and cost. Pricing examples use public East US retail rates in USD.</p>
+      <div class="audience"><span>Cloud Architects</span><span>Integration Engineers</span><span>Platform Engineers</span></div>
+      <div class="legend" aria-label="Hosting plan color legend">
+        <div class="legend-item"><span class="swatch flex"></span> Consumption: multitenant, pay per execution</div>
+        <div class="legend-item"><span class="swatch premium"></span> Standard: Workflow Service Plan, ASE v3, or Hybrid</div>
+      </div>
+    </header>
+
+    <div class="layout">
+      <main class="content">
+        <section id="primary-decision-tree" class="card reveal">
+          <h2>Primary Hosting Decision Tree</h2>
+          <p>Start with where the runtime must execute and who owns the infrastructure. Then compare isolation, scale behavior, and the complete cost boundary.</p>
+          <div class="diagram-wrap">
+            <pre class="mermaid">
+flowchart TD
+  S([Start]) --> STATELESS{Need a stateless workflow?}
+  STATELESS -->|Yes| WS[Workflow Service Plan]
+  STATELESS -->|No| LOCAL{Must execution run on customer Kubernetes?}
+  LOCAL -->|Yes| HYB[Standard Hybrid]
+  LOCAL -->|No| ISO{Need a fully isolated App Service environment?}
+  ISO -->|Yes| ASE[Standard on ASE v3]
+  ISO -->|No| PRE{Evaluate preview dedicated compute with scale to zero?}
+  PRE -->|Yes| AUTO[Automation Project Managed]
+  PRE -->|No| STD{Need VNet integration, multiple workflows, or single-tenant runtime?}
+  STD -->|Yes| WS[Workflow Service Plan]
+  STD -->|No| CONS[Consumption Multi-tenant]
+
+    classDef decision fill:#f3f7fd,stroke:#0078d4,stroke-width:2,color:#0f1722;
+    classDef consumption fill:#e7f6e9,stroke:#107c10,stroke-width:2,color:#0f2a15;
+    classDef standard fill:#fff3e3,stroke:#ff8c00,stroke-width:2,color:#4b2a05;
+    class S,STATELESS,LOCAL,ISO,PRE,STD decision;
+    class CONS consumption;
+    class WS,ASE,HYB,AUTO standard;
+            </pre>
+          </div>
+          <p><em>Rule of thumb:</em> Consumption and Logic Apps Automation support stateful workflows only. Use Workflow Service Plan, ASE v3, or Hybrid when the solution requires stateless workflows. For stateful workloads, use Consumption for simple bursty integration, Workflow Service Plan for normal managed Standard workloads, ASE v3 for dedicated App Service isolation, Hybrid for customer-managed Kubernetes, and Logic Apps Automation only after validating its preview terms.</p>
+        </section>
+
+        <section id="plan-deep-dives" class="card reveal">
+          <h2>Plan Deep Dives</h2>
+          <div class="card-grid">
+            <a class="topic-card" style="--accent:#107c10" href="consumption-plans.html">
+              <span class="tag">Deep dive</span>
+              <h3>Consumption Plan</h3>
+              <p>Multitenant architecture, operation execution billing, polling and retry behavior, connector classes, free built-in grant, and workload fit.</p>
+              <span class="more">Open module &rarr;</span>
+            </a>
+            <a class="topic-card" style="--accent:#ff8c00" href="standard-plans.html">
+              <span class="tag">Deep dive</span>
+              <h3>Standard Overview</h3>
+              <p>Shared runtime concepts and how Workflow Service Plan, ASE v3, and Hybrid differ.</p>
+              <span class="more">Open module &rarr;</span>
+            </a>
+            <a class="topic-card" style="--accent:#ff8c00" href="workflow-service-plan.html">
+              <span class="tag">Standard host</span><h3>Workflow Service Plan</h3><p>Managed WS1-WS3 compute, VNet integration, scaling, and complete cost boundaries.</p><span class="more">Open module &rarr;</span>
+            </a>
+            <a class="topic-card" style="--accent:#0078d4" href="app-service-environment-v3.html">
+              <span class="tag">Standard host</span><h3>App Service Environment v3</h3><p>Windows Isolated v2 plans, dedicated infrastructure, inherited networking, and ASE pricing.</p><span class="more">Open module &rarr;</span>
+            </a>
+            <a class="topic-card" style="--accent:#8764b8" href="hybrid-plans.html">
+              <span class="tag">Standard host</span><h3>Hybrid</h3><p>Azure Arc-enabled Kubernetes, SQL Server, allocated vCPU billing, and platform ownership.</p><span class="more">Open module &rarr;</span>
+            </a>
+            <a class="topic-card" style="--accent:#107c10" href="logic-apps-automation.html">
+              <span class="tag">Managed consumption</span><h3>Logic Apps Automation</h3><p>Dedicated managed compute, VNet integration, stateful-only workflows, and scale-to-zero pricing.</p>
+              <span class="more">Open module &rarr;</span>
+            </a>
+          </div>
+        </section>
+
+        <section id="comparison" class="card reveal">
+          <h2>Architecture and Capability Comparison</h2>
+          <div class="table-wrap">
+            <table aria-label="Azure Logic Apps hosting plan comparison">
+              <thead><tr><th>Option</th><th>Workflow model</th><th>Compute</th><th>Networking</th><th>Base pricing</th></tr></thead>
+              <tbody>
+                <tr><td>Consumption: Multi-tenant</td><td>Stateful only</td><td>Shared, automatic scale</td><td>Shared service endpoints</td><td>Per trigger and action execution</td></tr>
+                <tr><td>Standard: Workflow Service Plan</td><td>Stateful and stateless</td><td>Managed WS1-WS3 instances</td><td>VNet integration and private endpoints</td><td>Reserved vCPU and memory while enabled</td></tr>
+                <tr><td>Standard: ASE v3</td><td>Stateful and stateless</td><td>Windows Isolated v2 instances</td><td>Dedicated ASE network boundary</td><td>App Service Plan instances</td></tr>
+                <tr><td>Standard: Hybrid</td><td>Stateful and stateless</td><td>Customer Kubernetes replicas</td><td>Customer cluster and network</td><td>Allocated vCPU plus customer infrastructure</td></tr>
+                <tr><td>Logic Apps Automation</td><td>Stateful only</td><td>Dedicated managed compute, scale to zero</td><td>VNet integration</td><td>Base plus active vCPU-second usage</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="execution-counting" class="card reveal">
+          <h2>How Consumption Executions Are Calculated</h2>
+          <p>Consumption meters an operation <strong>each time it executes</strong>, even when the overall workflow fails. Duration and memory do not enter the calculation.</p>
+          <div class="formula">Monthly operation executions = trigger executions + action executions + loop iterations + retry executions</div>
+          <div class="cheat">
+            <article class="cheat-item"><h3>Polling triggers</h3><p>Every poll is an execution, including checks that find no data and appear as Skipped. A one-minute poll can produce about 43,800 monthly trigger executions.</p></article>
+            <article class="cheat-item"><h3>Push triggers</h3><p>For webhook or event triggers, executions usually track received events. With Split On, each array item creates a separate workflow instance.</p></article>
+            <article class="cheat-item"><h3>Loops</h3><p>The loop action and actions inside it execute for each cycle. Ten items with one inner action produce 11 operations: 1 loop action + 10 inner executions.</p></article>
+            <article class="cheat-item"><h3>Retries</h3><p>The original attempt and every retry count. One action plus five retries produces six executions, whether the final result succeeds or fails.</p></article>
+          </div>
+          <h3 style="margin-top:16px;">Worked Example</h3>
+          <p>A workflow runs 100,000 times per month. Each run uses three built-in actions and two Standard connector actions. Its push trigger is built in and fires once per run.</p>
+          <div class="formula">Built-in = 100,000 triggers + (100,000 runs &times; 3 actions) = 400,000
+Standard connector = 100,000 runs &times; 2 actions = 200,000</div>
+          <p>The 4,000-operation grant applies only to built-in operations, so 396,000 built-in executions are billable. Managed connector executions do not consume that grant.</p>
+        </section>
+
+        <section id="pricing" class="card reveal">
+          <h2>East US Pricing Snapshot</h2>
+          <p>These USD retail rates were retrieved from the Azure Retail Prices API for East US on <strong>July 9, 2026</strong>. They are samples for teaching and estimation; negotiated rates, taxes, and future price changes are not represented.</p>
+          <div class="table-wrap">
+            <table aria-label="East US Azure Logic Apps sample pricing">
+              <thead><tr><th>Meter</th><th>East US sample rate</th><th>How it is applied</th></tr></thead>
+              <tbody>
+                <tr><td>Consumption built-in actions</td><td>First 4,000/month free, then <strong>$0.000025/execution</strong></td><td>Grant is per Azure subscription; it does not apply to managed connectors</td></tr>
+                <tr><td>Standard connector actions</td><td><strong>$0.000125/execution</strong></td><td>Consumption and shared managed connectors in Standard</td></tr>
+                <tr><td>Enterprise connector actions</td><td><strong>$0.001/execution</strong></td><td>Consumption and shared managed connectors in Standard</td></tr>
+                <tr><td>Consumption data retention</td><td><strong>$0.12/GB-month</strong></td><td>Retained run-history data</td></tr>
+                <tr><td>Standard vCPU</td><td><strong>$0.1997/vCPU-hour</strong></td><td>Workflow Standard compute while enabled</td></tr>
+                <tr><td>Standard memory</td><td><strong>$0.0143/GiB-hour</strong></td><td>Workflow Standard compute while enabled</td></tr>
+                <tr><td>ASE v3 Windows I1v2 / I2v2 / I3v2</td><td><strong>$0.547 / $1.094 / $2.188 per hour</strong></td><td>Per Isolated v2 plan instance</td></tr>
+                <tr><td>Hybrid vCPU</td><td><strong>$0.18/vCPU-hour</strong></td><td>Allocated vCPU across replicas; customer infrastructure is additional</td></tr>
+                <tr><td>Logic Apps Automation</td><td><strong>Published pricing shape: base + vCPU-second</strong></td><td>Capture applicable rates for your subscription and region</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p><em>Free grant:</em> Azure provides <strong>4,000 built-in operation executions per Azure subscription each month</strong> for Consumption. This is not 4,000 workflow runs, and it is not a credit against Standard or Enterprise managed connector operations.</p>
+          <p><em>Excluded costs:</em> integration accounts, agent-loop tokens, networking, custom domains, managed connector dependencies, and other Azure services are separate. Standard stateful workflows also use an Azure Storage account billed under Azure Storage pricing.</p>
+        </section>
+
+        <section id="consumption-calculator" class="card reveal">
+          <h2>Consumption Execution Calculator</h2>
+          <p>Estimate monthly Logic Apps Consumption charges by expanding a typical workflow run into operation executions. The calculator applies the 4,000 built-in operation grant and keeps connector categories separate.</p>
+          <p class="calc-pricing-note">East US USD sample rates as of July 9, 2026. This browser-only estimate includes built-in, Standard connector, Enterprise connector, and retained-data meters. It excludes integration accounts, agent loops, networking, and dependent Azure services.</p>
+
+          <form id="calc-form" class="calc" novalidate>
+            <div class="calc-grid">
+              <div class="calc-field"><label for="calc-runs">Workflow runs per month</label><input id="calc-runs" type="number" min="0" step="1" value="100000" inputmode="numeric" /></div>
+              <div class="calc-field"><label for="calc-triggers">Built-in trigger executions per month</label><input id="calc-triggers" type="number" min="0" step="1" value="100000" inputmode="numeric" /></div>
+              <div class="calc-field"><label for="calc-built-in">Built-in actions per run</label><input id="calc-built-in" type="number" min="0" step="0.01" value="3" inputmode="decimal" /></div>
+              <div class="calc-field"><label for="calc-standard">Standard connector actions per run</label><input id="calc-standard" type="number" min="0" step="0.01" value="2" inputmode="decimal" /></div>
+              <div class="calc-field"><label for="calc-enterprise">Enterprise connector actions per run</label><input id="calc-enterprise" type="number" min="0" step="0.01" value="0" inputmode="decimal" /></div>
+              <div class="calc-field"><label for="calc-retry">Extra attempts on run actions (%)</label><input id="calc-retry" type="number" min="0" step="0.1" value="0" inputmode="decimal" /></div>
+              <div class="calc-field"><label for="calc-retention">Retained run-history data (GB-month)</label><input id="calc-retention" type="number" min="0" step="0.01" value="0" inputmode="decimal" /></div>
+            </div>
+            <div class="calc-actions"><button type="reset" class="calc-reset">Reset</button></div>
+          </form>
+
+          <div id="calc-results" class="calc-results" aria-live="polite">
+            <div class="calc-total"><span class="calc-total-label">Estimated monthly cost</span><span id="calc-total-value" class="calc-total-value">$0.00</span><span class="calc-plan-name">Consumption</span></div>
+            <div class="table-wrap">
+              <table aria-label="Logic Apps Consumption cost breakdown">
+                <thead><tr><th>Line item</th><th>Executions or usage</th><th>Cost</th></tr></thead>
+                <tbody>
+                  <tr><td>Total built-in operations</td><td id="calc-built-total">&mdash;</td><td></td></tr>
+                  <tr><td>Free built-in grant</td><td id="calc-built-free">&mdash;</td><td></td></tr>
+                  <tr><td>Billable built-in operations</td><td id="calc-built-billable">&mdash;</td><td id="calc-built-cost">$0.00</td></tr>
+                  <tr><td>Standard connector operations</td><td id="calc-standard-total">&mdash;</td><td id="calc-standard-cost">$0.00</td></tr>
+                  <tr><td>Enterprise connector operations</td><td id="calc-enterprise-total">&mdash;</td><td id="calc-enterprise-cost">$0.00</td></tr>
+                  <tr><td>Data retention</td><td id="calc-retention-total">&mdash;</td><td id="calc-retention-cost">$0.00</td></tr>
+                  <tr class="calc-row-total"><td>Total monthly cost</td><td></td><td id="calc-grand-total">$0.00</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p id="calc-formula" class="calc-result-note"></p>
+          </div>
+        </section>
+
+        <section id="recommendation-matrix" class="card reveal">
+          <h2>Hosting Recommendation Matrix</h2>
+          <div class="table-wrap">
+            <table aria-label="Azure Logic Apps hosting recommendation matrix">
+              <thead><tr><th>Scenario</th><th>Consumption</th><th>Standard</th><th>Reason</th></tr></thead>
+              <tbody>
+                <tr><td>Low-volume SaaS automation</td><td><span class="badge b-best">Best Fit</span></td><td><span class="badge b-possible">Possible</span></td><td>Per-execution billing avoids an idle compute baseline</td></tr>
+                <tr><td>Private endpoints or direct VNet access</td><td><span class="badge b-no">Not Recommended</span></td><td><span class="badge b-best">Best Fit</span></td><td>Standard provides first-class single-tenant networking</td></tr>
+                <tr><td>Many related workflows</td><td><span class="badge b-weak">Weak Fit</span></td><td><span class="badge b-best">Best Fit</span></td><td>Standard packages multiple workflows in one resource</td></tr>
+                <tr><td>High-volume built-in connectors</td><td><span class="badge b-possible">Possible</span></td><td><span class="badge b-best">Best Fit</span></td><td>Built-in operations are included in Standard compute</td></tr>
+                <tr><td>Unpredictable burst traffic</td><td><span class="badge b-best">Best Fit</span></td><td><span class="badge b-good">Good Fit</span></td><td>Consumption has no reserved-capacity baseline</td></tr>
+                <tr><td>Local development and CI/CD packaging</td><td><span class="badge b-weak">Weak Fit</span></td><td><span class="badge b-best">Best Fit</span></td><td>Standard uses an application-style project and local runtime</td></tr>
+                <tr><td>Regional data residency</td><td><span class="badge b-weak">Weak Fit</span></td><td><span class="badge b-best">Best Fit</span></td><td>Standard workflow data remains in the deployment region</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="architect-cheat-sheet" class="card reveal">
+          <h2>Architect Cheat Sheet</h2>
+          <div class="cheat">
+            <article class="cheat-item"><h3>Choose Consumption when...</h3><p>Traffic is intermittent, the workflow is simple, shared networking is acceptable, and per-execution cost stays below reserved compute.</p></article>
+            <article class="cheat-item"><h3>Choose Standard when...</h3><p>You need private networking, multiple workflows, stateful/stateless choice, local debugging, regional data residency, or predictable capacity.</p></article>
+            <article class="cheat-item"><h3>Count polls, not only runs</h3><p>A polling trigger is metered even when it finds nothing. Use trigger history and Azure Monitor metrics to measure actual execution volume.</p></article>
+            <article class="cheat-item"><h3>Expand loops and retries</h3><p>Actions inside loops and repeated attempts are separate executions. Model the expanded path, not just the number of designer cards.</p></article>
+            <article class="cheat-item"><h3>Prefer built-in on Standard</h3><p>Built-in connector operations run in-process and are included in compute; shared managed connector operations remain separately billed.</p></article>
+            <article class="cheat-item"><h3>Price storage separately</h3><p>Consumption retention uses a Logic Apps meter. Standard stateful workflows use your Azure Storage account and its transaction/capacity rates.</p></article>
+          </div>
+        </section>
+
+        <nav class="pager" aria-label="Workshop pagination">
+          <a class="prev" href="advanced-patterns.html"><small>Previous</small><strong>&larr; Advanced Patterns</strong></a>
+          <a class="next" href="consumption-plans.html"><small>Next</small><strong>Consumption Plan &rarr;</strong></a>
+        </nav>
+      </main>
+
+      <aside class="toc" aria-label="Table of contents">
+        <h3>On This Page</h3>
+        <a href="#primary-decision-tree">Primary Decision Tree</a><a href="#plan-deep-dives">Plan Deep Dives</a><a href="#comparison">Plan Comparison</a><a href="#execution-counting">Execution Counting</a><a href="#pricing">East US Pricing</a><a href="#consumption-calculator">Consumption Calculator</a><a href="#recommendation-matrix">Recommendation Matrix</a><a href="#architect-cheat-sheet">Architect Cheat Sheet</a>
+      </aside>
+    </div>
+  </div>
+
+  <script type="module" src="../assets/site.js"></script>
+  <script>
+    (function () {
+      var RATES = { builtIn: 0.000025, standard: 0.000125, enterprise: 0.001, retention: 0.12, freeBuiltIn: 4000 };
+      var form = document.getElementById("calc-form");
+      if (!form) return;
+
+      var els = {
+        runs: document.getElementById("calc-runs"), triggers: document.getElementById("calc-triggers"),
+        builtIn: document.getElementById("calc-built-in"), standard: document.getElementById("calc-standard"),
+        enterprise: document.getElementById("calc-enterprise"), retry: document.getElementById("calc-retry"),
+        retention: document.getElementById("calc-retention"), totalValue: document.getElementById("calc-total-value"),
+        builtTotal: document.getElementById("calc-built-total"), builtFree: document.getElementById("calc-built-free"),
+        builtBillable: document.getElementById("calc-built-billable"), builtCost: document.getElementById("calc-built-cost"),
+        standardTotal: document.getElementById("calc-standard-total"), standardCost: document.getElementById("calc-standard-cost"),
+        enterpriseTotal: document.getElementById("calc-enterprise-total"), enterpriseCost: document.getElementById("calc-enterprise-cost"),
+        retentionTotal: document.getElementById("calc-retention-total"), retentionCost: document.getElementById("calc-retention-cost"),
+        grandTotal: document.getElementById("calc-grand-total"), formula: document.getElementById("calc-formula")
+      };
+      var whole = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
+      var decimal = new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 });
+
+      function value(element) {
+        var parsed = parseFloat(element.value);
+        return isFinite(parsed) && parsed > 0 ? parsed : 0;
+      }
+
+      function money(amount) {
+        return "$" + amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }
+
+      function calculate() {
+        var runs = Math.floor(value(els.runs));
+        var triggers = Math.floor(value(els.triggers));
+        var retryFactor = 1 + (value(els.retry) / 100);
+        var builtTotal = Math.ceil(triggers + (runs * value(els.builtIn) * retryFactor));
+        var standardTotal = Math.ceil(runs * value(els.standard) * retryFactor);
+        var enterpriseTotal = Math.ceil(runs * value(els.enterprise) * retryFactor);
+        var retentionGb = value(els.retention);
+        var freeBuiltIn = Math.min(builtTotal, RATES.freeBuiltIn);
+        var billableBuiltIn = Math.max(0, builtTotal - RATES.freeBuiltIn);
+        var builtCost = billableBuiltIn * RATES.builtIn;
+        var standardCost = standardTotal * RATES.standard;
+        var enterpriseCost = enterpriseTotal * RATES.enterprise;
+        var retentionCost = retentionGb * RATES.retention;
+        var total = builtCost + standardCost + enterpriseCost + retentionCost;
+
+        els.totalValue.textContent = money(total);
+        els.builtTotal.textContent = whole.format(builtTotal) + " executions";
+        els.builtFree.textContent = "\u2212 " + whole.format(freeBuiltIn) + " executions";
+        els.builtBillable.textContent = whole.format(billableBuiltIn) + " executions";
+        els.builtCost.textContent = money(builtCost);
+        els.standardTotal.textContent = whole.format(standardTotal) + " executions";
+        els.standardCost.textContent = money(standardCost);
+        els.enterpriseTotal.textContent = whole.format(enterpriseTotal) + " executions";
+        els.enterpriseCost.textContent = money(enterpriseCost);
+        els.retentionTotal.textContent = decimal.format(retentionGb) + " GB-month";
+        els.retentionCost.textContent = money(retentionCost);
+        els.grandTotal.textContent = money(total);
+        els.formula.textContent = "Built-in formula: " + whole.format(triggers) + " trigger executions + (" + whole.format(runs) + " runs \u00d7 " + decimal.format(value(els.builtIn)) + " actions \u00d7 " + decimal.format(retryFactor) + " attempt factor) = " + whole.format(builtTotal) + ".";
+      }
+
+      form.addEventListener("input", calculate);
+      form.addEventListener("change", calculate);
+      form.addEventListener("reset", function () { setTimeout(calculate, 0); });
+      calculate();
+    })();
+  </script>
+</body>
+</html>

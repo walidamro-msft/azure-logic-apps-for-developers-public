@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portal Menus &middot; Azure Logic Apps Workshop</title>
+  <meta name="description" content="Field guide for Workflow Service Plan left menu items in the Azure portal for Logic App (Standard)." />
+  <script>
+    (function () {
+      var t = localStorage.getItem("logic-apps-workshop-theme");
+      document.documentElement.setAttribute("data-theme",
+        (t === "light" || t === "dark") ? t : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
+    })();
+  </script>
+  <link rel="icon" type="image/svg+xml" href="../images/azure/02631-icon-service-Logic-Apps.svg" />
+  <link rel="stylesheet" href="../assets/site.css" />
+</head>
+<body data-root=".." data-active="portal-menus">
+  <div class="page">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../index.html">Home</a><span class="sep">/</span><a href="build-and-manage.html">Build &amp; Manage</a><span class="sep">/</span><span>Portal Menus</span>
+    </nav>
+
+    <header class="hero">
+      <h1>Portal Menus</h1>
+      <p class="subtitle">Menu-by-menu guide for the left navigation under a Logic App (Standard) resource running on Workflow Service Plan in Azure portal.</p>
+      <div class="badge-row"><span class="badge">Workflow Service Plan</span><span class="badge">Azure Portal</span><span class="badge">Operations</span></div>
+    </header>
+
+    <div class="layout">
+      <main class="content">
+        <section id="how-to-read" class="section-card reveal">
+          <h2>How to Read This Guide</h2>
+          <ul>
+            <li>Some menu items are Logic Apps-specific, while others are inherited from Azure App Service, Azure Monitor, or Azure Resource Manager.</li>
+            <li>The exact menu can vary by region, feature flags, and role permissions.</li>
+            <li>Preview items can change behavior or naming before general availability.</li>
+          </ul>
+          <div class="callout"><strong>Important:</strong> A Logic App (Standard) resource is hosted on App Service infrastructure, so many platform pages map to App Service guidance even though you are working with workflows.</div>
+        </section>
+
+        <section id="resource-basics" class="section-card reveal">
+          <h2>Resource Basics and Governance</h2>
+          <div class="table-wrap">
+            <table aria-label="Resource basics and governance menus">
+              <thead>
+                <tr><th>Menu item</th><th>What you use it for</th><th>Source context</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Overview</td><td>Open the resource summary, start/stop, key properties, and top-level quick actions.</td><td>Standard logic app portal management model.</td></tr>
+                <tr><td>Activity log</td><td>Review control-plane operations such as create, update, delete, and authorization changes.</td><td>Azure Monitor Activity Log.</td></tr>
+                <tr><td>Access control (IAM)</td><td>Grant role assignments to users, groups, service principals, or managed identities at resource scope.</td><td>Azure RBAC model.</td></tr>
+                <tr><td>Tags</td><td>Apply key-value metadata for cost grouping, ownership, and environment labeling.</td><td>ARM tags guidance and limits.</td></tr>
+                <tr><td>Locks</td><td>Apply CanNotDelete or ReadOnly management locks to prevent accidental control-plane changes.</td><td>ARM locks behavior.</td></tr>
+                <tr><td>Properties</td><td>Inspect immutable identifiers and host metadata such as resource ID and outbound network properties.</td><td>App Service and ARM properties surfaces.</td></tr>
+                <tr><td>Resource visualizer</td><td>View dependency relationships between the logic app resource and connected Azure resources.</td><td>ARM dependency visualization in portal.</td></tr>
+                <tr><td>Export template</td><td>Generate ARM template JSON snapshot for this resource or deployment history.</td><td>ARM template export guidance.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="workflows-and-assets" class="section-card reveal">
+          <h2>Workflows, Connections, and Artifacts</h2>
+          <div class="table-wrap">
+            <table aria-label="Workflow and artifact menus">
+              <thead>
+                <tr><th>Menu item</th><th>What you use it for</th><th>Source context</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Workflows</td><td>Create and manage stateful or stateless workflows, open Designer, and inspect workflow-level runs.</td><td>Standard workflow authoring in portal.</td></tr>
+                <tr><td>Connections</td><td>View managed API connections used by workflows; inspect connection details and runtime URLs when needed.</td><td>Standard connection management docs.</td></tr>
+                <tr><td>Parameters</td><td>Review and maintain app/workflow parameters used by workflow definitions and environment-specific values.</td><td>Standard runtime parameterization practice.</td></tr>
+                <tr><td>Artifacts &gt; Schemas</td><td>Manage XSD artifacts used for XML validation and B2B workflows.</td><td>Logic Apps enterprise integration artifacts.</td></tr>
+                <tr><td>Artifacts &gt; Maps</td><td>Manage XSLT maps used for XML transformation actions.</td><td>Logic Apps enterprise integration artifacts.</td></tr>
+                <tr><td>Artifacts &gt; Assemblies</td><td>Upload and manage referenced assemblies. The Add Assembly picker currently includes: Client/SDK Assembly (.NET Framework), Client/SDK Assembly (Java), Custom Assembly (.NET Framework), Custom Assembly (.NET 8), and Custom Assembly (.NET 10).</td><td>Standard project artifact model and current portal picker options.</td></tr>
+                <tr><td>Artifacts &gt; Rules</td><td>Manage rules engine artifacts for rules-based enterprise integration scenarios.</td><td>Rules Engine in Standard workflows.</td></tr>
+                <tr><td>Agents</td><td>Open agent-related features available for this resource.</td><td>Portal feature surface; availability can vary.</td></tr>
+                <tr><td>Agents &gt; MCP servers</td><td>Manage Model Context Protocol server endpoints shown for agent scenarios.</td><td>Portal feature surface; preview-oriented.</td></tr>
+                <tr><td>Agents &gt; Knowledge base</td><td>Manage knowledge resources exposed for agent-assisted scenarios.</td><td>Portal feature surface; preview-oriented.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="table-wrap" style="margin-top:12px;">
+            <table aria-label="Assemblies menu add types">
+              <thead>
+                <tr><th>Assembly type in Add Assembly</th><th>When to choose it</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Client/SDK Assembly (.NET Framework)</td><td>Reference supported .NET Framework client SDK libraries needed by your workflow operations.</td></tr>
+                <tr><td>Client/SDK Assembly (Java)</td><td>Reference supported Java SDK libraries for Java-based assembly scenarios.</td></tr>
+                <tr><td>Custom Assembly (.NET Framework)</td><td>Use your own .NET Framework assembly built for custom workflow logic integration.</td></tr>
+                <tr><td>Custom Assembly (.NET 8)</td><td>Use your own assembly built for .NET 8 runtime compatibility.</td></tr>
+                <tr><td>Custom Assembly (.NET 10)</td><td>Use your own assembly built for .NET 10 runtime compatibility where your workload and dependencies require it.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout"><strong>Important:</strong> Match the assembly type to your target runtime and dependency chain. A version mismatch can cause load failures at design time or run time.</div>
+          <div class="callout"><strong>Note:</strong> Agent-related pages are newer portal capabilities and can differ by tenant rollout, region, and enabled features.</div>
+        </section>
+
+        <section id="deployment-and-settings" class="section-card reveal">
+          <h2>Deployment and Runtime Settings</h2>
+          <div class="table-wrap">
+            <table aria-label="Deployment and settings menus">
+              <thead>
+                <tr><th>Menu item</th><th>What you use it for</th><th>Source context</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Deployment slots</td><td>Create staging slots, warm up changes, and swap into production with minimal downtime.</td><td>App Service deployment slots.</td></tr>
+                <tr><td>Deployment Center</td><td>Configure deployment source and CI/CD hooks for app content delivery.</td><td>App Service deployment tooling.</td></tr>
+                <tr><td>Environment variables</td><td>Set application settings and connection strings injected as environment variables.</td><td>App Service configuration guidance.</td></tr>
+                <tr><td>Configuration</td><td>Set general platform/runtime options such as HTTPS, TLS, Always On, and stack settings.</td><td>App Service configuration guidance.</td></tr>
+                <tr><td>Instances</td><td>Inspect active worker instances and instance-level state for troubleshooting.</td><td>App Service plan instance operations.</td></tr>
+                <tr><td>Authentication</td><td>Configure built-in authentication/authorization for app endpoints.</td><td>App Service authentication model.</td></tr>
+                <tr><td>Identity</td><td>Enable and manage system-assigned or user-assigned managed identities.</td><td>Managed identity usage for connections and RBAC.</td></tr>
+                <tr><td>Backups</td><td>Configure app backups where supported by plan and app characteristics.</td><td>App Service capability; can be unavailable in some contexts.</td></tr>
+                <tr><td>Custom domains</td><td>Bind custom hostnames and domain records to the app.</td><td>App Service custom domain workflow.</td></tr>
+                <tr><td>Certificates</td><td>Import/upload certificates and manage TLS/SSL certificate inventory.</td><td>App Service certificate management.</td></tr>
+                <tr><td>Networking</td><td>Configure inbound/outbound access features, VNet integration, private endpoint options, and restrictions.</td><td>App Service networking features.</td></tr>
+                <tr><td>Service Connector</td><td>Create managed service-to-service connection metadata and generated settings.</td><td>Service Connector overview.</td></tr>
+                <tr><td>CORS</td><td>Configure allowed origins for cross-origin calls; used in some monitoring and browser-based tooling flows.</td><td>App Service API settings; Standard monitoring setup guidance.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="plan-and-devtools" class="section-card reveal">
+          <h2>App Service Plan and Developer Tools</h2>
+          <div class="table-wrap">
+            <table aria-label="App Service plan and development tools menus">
+              <thead>
+                <tr><th>Menu item</th><th>What you use it for</th><th>Source context</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>App Service plan</td><td>Open the hosting plan resource that provides compute for this logic app.</td><td>App Service plan fundamentals.</td></tr>
+                <tr><td>Scale up</td><td>Change SKU/tier (for example, WS or dedicated capabilities) to adjust feature set and capacity.</td><td>App Service scaling model.</td></tr>
+                <tr><td>Scale out</td><td>Increase/decrease instance count or autoscale behaviors for concurrency and resilience.</td><td>App Service scaling model.</td></tr>
+                <tr><td>Advanced Tools</td><td>Open Kudu site for file inspection, environment details, process diagnostics, and deployment troubleshooting.</td><td>Kudu service overview.</td></tr>
+                <tr><td>Recommended services (preview)</td><td>View contextual Azure recommendations for adjacent services.</td><td>Portal advisory surface; preview.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="monitoring" class="section-card reveal">
+          <h2>Monitoring and Diagnostics Menus</h2>
+          <div class="table-wrap">
+            <table aria-label="Monitoring menus">
+              <thead>
+                <tr><th>Menu item</th><th>What you use it for</th><th>Source context</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Insights</td><td>Open curated monitoring workbook-style views for quick health and trend checks.</td><td>Azure Monitor insights model.</td></tr>
+                <tr><td>Metrics</td><td>Chart platform metrics and configure metric alerts.</td><td>Azure Monitor metrics.</td></tr>
+                <tr><td>Health check</td><td>Configure probe endpoint behavior used for app instance health evaluation.</td><td>App Service health check capability.</td></tr>
+                <tr><td>Application Insights</td><td>Enable/open Application Insights for telemetry, traces, and performance troubleshooting.</td><td>Logic Apps Standard + App Insights guidance.</td></tr>
+                <tr><td>Logs</td><td>Run Log Analytics queries over connected diagnostic data and telemetry.</td><td>Azure Monitor logs.</td></tr>
+                <tr><td>Diagnostic settings</td><td>Route platform logs and metrics to Log Analytics, Storage, Event Hubs, or partners.</td><td>Azure Monitor diagnostic settings.</td></tr>
+                <tr><td>App Service logs</td><td>Configure application, web server, detailed error, and failed request logs.</td><td>App Service diagnostics logging.</td></tr>
+                <tr><td>Log stream</td><td>Tail live log output for immediate troubleshooting.</td><td>App Service live log streaming.</td></tr>
+                <tr><td>Dashboards with Grafana (Preview)</td><td>Open Grafana-integrated dashboards for operational visualization.</td><td>Azure Monitor/Grafana integration surface.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout"><strong>How to choose:</strong> Use workflow run history and workflow pages for execution debugging, then use Metrics/Logs/Application Insights for cross-resource correlation and alerting.</div>
+        </section>
+
+        <section id="automation-support" class="section-card reveal">
+          <h2>Automation and Support Menus</h2>
+          <div class="table-wrap">
+            <table aria-label="Automation and support menus">
+              <thead>
+                <tr><th>Menu item</th><th>What you use it for</th><th>Source context</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Tasks</td><td>Create recurring management tasks and automated maintenance actions from portal-supported automation features.</td><td>Portal automation surface.</td></tr>
+                <tr><td>Export template</td><td>Export ARM JSON for current resource shape or deployment-history template.</td><td>ARM template export guidance.</td></tr>
+                <tr><td>Diagnose and solve problems</td><td>Run built-in troubleshooting detectors and diagnostics workflows.</td><td>App Service diagnostics experience.</td></tr>
+                <tr><td>Microsoft Defender for Cloud</td><td>Review security posture and hardening recommendations tied to this resource.</td><td>Defender for Cloud integration.</td></tr>
+                <tr><td>Events (preview)</td><td>Review portal event surfaces available for this resource in current preview experience.</td><td>Portal preview feature surface.</td></tr>
+                <tr><td>Resource health</td><td>Check platform-reported availability/health incidents for this resource.</td><td>Azure Resource Health model.</td></tr>
+                <tr><td>Advisor recommendations</td><td>Review cost, reliability, performance, security, and operational excellence recommendations.</td><td>Azure Advisor overview.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="references" class="section-card reveal">
+          <h2>Microsoft Learn References</h2>
+          <ul>
+            <li><a href="https://learn.microsoft.com/en-us/azure/logic-apps/create-single-tenant-workflows-azure-portal">Create Standard workflows in Azure portal</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/logic-apps/create-standard-workflows-visual-studio-code">Create Standard workflows with Visual Studio Code</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/azure-monitor/essentials/activity-log">Azure Monitor Activity Log</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/role-based-access-control/overview">Azure RBAC overview</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/tag-resources">Tag Azure resources</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/lock-resources">Lock Azure resources</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/azure-resource-manager/templates/export-template-portal">Export template in Azure portal</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/app-service/overview-hosting-plans">App Service plans overview</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/app-service/deploy-staging-slots">Deployment slots in App Service</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/app-service/configure-common">App Service configuration and environment variables</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/app-service/networking-features">App Service networking features</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/app-service/manage-custom-dns-buy-domain">Custom domains in App Service</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/app-service/configure-ssl-certificate">Certificates in App Service</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/app-service/resources-kudu">Kudu (Advanced Tools) overview</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/app-service/troubleshoot-diagnostic-logs">App Service logs and log stream</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/logic-apps/monitor-logic-apps-overview">Monitor workflows in Azure Logic Apps</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/azure-monitor/app/app-insights-overview">Application Insights overview</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/service-connector/overview">Service Connector overview</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/advisor/advisor-overview">Azure Advisor overview</a></li>
+          </ul>
+        </section>
+
+        <nav class="pager" aria-label="Workshop pagination">
+          <a class="prev" href="build-and-manage.html"><small>Previous</small><strong>&larr; Build &amp; Manage</strong></a>
+          <a class="next" href="../index.html"><small>Finish</small><strong>Workshop Home &rarr;</strong></a>
+        </nav>
+      </main>
+
+      <aside class="toc" aria-label="Table of contents">
+        <h3>On This Page</h3>
+        <a href="#how-to-read">How to Read</a>
+        <a href="#resource-basics">Resource Basics</a>
+        <a href="#workflows-and-assets">Workflows and Artifacts</a>
+        <a href="#deployment-and-settings">Deployment and Settings</a>
+        <a href="#plan-and-devtools">Plan and Dev Tools</a>
+        <a href="#monitoring">Monitoring Menus</a>
+        <a href="#automation-support">Automation and Support</a>
+        <a href="#references">References</a>
+      </aside>
+    </div>
+  </div>
+
+  <script type="module" src="../assets/site.js"></script>
+</body>
+</html>

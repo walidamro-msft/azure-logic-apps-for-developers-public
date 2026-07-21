@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>App Service Environment v3 &middot; Azure Logic Apps Workshop</title>
+  <meta name="description" content="Architecture, East US Isolated v2 pricing, networking, and workload guidance for Azure Logic Apps Standard on App Service Environment v3." />
+  <script>(function(){var t=localStorage.getItem("logic-apps-workshop-theme");document.documentElement.setAttribute("data-theme",(t==="light"||t==="dark")?t:(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"));})();</script>
+  <link rel="icon" type="image/svg+xml" href="../images/azure/02631-icon-service-Logic-Apps.svg" />
+  <link rel="stylesheet" href="../assets/site.css" />
+</head>
+<body data-root=".." data-active="app-service-environment-v3">
+  <div class="page">
+    <nav class="breadcrumb" aria-label="Breadcrumb"><a href="../index.html">Home</a><span class="sep">/</span><a href="hosting-plans.html">Hosting Plans</a><span class="sep">/</span><a href="standard-plans.html">Standard</a><span class="sep">/</span><span>ASE v3</span></nav>
+    <header class="hero">
+      <h1>Standard on App Service Environment v3</h1>
+      <p class="subtitle">Run Logic Apps Standard on dedicated, fully isolated App Service infrastructure using Windows Isolated v2 plans.</p>
+      <div class="audience"><span>Standard runtime</span><span>Fully isolated</span><span>Windows only</span><span>Isolated v2</span></div>
+    </header>
+    <div class="layout">
+      <main class="content">
+        <section id="architecture" class="card reveal">
+          <h2>Dedicated Environment</h2>
+          <p>The Standard runtime runs inside your App Service Environment v3. Logic apps inherit the ASE network boundary, routing, inbound model, and operational controls. Logic Apps Standard on ASE v3 supports Windows plans only.</p>
+          <div class="diagram-wrap"><pre class="mermaid">
+flowchart LR
+    V[VNet] --> ASE[App Service Environment v3]
+    ASE --> P[Windows Isolated v2 plan]
+    P --> A[Standard logic apps]
+    A --> W[Stateful and stateless workflows]
+    classDef host fill:#e8f3fc,stroke:#0078d4,stroke-width:2,color:#0f3150;
+    class ASE,P,A host;
+          </pre></div>
+        </section>
+
+        <section id="pricing" class="card reveal">
+          <h2>East US Pricing</h2>
+          <p>ASE-hosted Logic Apps are billed through the Windows Isolated v2 App Service Plan, not the Workflow Standard vCPU and memory meters. These public pay-as-you-go East US samples assume one instance for 730 hours.</p>
+          <div class="table-wrap"><table aria-label="App Service Isolated v2 East US pricing">
+            <thead><tr><th>Windows tier</th><th>Hourly rate</th><th>730-hour estimate</th><th>Billing scope</th></tr></thead>
+            <tbody>
+              <tr><td>I1v2</td><td>$0.547</td><td><strong>$399.31</strong></td><td>Per plan instance</td></tr>
+              <tr><td>I2v2</td><td>$1.094</td><td><strong>$798.62</strong></td><td>Per plan instance</td></tr>
+              <tr><td>I3v2</td><td>$2.188</td><td><strong>$1,597.24</strong></td><td>Per plan instance</td></tr>
+            </tbody>
+          </table></div>
+          <div class="formula">Monthly plan compute = hourly Isolated v2 rate &times; enabled hours &times; instance count</div>
+          <div class="callout"><strong>Billing boundary:</strong> for Logic Apps Standard on ASE v3, Microsoft documents the charge as the Isolated v2 App Service Plan instances used to run the workflows. There is no additional Logic Apps execution charge for built-in operations.</div>
+        </section>
+
+        <section id="cost-boundary" class="card reveal">
+          <h2>Complete Cost Boundary</h2>
+          <ul>
+            <li>Built-in workflow operations are included in the App Service Plan capacity.</li>
+            <li>Shared managed connector calls remain separately billed at Logic Apps connector rates.</li>
+            <li>Stateful workflows use an Azure Storage account billed separately.</li>
+            <li>Private endpoints, gateways, firewalls, DNS, monitoring, and dependent services can add costs.</li>
+            <li>Reserved pricing can differ from the pay-as-you-go samples shown here.</li>
+          </ul>
+        </section>
+
+        <section id="networking" class="card reveal">
+          <h2>Networking and Operations</h2>
+          <div class="cheat">
+            <article class="cheat-item"><h3>Inherited isolation</h3><p>Workflow apps use the ASE's dedicated environment and VNet topology rather than the shared Workflow Service Plan infrastructure.</p></article>
+            <article class="cheat-item"><h3>Inbound design</h3><p>Choose internal or external access patterns at the ASE level and coordinate private DNS and certificates.</p></article>
+            <article class="cheat-item"><h3>Outbound design</h3><p>Apply route tables, firewalls, and network security controls while preserving required Azure service and connector access.</p></article>
+            <article class="cheat-item"><h3>Shared platform</h3><p>Multiple compatible App Service workloads can share ASE capacity, improving utilization but expanding the operational scope.</p></article>
+          </div>
+        </section>
+
+        <section id="fit" class="card reveal">
+          <h2>When to Choose It</h2>
+          <p>Choose ASE v3 when policy requires fully isolated App Service infrastructure, high scale in a dedicated environment, or a shared isolated platform for compatible App Service workloads. Use <a href="workflow-service-plan.html">Workflow Service Plan</a> when private networking is sufficient and you do not need to operate an ASE.</p>
+          <div class="callout"><strong>Do not confuse the meters:</strong> legacy Logic Apps Integration Service Environment pricing is unrelated to Standard on App Service Environment v3.</div>
+        </section>
+
+        <nav class="pager" aria-label="Workshop pagination"><a class="prev" href="workflow-service-plan.html"><small>Previous</small><strong>&larr; Workflow Service Plan</strong></a><a class="next" href="hybrid-plans.html"><small>Next</small><strong>Hybrid &rarr;</strong></a></nav>
+      </main>
+      <aside class="toc" aria-label="Table of contents"><h3>On This Page</h3><a href="#architecture">Architecture</a><a href="#pricing">East US Pricing</a><a href="#cost-boundary">Cost Boundary</a><a href="#networking">Networking</a><a href="#fit">When to Choose</a></aside>
+    </div>
+  </div>
+  <script type="module" src="../assets/site.js"></script>
+</body>
+</html>

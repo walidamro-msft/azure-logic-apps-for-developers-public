@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lab 06: Inline .NET Code &middot; Azure Logic Apps Workshop</title>
+  <meta name="description" content="Calculate order pricing with inline C# code in an Azure Logic Apps Standard workflow." />
+  <script>(function(){var t=localStorage.getItem("logic-apps-workshop-theme");document.documentElement.setAttribute("data-theme",(t==="light"||t==="dark")?t:(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"));})();</script>
+  <link rel="icon" type="image/svg+xml" href="../images/azure/02631-icon-service-Logic-Apps.svg" /><link rel="stylesheet" href="../assets/site.css" />
+</head><body data-root=".." data-active="lab06-inline-dotnet">
+<div class="page"><nav class="breadcrumb" aria-label="Breadcrumb"><a href="../index.html">Home</a><span class="sep">/</span><a href="index.html">Labs</a><span class="sep">/</span><span>Lab 06</span></nav>
+<header class="hero"><h1>Lab 06: Inline .NET Code</h1><p class="subtitle">Use a workflow-local C# script to validate line items and calculate subtotal, tax, and total.</p><div class="badge-row"><span class="badge">Visual Studio Code</span><span class="badge">Standard only</span><span class="badge">~50 min</span></div></header>
+<div class="layout"><main class="content">
+<section id="scenario" class="section-card reveal"><h2>Scenario and Objectives</h2><p>An order workflow receives a variable number of line items. The calculation is small and belongs only to this workflow, but nested loops and expressions would obscure the business rule. You will implement the rule in the <strong>Execute C# Script Code</strong> action.</p><ul><li>Read trigger data through <code>WorkflowContext</code>.</li><li>Validate items and calculate currency values with <code>decimal</code>.</li><li>Return a typed result to the next workflow action.</li><li>Recognize when custom logic should move to Azure Functions.</li></ul></section>
+<section id="architecture" class="section-card reveal"><h2>Architecture</h2><div class="diagram-wrap"><pre class="mermaid">flowchart LR
+ C[HTTP client] --> T[Request trigger]
+ T --> CS[Execute C# Script Code]
+ CS -->|Results in action body| R[HTTP response]
+ CS -. invalid item .-> F[Failure response]
+ classDef azure fill:#e6f2fb,stroke:#0078d4,stroke-width:2,color:#0f1722;
+ classDef result fill:#e7f5e7,stroke:#107c10,stroke-width:2,color:#103010;
+ class C,T,CS azure; class R,F result;</pre></div></section>
+<section id="prerequisites" class="section-card reveal"><h2>Prerequisites and Constraints</h2><ul><li>Visual Studio Code, the Azure Logic Apps (Standard) extension, Azure Functions Core Tools v4, and Azurite when required by local settings.</li><li>A Standard stateful workflow project. You can reuse the project pattern from Lab 03 or create a new project named <code>inline-pricing</code>.</li><li>Basic familiarity with C# classes, async methods, and JSON.</li></ul><div class="callout"><strong>Do not select the JavaScript action:</strong> <strong>Execute C# Script Code</strong> is a distinct Inline Code Operations action for Standard workflows. The predefined entry point is <code>Run</code>.</div><div class="table-wrap"><table><thead><tr><th>Boundary</th><th>Current limit</th><th>Design implication</th></tr></thead><tbody><tr><td>Script duration</td><td>10 minutes</td><td>Use an external compute service for longer work.</td></tr><tr><td>Action output</td><td>Generally 100 MB</td><td>Store large content and return a reference.</td></tr><tr><td>Reuse</td><td>Script is workflow-local</td><td>Move shared or independently versioned logic to a service.</td></tr></tbody></table></div></section>
+<section id="workflow" class="section-card reveal"><h2>Create the Workflow</h2><ol><li>Create a Logic Apps Standard project with a <strong>Stateful Workflow</strong> named <code>inline-pricing</code>.</li><li>Add <strong>When a HTTP request is received</strong>, set method to POST, and paste the schema below.</li><li>Add the Inline Code Operations action <strong>Execute C# Script Code</strong>. Rename its display name to <strong>Calculate pricing</strong>. Logic Apps generates the internal action name <code>Calculate_pricing</code> by replacing the space with an underscore. The designer shows the display name, while workflow expressions use the internal name.</li><li>Replace the sample code file with the C# script in the next section. Keep the generated <code>.csx</code> file beside the workflow's <code>workflow.json</code>.</li><li>Add a Response action after the script. Set status to 200 and body to <code>@body('Calculate_pricing')</code>. Here, <code>Calculate_pricing</code> is the internal action name from step 3.</li><li>Add a second Response action with status 400 (for error handling). Right-click it and select <strong>Run after</strong>. In the Settings panel: <ol style="list-style-type: lower-alpha;"><li>Click <strong>Select actions</strong> and choose <strong>Calculate pricing</strong>, the display name shown in the designer (remove <strong>Response</strong> if present).</li><li>Uncheck all conditions except <strong>has failed</strong>.</li><li>Switch to the <strong>Parameters</strong> tab and set the response Body to <code>@outputs('Calculate_pricing')</code>, using the internal action name, to include error details.</li></ol></li></ol>
+<h3>Request schema</h3><pre class="code" data-lang="json">{
+  "type": "object",
+  "properties": {
+    "orderId": { "type": "string" },
+    "taxRate": { "type": "number" },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "sku": { "type": "string" },
+          "quantity": { "type": "integer" },
+          "unitPrice": { "type": "number" }
+        },
+        "required": ["sku", "quantity", "unitPrice"]
+      }
+    }
+  },
+  "required": ["orderId", "items"]
+}</pre></section>
+<section id="code" class="section-card reveal"><h2>Add the C# Pricing Script</h2><h3>Understand the script contract</h3><p>A Logic Apps C# script is a <code>.csx</code> file compiled and hosted by the Azure Logic Apps runtime. The runtime supplies the workflow objects and invokes the script entry point.</p><div class="table-wrap"><table><thead><tr><th>Code element</th><th>Purpose</th></tr></thead><tbody><tr><td><code>Run</code></td><td>This predefined method name is the script entry point. The runtime calls <code>Run</code>, so do not rename it. Use <code>Task&lt;T&gt;</code> with <code>async</code> when awaiting workflow data and returning a value.</td></tr><tr><td><code>WorkflowContext context</code></td><td>The runtime provides this object. Use <code>GetTriggerResults()</code> for the trigger or <code>GetActionResults("action-name")</code> for a preceding action. Each operation result can include inputs, outputs, status, timing, tracking information, and error details.</td></tr><tr><td><code>ILogger log</code></td><td>The runtime injects this logger. Use it instead of <code>Console.Write</code> so messages flow through the host logging pipeline and can appear in Application Insights when configured. Log identifiers and counts rather than sensitive payloads.</td></tr><tr><td><code>#r</code> directives</td><td>A <code>#r</code> directive tells the script compiler to reference an assembly. Here, the script references the JSON and Logic Apps scripting assemblies available to the host.</td></tr><tr><td><code>using</code> directives</td><td>A <code>using</code> directive imports a namespace from a referenced or host-provided assembly, allowing names such as <code>WorkflowContext</code>, <code>ILogger</code>, and <code>JObject</code> without their fully qualified names.</td></tr><tr><td><code>PricingResults</code></td><td>This class defines the shape returned by <code>Run</code>. The runtime serializes the instance to JSON and places it in the C# action's output body for later workflow actions.</td></tr></tbody></table></div><div class="callout"><strong>Assembly versus namespace:</strong> <code>#r "Microsoft.Azure.Workflows.Scripting"</code> makes the assembly available to the script compiler; <code>using Microsoft.Azure.Workflows.Scripting;</code> then imports its namespace. The Logic Apps host already provides common framework and logging assemblies, while these explicit directives make this script's dependencies clear.</div><pre class="code" data-lang="csharp">// Reference assemblies used by this .csx script.
+#r "Newtonsoft.Json"
+#r "Microsoft.Azure.Workflows.Scripting"
+
+// Import namespaces so their types can be used without full names.
+using Microsoft.Azure.Workflows.Scripting;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json.Linq;
+
+// Logic Apps calls this predefined Run method and supplies context and log.
+public static async Task&lt;PricingResults&gt; Run(WorkflowContext context, ILogger log)
+{
+  // Read the request trigger output and require a JSON object in its body.
+    var triggerOutputs = (await context.GetTriggerResults().ConfigureAwait(false)).Outputs;
+    var body = triggerOutputs?["body"] as JObject
+        ?? throw new ArgumentException("The request body is required.");
+
+  // Extract the fields used by the pricing rule.
+    var orderId = body.Value&lt;string&gt;("orderId");
+    var items = body["items"] as JArray;
+    var taxRate = body.Value&lt;decimal?&gt;("taxRate") ?? 0.08m;
+
+  // Reject incomplete requests before calculating a result.
+    if (string.IsNullOrWhiteSpace(orderId))
+        throw new ArgumentException("orderId is required.");
+    if (items == null || items.Count == 0)
+        throw new ArgumentException("At least one line item is required.");
+    if (taxRate &lt; 0m || taxRate &gt; 1m)
+        throw new ArgumentException("taxRate must be between 0 and 1.");
+
+    // Visit each object in the items array, validate it, and add its line total.
+    decimal subtotal = 0m;
+    foreach (var item in items)
+    {
+        var sku = item.Value&lt;string&gt;("sku");
+        var quantity = item.Value&lt;int&gt;("quantity");
+        var unitPrice = item.Value&lt;decimal&gt;("unitPrice");
+
+        if (string.IsNullOrWhiteSpace(sku) || quantity &lt;= 0 || unitPrice &lt; 0m)
+            throw new ArgumentException("Each item needs a SKU, positive quantity, and nonnegative unitPrice.");
+
+        subtotal += quantity * unitPrice;
+    }
+
+      // Round currency values once the line-item loop is complete.
+    subtotal = Math.Round(subtotal, 2, MidpointRounding.AwayFromZero);
+    var tax = Math.Round(subtotal * taxRate, 2, MidpointRounding.AwayFromZero);
+
+      // Send operational information through the host logger without the payload.
+    log.LogInformation("Calculated pricing for order {OrderId} with {ItemCount} items.", orderId, items.Count);
+
+      // The runtime serializes this object into the action output body.
+    return new PricingResults
+    {
+        OrderId = orderId,
+        ItemCount = items.Count,
+        Subtotal = subtotal,
+        Tax = tax,
+        Total = subtotal + tax,
+        Currency = "USD"
+    };
+}
+
+// This return model gives downstream actions a predictable JSON shape.
+public class PricingResults
+{
+    public string OrderId { get; set; }
+    public int ItemCount { get; set; }
+    public decimal Subtotal { get; set; }
+    public decimal Tax { get; set; }
+    public decimal Total { get; set; }
+    public string Currency { get; set; }
+}</pre><h3>Follow the data through the script</h3><ol><li><code>GetTriggerResults()</code> retrieves the Request trigger result, and <code>Outputs["body"]</code> selects the submitted JSON body.</li><li>The script reads <code>orderId</code>, <code>items</code>, and <code>taxRate</code>. Because <code>taxRate</code> is optional, the null-coalescing operator (<code>??</code>) supplies <code>0.08m</code> when it is absent.</li><li>The <code>foreach</code> loop processes one JSON object from the <code>items</code> array at a time. It reads that item's SKU, quantity, and unit price, validates them, then adds <code>quantity * unitPrice</code> to <code>subtotal</code>.</li><li>After every item has been processed, the script rounds the subtotal, calculates and rounds tax, and writes a structured log message.</li><li>The script creates one <code>PricingResults</code> object. Its public properties become JSON fields in the action output body, which the 200 Response action reads with <code>@body('Calculate_pricing')</code>.</li></ol><div class="callout"><strong>Why use a result class?</strong> Returning a typed model documents the output contract, keeps all response fields together, and gives downstream actions a stable JSON shape. If you add or remove a public property in <code>PricingResults</code>, you change the data exposed by the script action.</div></section>
+<section id="run" class="section-card reveal"><h2>Run and Verify</h2><ol><li>Start Azurite if your local project requires it, then press <strong>F5</strong>.</li><li>Send the valid request to the local callback URL.</li><li>Confirm the response values match the expected result.</li><li>Send the invalid request and confirm the script fails and the 400 response path runs.</li><li>Inspect local run details and the host log. Confirm the log identifies the order and item count without logging the complete customer payload.</li></ol>
+<h3>Valid request</h3><pre class="code" data-lang="json">{
+  "orderId": "ORD-2001",
+  "taxRate": 0.08,
+  "items": [
+    { "sku": "AZ-100", "quantity": 2, "unitPrice": 18.50 },
+    { "sku": "AZ-200", "quantity": 1, "unitPrice": 25.00 }
+  ]
+}</pre><pre class="code" data-lang="json">{
+  "orderId": "ORD-2001",
+  "itemCount": 2,
+  "subtotal": 62.00,
+  "tax": 4.96,
+  "total": 66.96,
+  "currency": "USD"
+}</pre><h3>Invalid request (to test 400 error response)</h3><pre class="code" data-lang="json">{
+  "orderId": "ORD-2002",
+  "taxRate": 0.08,
+  "items": [
+    { "sku": "AZ-100", "quantity": 0, "unitPrice": 18.50 }
+  ]
+}</pre><p>This request has a quantity of <code>0</code>, which violates the validation rule. The pricing script will throw an exception, Response 1 will execute (because Calculate_pricing has failed), and you'll see the error message in the 400 response body.</p></section>
+<section id="decision" class="section-card reveal"><h2>Inline Code or Azure Functions?</h2><div class="table-wrap"><table><thead><tr><th>Keep inline C# when</th><th>Move to Azure Functions when</th></tr></thead><tbody><tr><td>The logic is small, workflow-local, and executes within action limits.</td><td>Multiple workflows or applications share the logic.</td></tr><tr><td>Deployment and versioning should follow one workflow.</td><td>The code needs independent deployment, scaling, testing, or ownership.</td></tr><tr><td>The script is clearer than a large expression graph.</td><td>The solution needs long execution, large output, complex dependencies, or a public API.</td></tr></tbody></table></div></section>
+<section id="troubleshoot" class="section-card reveal"><h2>Troubleshooting</h2><div class="table-wrap"><table><thead><tr><th>Symptom</th><th>Check</th></tr></thead><tbody><tr><td>Script does not compile</td><td>Keep the <code>#r</code> directives, namespaces, predefined <code>Run</code> name, and supported method signature.</td></tr><tr><td>Body is null</td><td>Inspect trigger outputs and confirm the JSON request used <code>application/json</code>.</td></tr><tr><td>Response cannot find output</td><td>Use the action's internal name in <code>body('Calculate_pricing')</code> or insert its Body token from dynamic content.</td></tr><tr><td>Package import fails</td><td>For optional NuGet packages, place <code>functions.proj</code> in the workflow folder, target <code>netstandard2.0</code>, and restart the app.</td></tr></tbody></table></div></section>
+<section id="cleanup" class="section-card reveal"><h2>Cleanup and References</h2><p>Stop the local host and Azurite. Remove any deployed Standard logic app and supporting storage resources, or delete the lab resource group.</p><div class="callout"><strong>Microsoft Learn:</strong> <a href="https://learn.microsoft.com/azure/logic-apps/add-run-csharp-scripts">Add and run C# scripts in Standard workflows</a>, <a href="https://learn.microsoft.com/azure/logic-apps/create-single-tenant-workflows-visual-studio-code">Create Standard workflows with VS Code</a>, and <a href="../topics/core-concepts.html#inline-code">Workshop topic: Inline Code</a>.</div></section>
+<nav class="pager" aria-label="Lab pagination"><a class="prev" href="lab05-logic-app-testing-portal.html"><small>Previous</small><strong>&larr; Lab 05: Logic App Testing</strong></a><a class="next" href="index.html"><small>Complete</small><strong>Labs Overview &rarr;</strong></a></nav>
+</main><aside class="toc" aria-label="Table of contents"><h3>On This Page</h3><a href="#scenario">Scenario</a><a href="#architecture">Architecture</a><a href="#prerequisites">Prerequisites</a><a href="#workflow">Create Workflow</a><a href="#code">C# Script</a><a href="#run">Run and Verify</a><a href="#decision">Code Decision</a><a href="#troubleshoot">Troubleshooting</a><a href="#cleanup">Cleanup</a></aside></div>
+</div><script type="module" src="../assets/site.js"></script></body></html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lab 01: HTTP Product API &middot; Azure Logic Apps Workshop</title>
+  <meta name="description" content="Build and test an HTTP product API with Azure Logic Apps in the Azure portal." />
+  <script>(function(){var t=localStorage.getItem("logic-apps-workshop-theme");document.documentElement.setAttribute("data-theme",(t==="light"||t==="dark")?t:(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"));})();</script>
+  <link rel="icon" type="image/svg+xml" href="../images/azure/02631-icon-service-Logic-Apps.svg" /><link rel="stylesheet" href="../assets/site.css" />
+</head>
+<body data-root=".." data-active="lab01-http-product-api">
+  <div class="page">
+    <nav class="breadcrumb" aria-label="Breadcrumb"><a href="../index.html">Home</a><span class="sep">/</span><a href="index.html">Labs</a><span class="sep">/</span><span>Lab 01</span></nav>
+    <header class="hero"><h1>Lab 01: HTTP Product API</h1><p class="subtitle">Create a request-response workflow that validates a product payload and returns a clear API result.</p><div class="badge-row"><span class="badge">Azure portal</span><span class="badge">Consumption</span><span class="badge">~35 min</span></div></header>
+    <div class="layout"><main class="content">
+      <section id="scenario" class="section-card reveal"><h2>Scenario and Objectives</h2><p>A catalog team needs a lightweight endpoint that accepts a product and rejects incomplete or invalid data before downstream processing begins.</p><ul><li>Create an HTTP-triggered Consumption workflow.</li><li>Validate required product fields and price.</li><li>Return either <strong>201 Created</strong> or <strong>400 Bad Request</strong>.</li><li>Inspect inputs, outputs, and timing in run history.</li></ul></section>
+      <section id="architecture" class="section-card reveal"><h2>Architecture</h2><div class="diagram-wrap"><pre class="mermaid">flowchart LR
+ C[API client] -->|POST product JSON| H[HTTP request trigger]
+ H --> V{Valid SKU, name, price?}
+ V -->|Yes| S[201 response]
+ V -->|No| B[400 response]
+ classDef azure fill:#e6f2fb,stroke:#0078d4,stroke-width:2,color:#0f1722;
+ classDef result fill:#e7f5e7,stroke:#107c10,stroke-width:2,color:#103010;
+ class C,H,V azure; class S,B result;</pre></div></section>
+      <section id="prerequisites" class="section-card reveal"><h2>Prerequisites and Names</h2><ul><li>An Azure subscription with permission to create a resource group and Consumption logic app.</li><li>A REST client such as the VS Code REST Client extension, PowerShell, or curl.</li></ul><div class="table-wrap"><table><thead><tr><th>Resource</th><th>Suggested name</th></tr></thead><tbody><tr><td>Resource group</td><td><code>rg-logicapps-labs</code></td></tr><tr><td>Logic app</td><td><code>la-product-api-&lt;suffix&gt;</code></td></tr><tr><td>Workflow</td><td>The Consumption resource contains this single workflow.</td></tr></tbody></table></div><div class="callout"><strong>Security:</strong> the generated callback URL contains a shared access signature. Treat it as a secret and do not commit it to source control.</div></section>
+      <section id="build" class="section-card reveal"><h2>Build the Workflow</h2><ol><li>In the Azure portal, create a <strong>Logic App (Consumption)</strong> in your lab resource group.</li><li>Open the designer and choose the <strong>When an HTTP request is received</strong> trigger.</li><li>Set the method to <strong>POST</strong> and paste the schema below into <strong>Request Body JSON Schema</strong>.</li><li>Below the trigger, select <strong>+</strong> &gt; <strong>Add an action</strong>, search for <strong>Condition</strong>, and add the <strong>Control</strong> Condition action. In its left <strong>Choose a value</strong> field, open <strong>Expression</strong> and enter the validation expression below. Set the operator to <strong>is equal to</strong> and the right value to the Boolean <strong>true</strong>.</li><li>In the true branch, add a <strong>Response</strong> action with status code <strong>201</strong> and the success body.</li><li>In the false branch, add a <strong>Response</strong> action with status code <strong>400</strong> and the error body.</li><li>Wait until the designer reports that the draft was autosaved, then select <strong>Publish</strong>. After publishing succeeds, open the HTTP trigger and copy its HTTP POST URL.</li></ol>
+      <figure class="media-panel">
+        <img src="../images/custom/lab01-logic-app.png" alt="Azure Logic Apps designer showing the HTTP request trigger followed by a Condition with a Success Response in the True branch and a Failure Response in the False branch." loading="lazy" />
+        <figcaption>Your completed workflow should have an HTTP request trigger, a Condition action, a 201 Success Response in the True branch, and a 400 Failure Response in the False branch. Confirm the draft is autosaved, then select Publish.</figcaption>
+      </figure>
+      <h3>Request schema</h3><pre class="code" data-lang="json">{
+  "type": "object",
+  "properties": {
+    "sku": { "type": "string" },
+    "name": { "type": "string" },
+    "price": { "type": "number" }
+  },
+  "required": ["sku", "name", "price"]
+}</pre>
+      <h3>Condition expression</h3><pre class="code">and(not(empty(triggerBody()?['sku'])), not(empty(triggerBody()?['name'])), greater(float(triggerBody()?['price']), 0))</pre>
+      <div class="callout"><strong>Do not use Trigger conditions:</strong> the trigger settings shown in the screenshot control whether the workflow starts at all. This lab needs a separate Condition action so invalid requests still start the workflow and receive the HTTP 400 response.</div>
+      <h3>Success body</h3><pre class="code" data-lang="json">{
+  "status": "accepted",
+  "sku": "@{triggerBody()?['sku']}",
+  "correlationId": "@{workflow()?['run']?['name']}"
+}</pre>
+      <h3>Bad request body (HTTP 400)</h3><pre class="code" data-lang="json">{
+  "status": "rejected",
+  "message": "sku, name, and a positive price are required"
+}</pre>
+      <div class="callout"><strong>Draft versus published workflow:</strong> the designer autosaves your edits as a draft. <strong>Run draft</strong> is useful for an interactive check in the designer, but external callers use the published workflow. Select <strong>Publish</strong> before testing the callback URL from PowerShell or another REST client.</div></section>
+      <section id="test" class="section-card reveal"><h2>Test and Inspect</h2><h3>Test with Run draft</h3><ol><li>Select <strong>Run draft</strong> in the designer.</li><li>When the designer asks for the HTTP request body, paste the valid request below and run the workflow.</li><li>Repeat with the invalid request to exercise the False branch and 400 response.</li></ol>
+      <h3>Valid request body (expects HTTP 201)</h3><pre class="code" data-lang="json">{
+      "sku": "AZ-100",
+      "name": "Workflow Mug",
+      "price": 18.50
+    }</pre>
+      <h3>Invalid request body (expects HTTP 400)</h3><pre class="code" data-lang="json">{
+      "sku": "AZ-101",
+      "name": "Invalid Product",
+      "price": 0
+    }</pre>
+      <h3>Test the published callback URL</h3><p>After publishing the workflow, replace <code>&lt;callback-url&gt;</code> and run both requests. Keep the URL only in your local shell history or an untracked environment variable.</p><pre class="code" data-lang="powershell">$url = '&lt;callback-url&gt;'
+$valid = @{ sku='AZ-100'; name='Workflow Mug'; price=18.50 } | ConvertTo-Json
+Invoke-RestMethod -Method Post -Uri $url -ContentType 'application/json' -Body $valid
+
+$invalid = @{ sku='AZ-101'; name='Invalid Product'; price=0 } | ConvertTo-Json
+try { Invoke-RestMethod -Method Post -Uri $url -ContentType 'application/json' -Body $invalid } catch { $_.Exception.Response.StatusCode.value__ }</pre><ul><li>The valid request returns HTTP 201, the SKU, and a correlation ID.</li><li>The invalid request returns HTTP 400 and the validation message.</li><li>Run history shows only the matching condition branch as executed.</li></ul></section>
+      <section id="troubleshoot" class="section-card reveal"><h2>Troubleshooting</h2><div class="table-wrap"><table><thead><tr><th>Symptom</th><th>Check</th></tr></thead><tbody><tr><td>404 or 401 response</td><td>Confirm the latest draft is published, then recopy the complete callback URL including its query string.</td></tr><tr><td>Condition fails unexpectedly</td><td>Open trigger inputs in run history and confirm JSON property names and content type.</td></tr><tr><td>Client waits indefinitely</td><td>Confirm both branches contain a Response action.</td></tr></tbody></table></div></section>
+      <section id="cleanup" class="section-card reveal"><h2>Cleanup and References</h2><p>Delete the lab resource group if you will not use it in later labs. Otherwise, disable the workflow and keep the callback URL private.</p><div class="callout"><strong>Microsoft Learn:</strong> <a href="https://learn.microsoft.com/azure/connectors/connectors-native-reqres">Receive and respond to inbound HTTPS calls</a> and <a href="https://learn.microsoft.com/azure/logic-apps/logic-apps-workflow-actions-triggers">Workflow triggers and actions</a>.</div></section>
+      <nav class="pager" aria-label="Lab pagination"><a class="prev" href="index.html"><small>Previous</small><strong>&larr; Labs Overview</strong></a><a class="next" href="lab02-timer-daily-report-portal.html"><small>Next</small><strong>Lab 02: Timer Daily Report &rarr;</strong></a></nav>
+    </main><aside class="toc" aria-label="Table of contents"><h3>On This Page</h3><a href="#scenario">Scenario</a><a href="#architecture">Architecture</a><a href="#prerequisites">Prerequisites</a><a href="#build">Build</a><a href="#test">Test</a><a href="#troubleshoot">Troubleshooting</a><a href="#cleanup">Cleanup</a></aside></div>
+  </div><script type="module" src="../assets/site.js"></script>
+</body></html>

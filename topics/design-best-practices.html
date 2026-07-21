@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Design Guidance &middot; Azure Logic Apps Workshop</title>
+  <meta name="description" content="Design considerations and best practices for Azure Logic Apps including naming, scopes, throughput, and networking." />
+  <script>
+    (function () {
+      var t = localStorage.getItem("logic-apps-workshop-theme");
+      document.documentElement.setAttribute("data-theme",
+        (t === "light" || t === "dark") ? t : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
+    })();
+  </script>
+  <link rel="icon" type="image/svg+xml" href="../images/azure/02631-icon-service-Logic-Apps.svg" />
+  <link rel="stylesheet" href="../assets/site.css" />
+</head>
+<body data-root=".." data-active="design-best-practices">
+  <div class="page">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../index.html">Home</a><span class="sep">/</span><span>Topics</span><span class="sep">/</span><span>Design Guidance</span>
+    </nav>
+
+    <header class="hero">
+      <h1>Design Guidance</h1>
+      <p class="subtitle">The deck's design section is practical rather than theoretical. These are the habits that keep workflows readable, supportable, and scalable.</p>
+      <div class="badge-row"><span class="badge">Best practices</span><span class="badge">Operations-aware design</span></div>
+    </header>
+
+    <div class="layout">
+      <main class="content">
+        <section id="naming" class="section-card reveal">
+          <h2>Naming and Organization</h2>
+          <ul>
+            <li>Name workflows for the business outcome, not the trigger alone.</li>
+            <li>Name actions so run history reads like a story during an incident.</li>
+            <li>Group related actions into scopes for logical phases such as validation, enrichment, routing, and notification.</li>
+            <li>Document assumptions for workflows that multiple teams will maintain.</li>
+          </ul>
+        </section>
+
+        <section id="scopes" class="section-card reveal">
+          <h2>Use Scopes as Structural Boundaries</h2>
+          <p>Scopes improve readability and make error handling more intentional. Instead of a single long designer surface, use scopes to mark phases and attach run-after logic to the whole group.</p>
+          <div class="diagram-wrap">
+            <pre class="mermaid">
+flowchart TD
+    T[Trigger] --> V[Validation scope]
+    V --> P[Processing scope]
+    P --> N[Notification scope]
+    V --> E[Failure handling scope]
+    P --> E
+    N --> D[Done]
+    E --> D
+
+    classDef azure fill:#e6f2fb,stroke:#0078d4,stroke-width:2,color:#0f1722;
+    classDef success fill:#e7f5e7,stroke:#107c10,stroke-width:2,color:#103010;
+    class T,V,P,N,E azure;
+    class D success;
+            </pre>
+          </div>
+        </section>
+
+        <section id="shared-workflows" class="section-card reveal">
+          <h2>Design Shared, Callable Workflows</h2>
+          <p>Move stable capabilities that several workflows repeat into a shared workflow. Examples include customer enrichment, document validation, notification delivery, audit logging, and common error handling. Calling one maintained implementation reduces duplicated actions and saves development and testing time in every caller.</p>
+          <div class="diagram-wrap">
+            <pre class="mermaid">
+flowchart LR
+    O[Order workflow] --> S[Shared notification workflow]
+    I[Invoice workflow] --> S
+    C[Customer workflow] --> S
+    S --> R[Consistent result]
+
+    classDef caller fill:#e6f2fb,stroke:#0078d4,stroke-width:2,color:#0f1722;
+    classDef shared fill:#fff3e3,stroke:#ff8c00,stroke-width:2,color:#4b2a05;
+    classDef result fill:#e7f5e7,stroke:#107c10,stroke-width:2,color:#103010;
+    class O,I,C caller;
+    class S shared;
+    class R result;
+            </pre>
+          </div>
+
+          <h3>Choose the Calling Pattern</h3>
+          <div class="table-wrap">
+            <table aria-label="Shared workflow calling patterns">
+              <thead>
+                <tr><th>Situation</th><th>Pattern</th><th>Design guidance</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Workflows share the same Standard logic app resource</td><td><strong>Call workflow in this logic app</strong></td><td>Use the built-in Workflow Operations action to invoke an eligible workflow without managing a callback URL.</td></tr>
+                <tr><td>Consumption workflows call another Logic Apps workflow</td><td><strong>Azure Logic Apps workflow action</strong></td><td>Select the eligible child workflow in the designer and pass only the data defined by its request contract.</td></tr>
+                <tr><td>Callers cross resource or service boundaries</td><td><strong>Request and Response</strong></td><td>Expose a request-based HTTPS endpoint with a JSON schema and return an explicit status code and response body.</td></tr>
+                <tr><td>Work is long-running or the caller does not need an immediate result</td><td><strong>Asynchronous handoff</strong></td><td>Send a message or event and return an acknowledgement instead of holding a synchronous request open.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="cheat">
+            <div class="cheat-item"><h3>Define a contract</h3><p>Use a Request trigger JSON schema for required inputs and a predictable Response body for outputs. Keep the contract small and independent of the caller's internal action names.</p></div>
+            <div class="cheat-item"><h3>Version breaking changes</h3><p>Add a new workflow or endpoint version when inputs, outputs, or behavior change incompatibly. Migrate callers before retiring the previous contract.</p></div>
+            <div class="cheat-item"><h3>Design for retries</h3><p>Make shared operations idempotent where possible. Pass a business or correlation identifier so retries do not create duplicate notifications, records, or payments.</p></div>
+            <div class="cheat-item"><h3>Return useful failures</h3><p>Return consistent status codes and an error shape that includes a safe message and correlation identifier. Configure caller run-after behavior for failure and timeout paths.</p></div>
+            <div class="cheat-item"><h3>Secure the boundary</h3><p>Do not store callback URLs with SAS signatures in source control. Use managed access controls, restrict inbound traffic, and place externally exposed contracts behind API Management when governance requires it.</p></div>
+            <div class="cheat-item"><h3>Keep ownership clear</h3><p>Give the shared workflow an owner, tests, deployment pipeline, and compatibility policy. Centralization saves time only when callers can depend on stable behavior.</p></div>
+          </div>
+
+          <div class="callout"><strong>How to choose:</strong> Extract a shared workflow when the capability has a stable contract and at least two real callers. Keep logic local when it is short, caller-specific, or likely to change independently; an unnecessary shared dependency can increase latency, cost, and deployment coordination.</div>
+          <p>Microsoft Learn: <a href="https://learn.microsoft.com/en-us/azure/logic-apps/logic-apps-http-endpoint?WT.mc_id=AZ-MVP-5003556">Create callable or nestable workflows in Azure Logic Apps</a>.</p>
+        </section>
+
+        <section id="concurrency" class="section-card reveal">
+          <h2>Manage Concurrency and Throughput</h2>
+          <p>Concurrency settings are a control surface, not an optimization trick. The right value depends on destination capacity, SLAs, and cost tolerance.</p>
+          <div class="table-wrap">
+            <table aria-label="Concurrency design guidance">
+              <thead>
+                <tr><th>Question</th><th>Why it matters</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Can the destination handle parallel requests?</td><td>Throughput gains vanish if the target throttles or rate limits aggressively.</td></tr>
+                <tr><td>Is action ordering important?</td><td>Parallel execution is dangerous when writes must happen in sequence.</td></tr>
+                <tr><td>Do you need batching?</td><td>Batching can cut action count and lower cost for high-volume scenarios.</td></tr>
+                <tr><td>What does peak traffic look like?</td><td>Limits that work at steady state often fail during burst traffic.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="speaker-note">
+            <h3>Emphasis</h3>
+            <p>Concurrency control should prevent downstream overload, not only improve speed. Treat concurrency as a system-protection mechanism as much as a performance lever.</p>
+          </div>
+        </section>
+
+        <section id="other-considerations" class="section-card reveal">
+          <h2>Other Design Considerations</h2>
+          <div class="cheat">
+            <div class="cheat-item"><h3>Custom code</h3><p>Use inline code or Azure Functions only when declarative actions stop being clear or maintainable.</p></div>
+            <div class="cheat-item"><h3>Caching and reuse</h3><p>Reduce repeated external calls when a workflow repeatedly needs the same reference data.</p></div>
+            <div class="cheat-item"><h3>API exposure</h3><p>Use API Management when a workflow becomes a governed integration endpoint rather than an internal automation artifact.</p></div>
+            <div class="cheat-item"><h3>Resilience</h3><p>Think about zone redundancy and deployment topology for business-critical workloads.</p></div>
+          </div>
+          <div class="callout"><strong>Connector strategy:</strong> continue to <a href="connectors-and-integration-accounts.html">Connectors and Integration Accounts</a> to compare commonly used built-in and managed connectors and decide when an Integration Account belongs in the architecture.</div>
+        </section>
+
+        <section id="networking-best-practices" class="section-card reveal">
+          <h2>Networking Best Practices</h2>
+          <ul>
+            <li>Use private paths for sensitive integrations where possible.</li>
+            <li>Document firewall, FQDN, and service-tag requirements before cutover.</li>
+            <li>Keep connection and identity strategy aligned with network isolation strategy.</li>
+            <li>Prefer predictable outbound patterns for partner systems that need allow lists.</li>
+          </ul>
+        </section>
+
+        <nav class="pager" aria-label="Workshop pagination">
+          <a class="prev" href="logic-apps-automation.html"><small>Previous</small><strong>&larr; Logic Apps Automation</strong></a>
+          <a class="next" href="connectors-and-integration-accounts.html"><small>Next</small><strong>Connectors and Integration Accounts &rarr;</strong></a>
+        </nav>
+      </main>
+
+      <aside class="toc" aria-label="Table of contents">
+        <h3>On This Page</h3>
+        <a href="#naming">Naming and Organization</a>
+        <a href="#scopes">Scopes</a>
+        <a href="#shared-workflows">Shared Workflows</a>
+        <a href="#concurrency">Concurrency and Throughput</a>
+        <a href="#other-considerations">Other Considerations</a>
+        <a href="#networking-best-practices">Networking</a>
+      </aside>
+    </div>
+  </div>
+
+  <script type="module" src="../assets/site.js"></script>
+</body>
+</html>

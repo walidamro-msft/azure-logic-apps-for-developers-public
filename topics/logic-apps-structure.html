@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Logic Apps Structure &middot; Azure Logic Apps Workshop</title>
+  <meta name="description" content="How Logic Apps are organized for deployment: workflows inside Logic App resources, hosting boundaries in Consumption versus Standard, and practical app-splitting guidance." />
+  <script>
+    (function () {
+      var t = localStorage.getItem("logic-apps-workshop-theme");
+      document.documentElement.setAttribute("data-theme",
+        (t === "light" || t === "dark") ? t : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
+    })();
+  </script>
+  <link rel="icon" type="image/svg+xml" href="../images/azure/02631-icon-service-Logic-Apps.svg" />
+  <link rel="stylesheet" href="../assets/site.css" />
+  <style>
+    .mermaid .icon-node {
+      display: inline-flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      gap: 2px !important;
+      line-height: 1.15 !important;
+      text-align: center !important;
+    }
+
+    .mermaid .icon-node img {
+      width: 16px !important;
+      height: 16px !important;
+      display: block !important;
+      margin: 0 0 2px 0 !important;
+    }
+
+    .mermaid .icon-node small {
+      font-size: 0.82em !important;
+      font-weight: 600 !important;
+    }
+
+    html[data-theme] .mermaid g.node .nodeLabel,
+    html[data-theme] .mermaid g.node .nodeLabel * {
+      fill: #ffffff !important;
+      color: #ffffff !important;
+      font-weight: 600 !important;
+    }
+
+    .mermaid .cluster-label,
+    .mermaid .cluster-label * {
+      fill: #102033 !important;
+      color: #102033 !important;
+      font-weight: 700 !important;
+    }
+
+    html[data-theme="dark"] .mermaid .cluster-label,
+    html[data-theme="dark"] .mermaid .cluster-label * {
+      fill: #d8e6fb !important;
+      color: #d8e6fb !important;
+    }
+
+    .mermaid g.cluster[id$="-HOST"] > rect,
+    .mermaid g.cluster[id$="-MULTI"] > rect,
+    .mermaid g.cluster[id$="-PLAN"] > rect {
+      fill: #eaf3fc !important;
+      stroke: #8eb2dc !important;
+    }
+
+    .mermaid g.cluster[id$="-APP"] > rect,
+    .mermaid g.cluster[id$="-APP1"] > rect,
+    .mermaid g.cluster[id$="-APP2"] > rect,
+    .mermaid g.cluster[id$="-CONS"] > rect,
+    .mermaid g.cluster[id$="-STD"] > rect {
+      fill: #d5e8fb !important;
+      stroke: #5f95d0 !important;
+    }
+
+    html[data-theme="dark"] .mermaid g.cluster[id$="-HOST"] > rect,
+    html[data-theme="dark"] .mermaid g.cluster[id$="-MULTI"] > rect,
+    html[data-theme="dark"] .mermaid g.cluster[id$="-PLAN"] > rect {
+      fill: #132840 !important;
+      stroke: #395d86 !important;
+    }
+
+    html[data-theme="dark"] .mermaid g.cluster[id$="-APP"] > rect,
+    html[data-theme="dark"] .mermaid g.cluster[id$="-APP1"] > rect,
+    html[data-theme="dark"] .mermaid g.cluster[id$="-APP2"] > rect,
+    html[data-theme="dark"] .mermaid g.cluster[id$="-CONS"] > rect,
+    html[data-theme="dark"] .mermaid g.cluster[id$="-STD"] > rect {
+      fill: #1d446d !important;
+      stroke: #4f87c1 !important;
+    }
+  </style>
+</head>
+<body data-root=".." data-active="logic-apps-structure">
+  <div class="page">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../index.html">Home</a><span class="sep">/</span><span>Topics</span><span class="sep">/</span><span>Logic Apps Structure</span>
+    </nav>
+
+    <header class="hero">
+      <h1>Logic Apps Structure</h1>
+      <p class="subtitle">How workflows are packaged and deployed in Azure Logic Apps: what belongs to a workflow, what belongs to the Logic App resource, and how hosting model changes your deployment boundary.</p>
+      <div class="badge-row"><span class="badge">Language-agnostic</span><span class="badge">Deployment</span><span class="badge">Structure</span></div>
+    </header>
+
+    <div class="layout">
+      <main class="content">
+        <section id="anatomy" class="section-card reveal">
+          <h2>Anatomy of a Logic App</h2>
+          <p>
+            A <strong>workflow</strong> is the executable sequence of one trigger and one or more actions.
+            The <strong>Logic App resource</strong> is the deployment and management boundary where workflow
+            definitions, connections, identity, and settings are configured.
+          </p>
+          <div class="diagram-wrap">
+            <pre class="mermaid">
+flowchart LR
+  CONN["<img src='../images/azure/10042-icon-service-API-Management-Services.svg' width='12' style='vertical-align:middle;margin-right:3px;'/> API and Connector Connections"]:::conn
+  STG["<img src='../images/azure/10086-icon-service-Storage-Accounts.svg' width='12' style='vertical-align:middle;margin-right:3px;'/> Azure Storage (Standard)"]:::storage
+
+  subgraph APP["<img src='../images/azure/02631-icon-service-Logic-Apps.svg' width='12' style='vertical-align:middle;margin-right:3px;'/> Logic App Resource"]
+    direction TB
+    W1["Workflow A\nTrigger -> Actions"]:::wf
+    W2["Workflow B\nTrigger -> Actions"]:::wf
+    WN["Workflow n"]:::wf
+  end
+
+  CONN --> APP
+  STG -.runtime state and artifacts.-> APP
+
+  classDef conn fill:#0f7f77,stroke:#0a5d58,stroke-width:1.5,color:#ffffff;
+  classDef storage fill:#0a93b8,stroke:#076e8a,stroke-width:1.5,color:#ffffff;
+  classDef wf fill:#0e6fc4,stroke:#0a4f8f,stroke-width:1.5,color:#ffffff;
+            </pre>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--muted); margin-top: 10px;">
+            In Standard, one Logic App resource can contain multiple workflows and relies on a storage account for state and artifacts.
+            In multitenant Consumption, each resource hosts a single workflow.
+          </p>
+        </section>
+
+        <section id="boundary" class="section-card reveal">
+          <h2>What the Logic App Boundary Gives You</h2>
+          <p>Everything inside one Logic App resource shares the same operational boundary, which is why structure decisions should match ownership, lifecycle, and runtime behavior.</p>
+          <div class="cheat" style="margin-top:12px;">
+            <div class="cheat-item"><h3>Shared identity and networking</h3><p>Managed identity, VNet integration model, and access controls are configured at the app resource level.</p></div>
+            <div class="cheat-item"><h3>Shared app settings</h3><p>Configuration values and runtime settings apply across workflows in the same Standard app.</p></div>
+            <div class="cheat-item"><h3>Shared deployment lifecycle</h3><p>Workflows in one Standard app are packaged and deployed together through one project boundary.</p></div>
+            <div class="cheat-item"><h3>Shared runtime capacity</h3><p>Workflows in the same Standard app use the same underlying worker and throughput envelope.</p></div>
+            <div class="cheat-item"><h3>Connection governance</h3><p>Connection references, authentication setup, and secret handling are managed with the app's environment model.</p></div>
+            <div class="cheat-item"><h3>Monitoring context</h3><p>Runs, diagnostics, and logs are easier to reason about when related workflows are grouped intentionally.</p></div>
+          </div>
+          <div class="callout" style="margin-top:14px;">
+            <strong>Design tip:</strong> Group workflows that share ownership, release cadence, and non-functional requirements.
+            Split apps when teams, risk boundaries, or scaling profiles diverge.
+          </div>
+        </section>
+
+        <section id="hosting-model" class="section-card reveal">
+          <h2>Consumption vs Standard Structure Model</h2>
+          <p>
+            The deployment shape differs by hosting model. Consumption is one workflow per Logic App resource in
+            multitenant infrastructure. Standard supports multiple workflows in one single-tenant Logic App resource.
+          </p>
+          <div class="diagram-wrap">
+            <pre class="mermaid">
+flowchart TB
+  subgraph CONS["Consumption (Multitenant)"]
+    direction LR
+    CAPP1["<span class='icon-node'><img src='../images/azure/02631-icon-service-Logic-Apps.svg'/>Logic App 1<small>(1 workflow)</small></span>"]:::app
+    CAPP2["<span class='icon-node'><img src='../images/azure/02631-icon-service-Logic-Apps.svg'/>Logic App 2<small>(1 workflow)</small></span>"]:::app
+    CAPP3["<span class='icon-node'><img src='../images/azure/02631-icon-service-Logic-Apps.svg'/>Logic App n<small>(1 workflow)</small></span>"]:::app
+  end
+
+  subgraph STD["Standard (Single-tenant)"]
+    direction TB
+    subgraph HOST["<span class='icon-node'><img src='../images/azure/10035-icon-service-App-Services.svg'/>Logic App Standard Host</span>"]
+      direction TB
+      SAPP["<span class='icon-node'><img src='../images/azure/02631-icon-service-Logic-Apps.svg'/>Logic App Resource</span>"]:::app
+      SW1["Workflow A"]:::wf
+      SW2["Workflow B"]:::wf
+      SWN["Workflow n"]:::wf
+      SAPP --> SW1
+      SAPP --> SW2
+      SAPP --> SWN
+    end
+  end
+
+  classDef app fill:#0e6fc4,stroke:#0a4f8f,stroke-width:1.5,color:#ffffff;
+  classDef wf fill:#0a93b8,stroke:#076e8a,stroke-width:1.5,color:#ffffff;
+            </pre>
+          </div>
+          <ul>
+            <li><strong>Consumption:</strong> finer deployment granularity by default, but each workflow is its own app resource.</li>
+            <li><strong>Standard:</strong> app-level packaging for multiple workflows with shared runtime, networking, and operations context.</li>
+            <li><strong>Architecture implication:</strong> when teams need independent releases or isolation, separate app resources are usually the safer shape.</li>
+          </ul>
+        </section>
+
+        <section id="guidance" class="section-card reveal">
+          <h2>Structuring for Deployment</h2>
+          <ul>
+            <li><strong>Align structure to ownership.</strong> Put workflows maintained by the same team in the same app when they share standards and release governance.</li>
+            <li><strong>Separate by blast radius.</strong> Isolate business-critical paths from experimental or high-change workflows.</li>
+            <li><strong>Separate by scaling profile.</strong> Keep high-volume and latency-sensitive workflows away from low-frequency batch orchestration.</li>
+            <li><strong>Model environments consistently.</strong> Keep app settings and connection references parameterized so dev/test/prod use the same deployment artifact shape.</li>
+            <li><strong>Use Monitoring as a design signal.</strong> If alerts and troubleshooting become noisy, split the app boundary to restore operational clarity.</li>
+          </ul>
+        </section>
+
+        <nav class="pager" aria-label="Workshop pagination">
+          <a class="prev" href="overview.html"><small>Previous</small><strong>&larr; Overview</strong></a>
+          <a class="next" href="runtime-lifecycle.html"><small>Next</small><strong>Runtime Lifecycle &rarr;</strong></a>
+        </nav>
+      </main>
+
+      <aside class="toc" aria-label="Table of contents">
+        <h3>On This Page</h3>
+        <a href="#anatomy">Anatomy of a Logic App</a>
+        <a href="#boundary">Logic App Boundary</a>
+        <a href="#hosting-model">Consumption vs Standard</a>
+        <a href="#guidance">Structuring for Deployment</a>
+      </aside>
+    </div>
+  </div>
+
+  <script type="module" src="../assets/site.js"></script>
+</body>
+</html>

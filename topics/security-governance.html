@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Security &amp; Limits &middot; Azure Logic Apps Workshop</title>
+  <meta name="description" content="Security, compliance, RBAC, and workflow limits for Azure Logic Apps." />
+  <script>
+    (function () {
+      var t = localStorage.getItem("logic-apps-workshop-theme");
+      document.documentElement.setAttribute("data-theme",
+        (t === "light" || t === "dark") ? t : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
+    })();
+  </script>
+  <link rel="icon" type="image/svg+xml" href="../images/azure/02631-icon-service-Logic-Apps.svg" />
+  <link rel="stylesheet" href="../assets/site.css" />
+</head>
+<body data-root=".." data-active="security-governance">
+  <div class="page">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../index.html">Home</a><span class="sep">/</span><span>Topics</span><span class="sep">/</span><span>Security &amp; Limits</span>
+    </nav>
+
+    <header class="hero">
+      <h1>Security &amp; Limits</h1>
+      <p class="subtitle">Secure the platform first, then shape workflows to live comfortably inside its runtime and connector limits.</p>
+      <div class="badge-row"><span class="badge">Security</span><span class="badge">Governance</span></div>
+    </header>
+
+    <div class="layout">
+      <main class="content">
+        <section id="security-basics" class="section-card reveal">
+          <h2>Security and Compliance Basics</h2>
+          <ul>
+            <li>Data is encrypted at rest and in transit.</li>
+            <li>Authentication choices include Entra ID, OAuth, API keys, and connector-specific mechanisms.</li>
+            <li>Microsoft positions Logic Apps for regulated industries through Azure's broader compliance portfolio.</li>
+          </ul>
+          <div class="callout"><strong>Start with identity:</strong> use managed identity for Microsoft Entra-protected Azure resources when the selected trigger or action supports it. Store a credential only when identity-based authentication is unavailable.</div>
+        </section>
+
+        <section id="managed-identity" class="section-card reveal">
+          <h2>Use Managed Identity End to End</h2>
+          <p>A managed identity removes stored access tokens and credentials from workflow configuration, but enabling the identity is only the first step. The target resource must also grant that principal the minimum required data-plane role or access policy, and the connector must support managed identity authentication.</p>
+          <div class="table-wrap">
+            <table aria-label="Managed identity behavior by Logic Apps hosting model">
+              <thead><tr><th>Hosting model</th><th>Identity behavior</th><th>Operational implication</th></tr></thead>
+              <tbody>
+                <tr><td>Consumption</td><td>Enable either the system-assigned identity or one user-assigned identity for workflow use.</td><td>Choose a user-assigned identity when the identity and its role assignments must survive logic app replacement.</td></tr>
+                <tr><td>Standard</td><td>The system-assigned identity is enabled by default. The app can also have multiple user-assigned identities, while each connection selects the identity it uses.</td><td>Do not disable the default system identity without checking managed API connections; doing so changes its object ID and can break runtime access.</td></tr>
+                <tr><td>Standard Hybrid</td><td>Managed identity authentication is not supported.</td><td>Use an app registration and manage its credential lifecycle explicitly.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <ol style="margin:8px 0 0 18px; color:var(--text-secondary);">
+            <li>Enable or attach the identity on the logic app resource.</li>
+            <li>Assign the narrowest suitable role on the target resource, such as <strong>Storage Blob Data Contributor</strong> at the required container or account scope.</li>
+            <li>Select managed identity authentication on the trigger, action, or connection and set the exact audience when the operation requires one.</li>
+            <li>Test both design-time discovery and runtime access; they can require different permissions.</li>
+          </ol>
+        </section>
+
+        <section id="connections-secrets" class="section-card reveal">
+          <h2>Manage Connections and Secrets as Dependencies</h2>
+          <div class="cheat">
+            <div class="cheat-item"><h3>Prefer identity</h3><p>Use managed identity and least-privilege RBAC before connection strings, keys, or user credentials.</p></div>
+            <div class="cheat-item"><h3>Protect remaining secrets</h3><p>Use Azure Key Vault references in Standard app settings where supported, and never commit <code>local.settings.json</code>.</p></div>
+            <div class="cheat-item"><h3>Own the lifecycle</h3><p>Document the owner, authentication type, target resource, rotation method, expiry signal, and recovery procedure for every connection.</p></div>
+          </div>
+          <p>Managed connectors create separate API connection resources. In Standard, each managed API connection also needs an access policy that permits the logic app identity to use the connection. Deploy the connection resource and access policy as infrastructure rather than relying on a designer-created production dependency.</p>
+          <div class="callout"><strong>Rotation warning:</strong> rotating a function key, certificate, client secret, or connector credential can break a workflow even when its definition has not changed. Monitor connection health and test rotation in a nonproduction environment.</div>
+        </section>
+
+        <section id="rbac" class="section-card reveal">
+          <h2>Role-Based Access Control</h2>
+          <p>RBAC should separate design authority, operational authority, and read-only access.</p>
+          <div class="plan-grid">
+            <div class="plan-box"><h3>Developers</h3><ul><li>Edit workflow definitions and connections in controlled environments.</li><li>Need contributor-style rights, not broad subscription ownership.</li></ul></div>
+            <div class="plan-box"><h3>Operators</h3><ul><li>Review runs, resubmit, inspect failures, and manage incidents.</li><li>Do not need permission to redesign workflows.</li></ul></div>
+            <div class="plan-box"><h3>Auditors / Viewers</h3><ul><li>Read configuration, history, and diagnostics.</li><li>No mutation rights.</li></ul></div>
+          </div>
+        </section>
+
+        <section id="limits" class="section-card reveal">
+          <h2>Limits Change Design</h2>
+          <p>The deck dedicates a full section to limits because workflow shape is often a consequence of runtime ceilings: payload size, iteration counts, retention, duration, and connector behavior.</p>
+          <ul>
+            <li>Large, long-running, or heavily branched workflows usually push you toward Standard and often toward stateful design.</li>
+            <li>High-concurrency designs must account for downstream throttling, not just Logic Apps runtime capability.</li>
+            <li>Stateless workflows trade history and payload flexibility for speed and reduced storage overhead.</li>
+          </ul>
+        </section>
+
+        <section id="networking" class="section-card reveal">
+          <h2>Networking and Isolation</h2>
+          <p>When the workflow touches private services or sensitive data, networking posture often becomes the deciding factor for Standard.</p>
+          <ul>
+            <li>Use private endpoints and VNet integration where the environment requires private access paths.</li>
+            <li>Review firewall dependencies for every trigger and connector, especially managed connectors.</li>
+            <li>Document outbound dependencies early so network teams are not a late-stage blocker.</li>
+          </ul>
+          <p>For multitenant Consumption firewall rules, prefer the <strong>LogicAppsManagement</strong>, <strong>LogicApps</strong>, and <strong>AzureConnectors</strong> service tags over copied IP lists where the network control supports service tags. For Standard, validate trigger and action FQDNs, App Service networking behavior, DNS resolution, and storage access before restricting traffic.</p>
+        </section>
+
+        <section id="endpoints-telemetry" class="section-card reveal">
+          <h2>Protect Inbound Endpoints and Operational Data</h2>
+          <ul>
+            <li>Do not treat a Request trigger callback URL or SAS value as a complete authorization design. Use supported Microsoft Entra authorization policies, API Management, private endpoints, or another controlled ingress layer when callers need stronger authentication and policy enforcement.</li>
+            <li>Restrict inbound callers by identity, network, and protocol requirements appropriate to the hosting model.</li>
+            <li>Enable <strong>Secure Inputs</strong> and <strong>Secure Outputs</strong> on supported operations that process sensitive values, and inspect downstream actions for accidental re-exposure.</li>
+            <li>Keep secrets, tokens, personal data, and regulated payloads out of tracked properties, logs, alerts, and incident notifications.</li>
+            <li>Apply least-privilege RBAC and retention controls to run history, Log Analytics workspaces, storage archives, and Application Insights.</li>
+          </ul>
+        </section>
+
+        <section id="governance" class="section-card reveal">
+          <h2>Make Governance Verifiable</h2>
+          <p>Use Azure Policy, deployment policy checks, naming and tagging standards, resource locks where appropriate, and separate deployment identities to make the approved architecture repeatable. Review current limits during design and before load testing rather than copying numeric ceilings into long-lived standards.</p>
+          <ul>
+            <li>Record data classification, region, retention, recovery objective, owner, and support path for each production workflow.</li>
+            <li>Alert on failed runs, failed triggers, authentication failures, abnormal volume, throttling, and expiring credentials.</li>
+            <li>Review role assignments, API connections, public network exposure, diagnostic destinations, and policy compliance on a schedule.</li>
+          </ul>
+        </section>
+
+        <section id="references" class="section-card reveal">
+          <h2>Microsoft Guidance</h2>
+          <ul>
+            <li><a href="https://learn.microsoft.com/azure/logic-apps/authenticate-with-managed-identity">Authenticate connections with managed identities</a></li>
+            <li><a href="https://learn.microsoft.com/azure/logic-apps/logic-apps-securing-a-logic-app">Secure access and data in Azure Logic Apps</a></li>
+            <li><a href="https://learn.microsoft.com/azure/logic-apps/logic-apps-limits-and-config">Limits and configuration reference</a></li>
+            <li><a href="https://learn.microsoft.com/azure/logic-apps/set-up-devops-deployment-single-tenant-azure-logic-apps">Deploy Standard workflows and API connection access policies</a></li>
+          </ul>
+        </section>
+
+        <nav class="pager" aria-label="Workshop pagination">
+          <a class="prev" href="connectors-and-integration-accounts.html"><small>Previous</small><strong>&larr; Connectors and Integration Accounts</strong></a>
+          <a class="next" href="monitoring-troubleshooting.html"><small>Next</small><strong>Monitoring &amp; Troubleshooting &rarr;</strong></a>
+        </nav>
+      </main>
+
+      <aside class="toc" aria-label="Table of contents">
+        <h3>On This Page</h3>
+        <a href="#security-basics">Security Basics</a>
+        <a href="#managed-identity">Managed Identity</a>
+        <a href="#connections-secrets">Connections and Secrets</a>
+        <a href="#rbac">RBAC</a>
+        <a href="#limits">Limits</a>
+        <a href="#networking">Networking</a>
+        <a href="#endpoints-telemetry">Endpoints and Telemetry</a>
+        <a href="#governance">Governance</a>
+        <a href="#references">Microsoft Guidance</a>
+      </aside>
+    </div>
+  </div>
+
+  <script type="module" src="../assets/site.js"></script>
+</body>
+</html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workflow Service Plan &middot; Azure Logic Apps Workshop</title>
+  <meta name="description" content="Architecture, East US pricing, capacity, networking, and workload guidance for the Azure Logic Apps Workflow Service Plan." />
+  <script>(function(){var t=localStorage.getItem("logic-apps-workshop-theme");document.documentElement.setAttribute("data-theme",(t==="light"||t==="dark")?t:(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"));})();</script>
+  <link rel="icon" type="image/svg+xml" href="../images/azure/02631-icon-service-Logic-Apps.svg" />
+  <link rel="stylesheet" href="../assets/site.css" />
+</head>
+<body data-root=".." data-active="workflow-service-plan">
+  <div class="page">
+    <nav class="breadcrumb" aria-label="Breadcrumb"><a href="../index.html">Home</a><span class="sep">/</span><a href="hosting-plans.html">Hosting Plans</a><span class="sep">/</span><a href="standard-plans.html">Standard</a><span class="sep">/</span><span>Workflow Service Plan</span></nav>
+    <header class="hero">
+      <h1>Workflow Service Plan</h1>
+      <p class="subtitle">The managed single-tenant Standard host with reserved WS compute, multiple workflows per app, private networking, and Azure-managed infrastructure.</p>
+      <div class="audience"><span>Standard runtime</span><span>WS1-WS3</span><span>Reserved compute</span><span>VNet integration</span></div>
+    </header>
+    <div class="layout">
+      <main class="content">
+        <section id="architecture" class="card reveal">
+          <h2>Managed Standard Architecture</h2>
+          <p>Azure runs the single-tenant Logic Apps runtime on a Workflow Service Plan. One plan can host Standard logic app resources, and each resource can package multiple stateful and stateless workflows. Scale-out adds plan instances.</p>
+          <div class="diagram-wrap"><pre class="mermaid">
+flowchart LR
+    E[Events and calls] --> P[Workflow Service Plan]
+    P --> A[Standard logic app]
+    A --> W1[Stateful workflows]
+    A --> W2[Stateless workflows]
+    A --> B[Built-in connectors]
+    A --> M[Shared managed connectors]
+    classDef host fill:#fff3e3,stroke:#ff8c00,stroke-width:2,color:#4b2a05;
+    class P,A host;
+          </pre></div>
+        </section>
+
+        <section id="pricing" class="card reveal">
+          <h2>East US Pricing</h2>
+          <p>The public East US meters are $0.1997 per vCPU-hour and $0.0143 per GiB-hour. These examples assume one enabled instance for 730 hours.</p>
+          <div class="table-wrap"><table aria-label="Workflow Service Plan East US pricing">
+            <thead><tr><th>Tier</th><th>vCPU</th><th>Memory</th><th>Hourly estimate</th><th>730-hour estimate</th></tr></thead>
+            <tbody>
+              <tr><td>WS1</td><td>1</td><td>3.5 GiB</td><td>$0.24975</td><td><strong>$182.32</strong></td></tr>
+              <tr><td>WS2</td><td>2</td><td>7 GiB</td><td>$0.49950</td><td><strong>$364.64</strong></td></tr>
+              <tr><td>WS3</td><td>4</td><td>14 GiB</td><td>$0.99900</td><td><strong>$729.27</strong></td></tr>
+            </tbody>
+          </table></div>
+          <div class="formula">Monthly compute = hours &times; [(vCPU &times; $0.1997) + (GiB &times; $0.0143)] &times; instance count</div>
+          <p>Compute is billed while enabled, including idle time. Scale-out multiplies the estimate by the number of instances.</p>
+        </section>
+
+        <section id="included-costs" class="card reveal">
+          <h2>Included and Additional Costs</h2>
+          <div class="table-wrap"><table aria-label="Workflow Service Plan cost boundaries">
+            <thead><tr><th>Cost area</th><th>Billing behavior</th></tr></thead>
+            <tbody>
+              <tr><td>Built-in operations</td><td>Included in reserved compute; no per-operation Logic Apps charge</td></tr>
+              <tr><td>Shared Standard managed connectors</td><td>$0.000125 per call in the East US sample</td></tr>
+              <tr><td>Shared Enterprise managed connectors</td><td>$0.001 per call in the East US sample</td></tr>
+              <tr><td>Stateful workflow storage</td><td>Your Azure Storage capacity and transactions are billed separately</td></tr>
+              <tr><td>Networking and dependencies</td><td>Private endpoints, integration accounts, and dependent services can add charges</td></tr>
+            </tbody>
+          </table></div>
+          <div class="callout"><strong>Managed connector detail:</strong> Standard charges shared managed connectors per underlying call. Pagination and chunking can create more than one billable call.</div>
+        </section>
+
+        <section id="capacity" class="card reveal">
+          <h2>Capacity and Scaling</h2>
+          <div class="cheat">
+            <article class="cheat-item"><h3>Start with measurements</h3><p>Load test CPU, memory, trigger latency, storage transactions, and connector throttling before selecting a production tier.</p></article>
+            <article class="cheat-item"><h3>Scale up</h3><p>Move from WS1 to WS2 or WS3 when a workflow app needs more CPU and memory per instance.</p></article>
+            <article class="cheat-item"><h3>Scale out</h3><p>Add instances for concurrency and resilience. Each active instance adds the complete tier cost.</p></article>
+            <article class="cheat-item"><h3>Share deliberately</h3><p>Multiple apps can improve plan utilization, but noisy-neighbor behavior remains your capacity-management responsibility.</p></article>
+          </div>
+        </section>
+
+        <section id="fit" class="card reveal">
+          <h2>When to Choose It</h2>
+          <p>Choose Workflow Service Plan for the normal managed Standard experience: private access to Azure resources, several related workflows, predictable capacity, local development, and regional workflow data without managing an isolated App Service environment or Kubernetes platform.</p>
+          <p>Choose <a href="app-service-environment-v3.html">ASE v3</a> for fully isolated App Service infrastructure, or <a href="hybrid-plans.html">Hybrid</a> when execution must run on customer-managed Kubernetes.</p>
+        </section>
+
+        <nav class="pager" aria-label="Workshop pagination"><a class="prev" href="standard-plans.html"><small>Previous</small><strong>&larr; Standard Overview</strong></a><a class="next" href="app-service-environment-v3.html"><small>Next</small><strong>App Service Environment v3 &rarr;</strong></a></nav>
+      </main>
+      <aside class="toc" aria-label="Table of contents"><h3>On This Page</h3><a href="#architecture">Architecture</a><a href="#pricing">East US Pricing</a><a href="#included-costs">Cost Boundaries</a><a href="#capacity">Capacity</a><a href="#fit">When to Choose</a></aside>
+    </div>
+  </div>
+  <script type="module" src="../assets/site.js"></script>
+</body>
+</html>

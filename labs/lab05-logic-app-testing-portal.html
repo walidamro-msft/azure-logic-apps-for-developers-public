@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lab 05: Logic App Testing &middot; Azure Logic Apps Workshop</title>
+  <meta name="description" content="Test success and failure paths with static action results in Azure Logic Apps." />
+  <script>(function(){var t=localStorage.getItem("logic-apps-workshop-theme");document.documentElement.setAttribute("data-theme",(t==="light"||t==="dark")?t:(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"));})();</script>
+  <link rel="icon" type="image/svg+xml" href="../images/azure/02631-icon-service-Logic-Apps.svg" /><link rel="stylesheet" href="../assets/site.css" />
+</head><body data-root=".." data-active="lab05-workflow-testing">
+<div class="page"><nav class="breadcrumb" aria-label="Breadcrumb"><a href="../index.html">Home</a><span class="sep">/</span><a href="index.html">Labs</a><span class="sep">/</span><span>Lab 05</span></nav>
+<header class="hero"><h1>Lab 05: Logic App Testing</h1><p class="subtitle">Mock an HTTP action to validate success and failure behavior without calling a live product service.</p><div class="badge-row"><span class="badge">Azure portal</span><span class="badge">Consumption or Standard</span><span class="badge">~35 min</span></div></header>
+<div class="layout"><main class="content">
+<section id="scenario" class="section-card reveal"><h2>Scenario and Objectives</h2><p>A workflow depends on a product service that is unavailable during development. You will configure static results on the HTTP action, verify two control-flow paths, and then restore live behavior.</p><ul><li>Build a small HTTP-request workflow.</li><li>Mock a successful downstream response.</li><li>Mock a failed action and verify failure handling.</li><li>Disable static results before completing the lab.</li></ul><div class="callout"><strong>Limit:</strong> static results apply to actions, not triggers. Trigger the workflow normally and mock only the downstream HTTP action.</div></section>
+<section id="architecture" class="section-card reveal"><h2>Test Design</h2><div class="diagram-wrap"><pre class="mermaid">flowchart LR
+ T[HTTP trigger] --> H[HTTP product lookup]
+ H -->|Mock succeeded| C[200 response]
+ H -. Mock failed .-> F[Failure handler]
+ F --> E[503 response]
+ classDef azure fill:#e6f2fb,stroke:#0078d4,stroke-width:2,color:#0f1722;
+ classDef result fill:#e7f5e7,stroke:#107c10,stroke-width:2,color:#103010;
+ class T,H,F azure; class C,E result;</pre></div></section>
+<section id="build" class="section-card reveal"><h2>Build the Test Workflow</h2><ol><li>Create or open a lab Logic App workflow in the portal.</li><li>Add <strong>When an HTTP request is received</strong>, method POST, with a body containing a string property named <code>sku</code>.</li><li>Add an HTTP action named <strong>Product lookup</strong>. Set method GET and URI to <code>https://example.invalid/products/@{triggerBody()?['sku']}</code>. The reserved invalid domain ensures a live call cannot reach a real service.</li><li>Add a Response action named <strong>Product found</strong>, status 200, with the body below.</li><li>Add a Response action named <strong>Dependency unavailable</strong>, status 503. Configure its <strong>Run after</strong> to run only when Product lookup has failed or timed out.</li><li>Configure Product found to run only when Product lookup succeeds. Save the workflow.</li></ol><pre class="code" data-lang="json">{
+  "requestedSku": "@{triggerBody()?['sku']}",
+  "product": "@{body('Product_lookup')}",
+  "testRun": "@{workflow()?['run']?['name']}"
+}</pre></section>
+<section id="success" class="section-card reveal"><h2>Test a Successful Action</h2><ol><li>Select <strong>Product lookup</strong> and open its <strong>Testing</strong> tab.</li><li>Select <strong>Enable Static Result</strong>.</li><li>Set action status to <strong>Succeeded</strong>. Configure outputs with status code <strong>200</strong>, content-type <code>application/json</code>, and the body below.</li><li>Save, trigger the workflow with <code>{ "sku": "AZ-100" }</code>, and inspect the run.</li></ol><pre class="code" data-lang="json">{
+  "sku": "AZ-100",
+  "name": "Workflow Mug",
+  "price": 18.50,
+  "inventory": 24
+}</pre><ul><li>The action displays the static-result beaker indicator.</li><li>The workflow returns HTTP 200 with the mocked product.</li><li>Run details show Product lookup used a static result.</li></ul></section>
+<section id="failure" class="section-card reveal"><h2>Test a Failed Action</h2><ol><li>Return to the Product lookup Testing tab and edit its static result.</li><li>Set status to <strong>Failed</strong> and provide an error code such as <code>ProductServiceUnavailable</code> with a clear test message.</li><li>Save and submit the same trigger payload.</li><li>Confirm Product found is skipped and Dependency unavailable returns HTTP 503.</li></ol><div class="speaker-note"><h3>What to inspect</h3><p>Open each action in run details. Verify the mocked error is visible, the run-after rule selected the failure path, and no outbound request reached the invalid URI.</p></div></section>
+<section id="disable" class="section-card reveal"><h2>Restore Live Behavior</h2><ol><li>Select Product lookup, open <strong>Testing</strong>, and choose <strong>Disable Static Result</strong>.</li><li>Save the workflow and confirm the beaker indicator is gone.</li><li>Do not run against a production endpoint until authentication, authorization, retry, timeout, and test-data controls are ready.</li></ol><div class="callout"><strong>Important:</strong> disabling static results can preserve the configured mock values for reuse. The absence of the enabled indicator is what confirms the action will call its configured endpoint.</div></section>
+<section id="troubleshoot" class="section-card reveal"><h2>Troubleshooting</h2><div class="table-wrap"><table><thead><tr><th>Symptom</th><th>Check</th></tr></thead><tbody><tr><td>Testing tab is unavailable</td><td>Static results are action-specific; select the HTTP action rather than the trigger or a control.</td></tr><tr><td>Success response is skipped</td><td>Check the mocked action status and the Response run-after settings.</td></tr><tr><td>Workflow calls the URI</td><td>Confirm static results are enabled and the action shows its test indicator before running.</td></tr></tbody></table></div></section>
+<section id="cleanup" class="section-card reveal"><h2>Cleanup and References</h2><p>Disable static results, disable or delete the test workflow, and remove the lab resource group when finished.</p><div class="callout"><strong>Microsoft Learn:</strong> <a href="https://learn.microsoft.com/azure/logic-apps/testing-framework/test-logic-apps-mock-data-static-results">Test workflows with mock outputs</a> and <a href="../topics/workflow-testing.html">Workshop topic: Workflow Testing</a>.</div></section>
+<nav class="pager" aria-label="Lab pagination"><a class="prev" href="lab04-event-grid-blob-processor-portal.html"><small>Previous</small><strong>&larr; Lab 04: Event Grid Blob Processor</strong></a><a class="next" href="lab06-inline-dotnet-code-vscode.html"><small>Next</small><strong>Lab 06: Inline .NET Code &rarr;</strong></a></nav>
+</main><aside class="toc" aria-label="Table of contents"><h3>On This Page</h3><a href="#scenario">Scenario</a><a href="#architecture">Test Design</a><a href="#build">Build</a><a href="#success">Success Test</a><a href="#failure">Failure Test</a><a href="#disable">Restore Behavior</a><a href="#troubleshoot">Troubleshooting</a><a href="#cleanup">Cleanup</a></aside></div>
+</div><script type="module" src="../assets/site.js"></script></body></html>
