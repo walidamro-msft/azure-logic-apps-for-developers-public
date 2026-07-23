@@ -135,6 +135,7 @@ function buildFooter() {
         <a href="${url("index.html")}">Home</a>
         <a href="${url("topics/overview.html")}">Overview</a>
         <a href="${url("topics/hosting-plans.html")}">Hosting Plans</a>
+        <a href="${url("license.html")}">License</a>
         <a href="${url("trainer/index.html")}">Trainer Hub</a>
         <a href="https://learn.microsoft.com/azure/logic-apps/" target="_blank" rel="noopener">Microsoft Learn &#8599;</a>
       </span>
