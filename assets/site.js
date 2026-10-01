@@ -131,6 +131,7 @@ function buildFooter() {
   footer.innerHTML = `
     <div class="footer-inner">
       <span>&copy; <span id="footer-year"></span> ${COPYRIGHT_TEXT}</span>
+      <span>Last updated: <time datetime="2026-10-01">10/1/2026</time></span>
       <span class="footer-links">
         <a href="${url("index.html")}">Home</a>
         <a href="${url("topics/overview.html")}">Overview</a>
