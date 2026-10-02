@@ -63,12 +63,12 @@
           <p>An agent loop repeats a simple cycle: receive input, decide the next action, call tools, evaluate results, and continue until completion criteria are met.</p>
           <div class="speaker-note">
             <h3>How to model it</h3>
-            <p>Implement loop control in workflow actions and conditions, then keep tool boundaries explicit so you can trace and govern each external call.</p>
+            <p>The Agent action runs the loop for you. Give it clear instructions, define a small set of tools, and keep tool boundaries explicit so you can trace and govern each external call.</p>
           </div>
           <ol style="margin:8px 0 0 18px; color:var(--text-secondary);">
             <li>Start from a trigger (chat, event, schedule, or API call).</li>
-            <li>Invoke an agent action to decide intent or next tool.</li>
-            <li>Run connector and API actions for tool execution.</li>
+            <li>Add an Agent action with instructions and a model connection; the agent decides intent and the next tool.</li>
+            <li>Back each tool with connector and API actions that run when the agent selects it.</li>
             <li>Store context and branch for follow-up reasoning or completion.</li>
           </ol>
         </section>

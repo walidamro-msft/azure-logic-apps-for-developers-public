@@ -58,7 +58,7 @@
           </div>
           <h3>Trigger Examples</h3>
           <div class="table-wrap">
-            <table aria-label="Logic Apps trigger examples for training labs">
+            <table aria-label="Logic Apps trigger examples">
               <thead>
                 <tr><th>Trigger</th><th>Where to find it</th><th>Typical usage scenario</th></tr>
               </thead>
@@ -75,7 +75,6 @@
                 <tr><td>When a message is received in a queue (peek-lock)</td><td>Azure Service Bus (Shared)</td><td>Queue-driven background processing.</td></tr>
                 <tr><td>When events are available in Event Hub</td><td>Azure Event Hubs (Shared)</td><td>Ingest telemetry batches.</td></tr>
                 <tr><td>When a resource event occurs</td><td>Azure Event Grid (Shared)</td><td>React to Azure resource lifecycle events.</td></tr>
-                <tr><td>When an HTTP request is received by APIM</td><td>Azure API Management (Shared/Built-in based on environment)</td><td>Gateway-based integration scenarios.</td></tr>
                 <tr><td>When a response to an Azure Monitor alert is triggered</td><td>Azure Monitor (Shared)</td><td>Operations and incident automation.</td></tr>
                 <tr><td>When a chat message is received</td><td>Microsoft Teams (Shared)</td><td>ChatOps workflow kickoff from Teams.</td></tr>
               </tbody>
@@ -112,7 +111,7 @@
           </div>
           <h3>Action Examples</h3>
           <div class="table-wrap">
-            <table aria-label="Logic Apps action examples for training labs">
+            <table aria-label="Logic Apps action examples">
               <thead>
                 <tr><th>Action</th><th>Category</th><th>Example use</th></tr>
               </thead>
@@ -461,7 +460,7 @@ flowchart TD
           </div>
           <h3>What to inspect</h3>
           <ul>
-            <li>Run status such as <strong>Succeeded</strong>, <strong>Failed</strong>, <strong>Timed out</strong>, or <strong>Waiting</strong>.</li>
+            <li>Run status such as <strong>Succeeded</strong>, <strong>Failed</strong>, <strong>TimedOut</strong>, or <strong>Waiting</strong>.</li>
             <li>Action-level inputs, outputs, and retry details.</li>
             <li>Whether an action was <strong>Skipped</strong> because its <strong>runAfter</strong> criteria were not met.</li>
             <li>Correlation IDs when working with support teams or external APIs.</li>

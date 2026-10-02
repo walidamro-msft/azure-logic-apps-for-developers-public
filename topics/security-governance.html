@@ -34,7 +34,7 @@
           <ul>
             <li>Data is encrypted at rest and in transit.</li>
             <li>Authentication choices include Entra ID, OAuth, API keys, and connector-specific mechanisms.</li>
-            <li>Microsoft positions Logic Apps for regulated industries through Azure's broader compliance portfolio.</li>
+            <li>Logic Apps is covered by Azure's broader compliance portfolio, which supports workloads in regulated industries.</li>
           </ul>
           <div class="callout"><strong>Start with identity:</strong> use managed identity for Microsoft Entra-protected Azure resources when the selected trigger or action supports it. Store a credential only when identity-based authentication is unavailable.</div>
         </section>
@@ -83,7 +83,7 @@
 
         <section id="limits" class="section-card reveal">
           <h2>Limits Change Design</h2>
-          <p>The deck dedicates a full section to limits because workflow shape is often a consequence of runtime ceilings: payload size, iteration counts, retention, duration, and connector behavior.</p>
+          <p>Workflow shape is often a consequence of runtime ceilings: payload size, iteration counts, retention, duration, and connector behavior.</p>
           <ul>
             <li>Large, long-running, or heavily branched workflows usually push you toward Standard and often toward stateful design.</li>
             <li>High-concurrency designs must account for downstream throttling, not just Logic Apps runtime capability.</li>

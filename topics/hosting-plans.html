@@ -23,7 +23,7 @@
 
     <header class="hero">
       <h1>Choosing the Correct Azure Logic Apps Hosting Plan</h1>
-      <p class="subtitle">Choose among Consumption, three Standard hosts, and Automation Project preview by evaluating tenancy, infrastructure ownership, networking, scaling, and cost. Pricing examples use public East US retail rates in USD.</p>
+      <p class="subtitle">Choose among Consumption, three Standard hosts, and Logic Apps Automation (preview) by evaluating tenancy, infrastructure ownership, networking, scaling, and cost. Pricing examples use public East US retail rates in USD.</p>
       <div class="audience"><span>Cloud Architects</span><span>Integration Engineers</span><span>Platform Engineers</span></div>
       <div class="legend" aria-label="Hosting plan color legend">
         <div class="legend-item"><span class="swatch flex"></span> Consumption: multitenant, pay per execution</div>
@@ -39,14 +39,14 @@
           <div class="diagram-wrap">
             <pre class="mermaid">
 flowchart TD
-  S([Start]) --> STATELESS{Need a stateless workflow?}
-  STATELESS -->|Yes| WS[Workflow Service Plan]
-  STATELESS -->|No| LOCAL{Must execution run on customer Kubernetes?}
+  S([Start]) --> LOCAL{Must execution run on customer Kubernetes?}
   LOCAL -->|Yes| HYB[Standard Hybrid]
   LOCAL -->|No| ISO{Need a fully isolated App Service environment?}
   ISO -->|Yes| ASE[Standard on ASE v3]
-  ISO -->|No| PRE{Evaluate preview dedicated compute with scale to zero?}
-  PRE -->|Yes| AUTO[Automation Project Managed]
+  ISO -->|No| STATELESS{Need a stateless workflow?}
+  STATELESS -->|Yes| WS[Workflow Service Plan]
+  STATELESS -->|No| PRE{Evaluate preview dedicated compute with scale to zero?}
+  PRE -->|Yes| AUTO[Logic Apps Automation]
   PRE -->|No| STD{Need VNet integration, multiple workflows, or single-tenant runtime?}
   STD -->|Yes| WS[Workflow Service Plan]
   STD -->|No| CONS[Consumption Multi-tenant]
@@ -128,7 +128,7 @@ Standard connector = 100,000 runs &times; 2 actions = 200,000</div>
 
         <section id="pricing" class="card reveal">
           <h2>East US Pricing Snapshot</h2>
-          <p>These USD retail rates were retrieved from the Azure Retail Prices API for East US on <strong>July 9, 2026</strong>. They are samples for teaching and estimation; negotiated rates, taxes, and future price changes are not represented.</p>
+          <p>These USD retail rates were retrieved from the Azure Retail Prices API for East US on <strong>July 9, 2026</strong>. They are samples for estimation; negotiated rates, taxes, and future price changes are not represented.</p>
           <div class="table-wrap">
             <table aria-label="East US Azure Logic Apps sample pricing">
               <thead><tr><th>Meter</th><th>East US sample rate</th><th>How it is applied</th></tr></thead>

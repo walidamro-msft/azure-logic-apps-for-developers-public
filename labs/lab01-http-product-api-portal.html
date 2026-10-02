@@ -37,7 +37,7 @@
   "required": ["sku", "name", "price"]
 }</pre>
       <h3>Condition expression</h3><pre class="code">and(not(empty(triggerBody()?['sku'])), not(empty(triggerBody()?['name'])), greater(float(triggerBody()?['price']), 0))</pre>
-      <div class="callout"><strong>Do not use Trigger conditions:</strong> the trigger settings shown in the screenshot control whether the workflow starts at all. This lab needs a separate Condition action so invalid requests still start the workflow and receive the HTTP 400 response.</div>
+      <div class="callout"><strong>Do not use Trigger conditions:</strong> the <strong>Trigger conditions</strong> option in the trigger's <strong>Settings</strong> controls whether the workflow starts at all. This lab needs a separate Condition action so invalid requests still start the workflow and receive the HTTP 400 response.</div>
       <h3>Success body</h3><pre class="code" data-lang="json">{
   "status": "accepted",
   "sku": "@{triggerBody()?['sku']}",
