@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>What's New &middot; Azure Logic Apps Workshop</title>
+  <meta name="description" content="See dated updates to the Azure Logic Apps Developer Workshop, including new topics, lab improvements, and corrections." />
+  <script>
+    (function () {
+      var t = localStorage.getItem("logic-apps-workshop-theme");
+      document.documentElement.setAttribute("data-theme",
+        (t === "light" || t === "dark") ? t : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
+    })();
+  </script>
+  <link rel="icon" type="image/svg+xml" href="images/azure/02631-icon-service-Logic-Apps.svg" />
+  <link rel="stylesheet" href="assets/site.css" />
+</head>
+<body data-root="." data-active="whats-new">
+  <div class="page">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="index.html">Home</a><span class="sep">/</span><span>What's New</span>
+    </nav>
+
+    <header class="hero">
+      <h1>What's New</h1>
+      <p class="subtitle">Returning to the workshop? Browse the dates below to see what has changed since your last visit, then follow the links to the updated content.</p>
+      <div class="badge-row"><span class="badge">Workshop updates</span><span class="badge">Newest first</span></div>
+    </header>
+
+    <div class="layout">
+      <main class="content">
+        <p>This page highlights visitor-facing additions, improvements, and corrections. Earlier entries are summarized from the repository history; this is not a list of every commit.</p>
+
+        <!-- Keep entries newest first; add visitor-facing changes here and update the shared footer date in assets/site.js. -->
+        <section id="2026-10-20" class="section-card reveal">
+          <h2><time datetime="2026-10-20">October 20, 2026</time></h2>
+          <h3>New migration topic and workshop update history</h3>
+          <ul>
+            <li><strong>Added:</strong> the <a href="topics/migration-agent.html">Logic Apps Migration Agent</a> module, covering the five migration stages, human review checkpoints, source coverage, a pilot exercise, behavior validation, and production cutover.</li>
+            <li><strong>Included:</strong> a reference to the original Microsoft Community Hub article, a credited illustration, and the article's YouTube demo in the new module.</li>
+            <li><strong>Updated:</strong> the <a href="index.html#topics">workshop module list</a>, learning path, topic navigation, and <a href="trainer/index.html">trainer guidance</a> to include migration.</li>
+            <li><strong>Added:</strong> this What's New page, with links from the home page, shared navigation, and footer so returning visitors can find dated updates.</li>
+            <li><strong>Updated:</strong> the shared footer's last-updated date to October 20, 2026.</li>
+          </ul>
+        </section>
+
+        <section id="2026-10-02" class="section-card reveal">
+          <h2><time datetime="2026-10-02">October 2, 2026</time></h2>
+          <h3>Workshop delivery improvements</h3>
+          <ul>
+            <li><strong>Improved:</strong> the <a href="index.html">home page</a> learning path and workshop presentation for attendees.</li>
+            <li><strong>Refined:</strong> explanations and instructions across the <a href="topics/overview.html">topic modules</a> and all six <a href="labs/index.html">hands-on labs</a>.</li>
+          </ul>
+        </section>
+
+        <section id="2026-10-01" class="section-card reveal">
+          <h2><time datetime="2026-10-01">October 1, 2026</time></h2>
+          <h3>Visible content freshness</h3>
+          <ul>
+            <li><strong>Added:</strong> a shared last-updated date in the footer across workshop pages, making the content update date visible to visitors.</li>
+          </ul>
+        </section>
+
+        <section id="2026-07-23" class="section-card reveal">
+          <h2><time datetime="2026-07-23">July 23, 2026</time></h2>
+          <h3>Workshop license access</h3>
+          <ul>
+            <li><strong>Added:</strong> a shared footer link to the local <a href="license.html">License page</a>.</li>
+          </ul>
+        </section>
+
+        <section id="2026-07-14" class="section-card reveal">
+          <h2><time datetime="2026-07-14">July 14, 2026</time></h2>
+          <h3>Clearer VS Code setup for Lab 03</h3>
+          <ul>
+            <li><strong>Improved:</strong> the Logic Apps setup instructions in <a href="labs/lab03-order-fulfillment-vscode.html">Lab 03: Order Fulfillment</a>, with additional screenshots for creating the project and workspace.</li>
+          </ul>
+        </section>
+
+        <section id="2026-07-13" class="section-card reveal">
+          <h2><time datetime="2026-07-13">July 13, 2026</time></h2>
+          <h3>Lab 06 script contract clarification</h3>
+          <ul>
+            <li><strong>Clarified:</strong> the C# script contract in <a href="labs/lab06-inline-dotnet-code-vscode.html">Lab 06: Inline .NET Code</a>.</li>
+          </ul>
+        </section>
+
+        <section id="2026-07-12" class="section-card reveal">
+          <h2><time datetime="2026-07-12">July 12, 2026</time></h2>
+          <h3>Portal reference and Lab 06 corrections</h3>
+          <ul>
+            <li><strong>Added:</strong> the <a href="topics/portal-menus.html">Portal Menus</a> subtopic and expanded Assemblies guidance, linked from <a href="topics/build-and-manage.html">Build &amp; Manage</a>.</li>
+            <li><strong>Corrected:</strong> the C# Script Code action name in <a href="labs/lab06-inline-dotnet-code-vscode.html">Lab 06</a> and clarified error handling with an invalid-request example.</li>
+          </ul>
+        </section>
+      </main>
+
+      <aside class="toc" aria-label="Update dates">
+        <h3>Update Dates</h3>
+        <a href="#2026-10-20">October 20, 2026</a>
+        <a href="#2026-10-02">October 2, 2026</a>
+        <a href="#2026-10-01">October 1, 2026</a>
+        <a href="#2026-07-23">July 23, 2026</a>
+        <a href="#2026-07-14">July 14, 2026</a>
+        <a href="#2026-07-13">July 13, 2026</a>
+        <a href="#2026-07-12">July 12, 2026</a>
+      </aside>
+    </div>
+  </div>
+
+  <script type="module" src="assets/site.js"></script>
+</body>
+</html>

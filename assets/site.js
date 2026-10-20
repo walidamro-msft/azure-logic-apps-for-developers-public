@@ -26,6 +26,7 @@ const TOPICS = [
   { key: "workflow-testing", label: "Workflow Testing", href: "topics/workflow-testing.html", dot: "dot-orange" },
   { key: "use-cases", label: "Use Cases", href: "topics/use-cases.html", dot: "dot-purple" },
   { key: "agentic-workflows", label: "Agentic Workflows", href: "topics/agentic-workflows.html", dot: "dot-blue" },
+  { key: "migration-agent", label: "Migration Agent", href: "topics/migration-agent.html", dot: "dot-purple" },
   { key: "build-and-manage", label: "Build & Manage", href: "topics/build-and-manage.html", dot: "dot-blue",
     children: [
       { key: "portal-menus", label: "Portal Menus", href: "topics/portal-menus.html", dot: "dot-green" }
@@ -108,6 +109,7 @@ function buildNav() {
         <div class="nav-menu">${menuMarkup(LABS, active)}</div>
       </details>
       <a href="${url("trainer/index.html")}" class="${active === "trainer" ? "is-active" : ""}">Trainer</a>
+      <a href="${url("whats-new.html")}" class="${active === "whats-new" ? "is-active" : ""}">What's New</a>
       <button id="theme-toggle" class="nav-toggle" type="button" aria-pressed="false" aria-label="Switch theme" title="Switch theme">
         ${MOON_SUN}
         <span id="theme-toggle-text" class="sr-only">Switch theme</span>
@@ -131,9 +133,10 @@ function buildFooter() {
   footer.innerHTML = `
     <div class="footer-inner">
       <span>&copy; <span id="footer-year"></span> ${COPYRIGHT_TEXT}</span>
-      <span>Last updated: <time datetime="2026-10-02">10/2/2026</time></span>
+      <span>Last updated: <time datetime="2026-10-20">10/20/2026</time></span>
       <span class="footer-links">
         <a href="${url("index.html")}">Home</a>
+        <a href="${url("whats-new.html")}">What's New</a>
         <a href="${url("topics/overview.html")}">Overview</a>
         <a href="${url("topics/hosting-plans.html")}">Hosting Plans</a>
         <a href="${url("license.html")}">License</a>

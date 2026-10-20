@@ -362,6 +362,7 @@ h3 { font-size: clamp(1.05rem, 1.3vw, 1.2rem); }
 
 /* Navigation theme toggle */
 .nav-toggle {
+  position: relative;
   flex: 0 0 auto;
   margin-left: 4px;
   border: 1px solid var(--border);

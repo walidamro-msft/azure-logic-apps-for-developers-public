@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Logic Apps Migration Agent &middot; Azure Logic Apps Workshop</title>
+  <meta name="description" content="Modernize existing integrations to Azure Logic Apps Standard with the Migration Agent: discovery, planning, conversion, validation, and deployment." />
+  <script>
+    (function () {
+      var t = localStorage.getItem("logic-apps-workshop-theme");
+      document.documentElement.setAttribute("data-theme",
+        (t === "light" || t === "dark") ? t : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
+    })();
+  </script>
+  <link rel="icon" type="image/svg+xml" href="../images/azure/02631-icon-service-Logic-Apps.svg" />
+  <link rel="stylesheet" href="../assets/site.css" />
+</head>
+<body data-root=".." data-active="migration-agent">
+  <div class="page">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../index.html">Home</a><span class="sep">/</span><span>Topics</span><span class="sep">/</span><span>Migration Agent</span>
+    </nav>
+
+    <header class="hero">
+      <h1>Logic Apps Migration Agent</h1>
+      <p class="subtitle">Use AI-assisted discovery, planning, and conversion to modernize existing integrations to Logic Apps Standard while retaining human review and business-behavior validation.</p>
+      <div class="badge-row"><span class="badge">Logic Apps Standard</span><span class="badge">VS Code + GitHub Copilot</span><span class="badge">Human-in-the-loop</span></div>
+    </header>
+
+    <div class="layout">
+      <main class="content">
+        <section id="modernization" class="section-card reveal">
+          <h2>Modernize Behavior, Not Legacy Topology</h2>
+          <p>The Logic Apps Migration Agent is an open-source Visual Studio Code extension built on GitHub Copilot and the VS Code Language Model API. It helps inventory integration artifacts, understand dependencies, plan a target design, and generate a baseline Standard implementation.</p>
+          <p>This module draws on the Microsoft Community Hub article <a href="https://techcommunity.microsoft.com/blog/integrationsonazureblog/modernize-any-integration-platform-to-azure-logic-apps-standard-with-the-logic-a/4517262">Modernize Any Integration Platform to Azure Logic Apps Standard with the Logic Apps Migration Agent</a>, published May 7, 2026.</p>
+          <ul>
+            <li>Preserve contracts, transformations, routing, ordering requirements, and error behavior.</li>
+            <li>Reconsider workflow boundaries, connector choices, identity, networking, and operations for the target platform.</li>
+            <li>Migrate one logical flow group or business capability at a time rather than attempting a big-bang conversion.</li>
+          </ul>
+          <div class="callout"><strong>Not a one-click migration:</strong> generated artifacts are a starting point. Engineers and business owners still approve architecture, resolve capability gaps, and prove semantic equivalence.</div>
+          <figure style="margin:18px 0 0;">
+            <a href="https://techcommunity.microsoft.com/t5/s/gxcuf89792/images/bS00NTE3MjYyLURyRGRWNw?image-dimensions=999x666&amp;revision=12">
+              <img src="https://techcommunity.microsoft.com/t5/s/gxcuf89792/images/bS00NTE3MjYyLURyRGRWNw?image-dimensions=999x666&amp;revision=12" alt="Migration Agent overview: discover, plan, convert, validate, and deploy to Logic Apps Standard, with human review at every step." width="999" height="666" loading="lazy" style="display:block; width:100%; height:auto; border-radius:10px;" />
+            </a>
+            <figcaption>Illustration from the <a href="https://techcommunity.microsoft.com/blog/integrationsonazureblog/modernize-any-integration-platform-to-azure-logic-apps-standard-with-the-logic-a/4517262">Microsoft Community Hub article</a>. Select the image for full size. Platform names illustrate the extensibility vision, not equal parser or conversion coverage.</figcaption>
+          </figure>
+        </section>
+
+        <section id="scope" class="section-card reveal">
+          <h2>Source Coverage and Target Scope</h2>
+          <p>The article introduces BizTalk Server 2016 and 2020 as the initial fully implemented source platforms and describes extensibility for other products. Support evolves: the <a href="https://learn.microsoft.com/en-us/azure/logic-apps/migration/migration-agent-overview">Microsoft Learn overview</a> documents built-in BizTalk, MuleSoft, and basic TIBCO BusinessWorks parsing for version 1.12.1, with platform-specific limitations.</p>
+          <ul>
+            <li><strong>Check the installed release:</strong> confirm that its parsers cover your source versions, artifact types, and required transformations before estimating migration effort.</li>
+            <li><strong>Parsing is not parity:</strong> discovering an artifact does not guarantee a correct generated implementation. Record unsupported components and manual redesign work explicitly.</li>
+            <li><strong>Extensible, not universally automatic:</strong> other platforms can require custom parsers and platform-specific discovery, analysis, conversion, and validation guidance.</li>
+            <li><strong>Standard target:</strong> plan for a Logic Apps Standard project, not a Consumption workflow. Select hosting and deployment support using the installed release documentation and the workshop's <a href="standard-plans.html">Standard Overview</a>.</li>
+          </ul>
+        </section>
+
+        <section id="stages" class="section-card reveal">
+          <h2>The Five-Stage Migration Workflow</h2>
+          <p>Review each stage's evidence before approving the next. AI assistance accelerates repeatable work; it does not transfer accountability away from your team.</p>
+          <div class="table-wrap">
+            <table aria-label="Migration stages and human review checkpoints">
+              <thead><tr><th>Stage</th><th>Agent-assisted work</th><th>Human review checkpoint</th></tr></thead>
+              <tbody>
+                <tr><td>1. Discovery</td><td>Inventory artifacts, build dependency graphs, and identify flow groups and gaps.</td><td>Confirm endpoints, shared dependencies, missing artifacts, and the actual business flow.</td></tr>
+                <tr><td>2. Planning</td><td>Propose target architecture, action mappings, artifact dispositions, and per-flow migration plans.</td><td>Approve workflow boundaries, connector choices, gap resolutions, and acceptance criteria.</td></tr>
+                <tr><td>3. Conversion</td><td>Execute the approved task plan to generate Standard workflows, connections, and supporting files.</td><td>Inspect generated logic, configuration, transformations, and custom code; resolve unsupported behavior.</td></tr>
+                <tr><td>4. Validation</td><td>Help test generated workflows against source specifications and supplied test cases.</td><td>Compare observable behavior, failure handling, and side effects; resolve differences before deployment.</td></tr>
+                <tr><td>5. Deployment</td><td>Prepare and deploy generated artifacts using the supported deployment path.</td><td>Approve the environment, access, costs, telemetry, release evidence, and rollback plan.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>The specialized Copilot agents are <code>@migration-analyser</code>, <code>@migration-planner</code>, and <code>@migration-converter</code>. Use their outputs as reviewable engineering artifacts, not as proof of production readiness.</p>
+        </section>
+
+        <section id="prepare" class="section-card reveal">
+          <h2>Prepare a Representative Pilot</h2>
+          <ol style="margin:8px 0 0 18px; color:var(--text-secondary);">
+            <li>Choose one bounded, non-production integration with a known owner, representative dependencies, and documented expected behavior.</li>
+            <li>Install VS Code, the Logic Apps Migration Agent, and the required Logic Apps Standard tooling. Confirm GitHub Copilot access and the current <a href="https://github.com/Azure/logicapps-migration-agent#requirements">extension requirements</a>; local testing and deployment can need additional tools.</li>
+            <li>Collect source projects, bindings, schemas, maps, pipelines, orchestrations, custom code, configuration references, and test specifications in an organized source directory.</li>
+            <li>Remove embedded secrets and sanitize sample data. Use certificate and secret references rather than private keys or production credentials, and follow organizational policies for AI-assisted source processing.</li>
+            <li>Open the extension in VS Code and select the source directory, or run <code>Logic Apps Migration Agent: Select Source Folder</code> from the Command Palette.</li>
+            <li>Review discovery and planning outputs before authorizing conversion. Configure an isolated Azure environment only when ready to test or deploy; review generated resources and costs first.</li>
+          </ol>
+        </section>
+
+        <section id="exercise" class="section-card reveal">
+          <h2>Workshop Exercise: Prove One Flow</h2>
+          <p>Use a sanitized order-processing integration as a discussion exercise, or use your own approved source project for a guided pilot. A local source project and the extension are required to execute the migration; this workshop does not include a legacy-platform export.</p>
+          <ol style="margin:8px 0 0 18px; color:var(--text-secondary);">
+            <li><strong>Capture the contract:</strong> document the incoming order schema, validation rules, routing decision, transformed output, response, and downstream side effects.</li>
+            <li><strong>Review the plan:</strong> identify the proposed trigger, connectors, transformation approach, retry policy, and failure path. Record every gap and its owner.</li>
+            <li><strong>Convert and inspect:</strong> check that the generated Standard project implements the approved plan and uses environment-specific connection settings rather than hard-coded credentials.</li>
+            <li><strong>Compare results:</strong> run the same fixtures against the source behavior and target workflow in an isolated environment. Compare outputs and side effects, not only successful run status.</li>
+          </ol>
+          <div class="table-wrap">
+            <table aria-label="Pilot migration acceptance cases">
+              <thead><tr><th>Test case</th><th>Evidence to capture</th></tr></thead>
+              <tbody>
+                <tr><td>Valid order</td><td>Expected schema, field mappings, route, response, and exactly the intended downstream business effect.</td></tr>
+                <tr><td>Missing or invalid field</td><td>Equivalent rejection and error response, without unintended downstream calls.</td></tr>
+                <tr><td>Duplicate or out-of-order message</td><td>Required deduplication and ordering behavior, including correlation identifiers.</td></tr>
+                <tr><td>Downstream timeout or failure</td><td>Expected retries, terminal failure handling, recovery path, and diagnostic evidence.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p><strong>Exit criteria:</strong> a reviewed inventory and plan, an explicit gap list, passing behavior comparisons, and an agreed operational owner. <a href="workflow-testing.html">Static results</a> help isolate branches but do not replace live connector, security, performance, and end-to-end validation.</p>
+        </section>
+
+        <section id="production" class="section-card reveal">
+          <h2>Production Readiness and Phased Cutover</h2>
+          <ul>
+            <li><strong>Architecture and gaps:</strong> deliberately redesign unsupported capabilities using appropriate connectors, custom code, Functions, Service Bus, or API Management. Do not copy legacy topology solely for visual similarity.</li>
+            <li><strong>Security and operations:</strong> validate managed identity, least privilege, secret storage, network access, throughput, cost, alerts, correlation, and recovery. See <a href="security-governance.html">Security &amp; Limits</a> and <a href="monitoring-troubleshooting.html">Monitoring &amp; Troubleshooting</a>.</li>
+            <li><strong>Release:</strong> version the reviewed source, generated artifacts, infrastructure, and test evidence. Follow the <a href="build-and-manage.html#pipeline">release pipeline guidance</a> for controlled promotion.</li>
+            <li><strong>Cutover:</strong> agree on coexistence, backlog reconciliation, partner coordination, in-flight messages, duplicate side effects, rollback, and eventual decommissioning before switching traffic.</li>
+          </ul>
+          <div class="callout warning"><strong>Availability changes:</strong> the May 2026 article also previews upcoming platform features. Treat those announcements as historical context, not a guarantee of current connector availability, release status, or migration coverage.</div>
+        </section>
+
+        <section id="video" class="section-card reveal">
+          <h2>Watch the Migration Agent Demo</h2>
+          <p>Watch <a href="https://www.youtube.com/watch?v=VPsuazYU8oc" target="_blank" rel="noopener">Logic Apps Migration Agent on YouTube</a>, the video embedded in the original blog post.</p>
+          <p>During the demo, identify where discovery becomes a migration plan and where a reviewer should stop to check mappings, gaps, and validation evidence.</p>
+        </section>
+
+        <section id="references" class="section-card reveal">
+          <h2>References and Further Reading</h2>
+          <ul>
+            <li><a href="https://techcommunity.microsoft.com/blog/integrationsonazureblog/modernize-any-integration-platform-to-azure-logic-apps-standard-with-the-logic-a/4517262">Source article: Modernize Any Integration Platform to Azure Logic Apps Standard with the Logic Apps Migration Agent</a> &mdash; Microsoft Community Hub, May 7, 2026; source of the illustration above.</li>
+            <li><a href="https://www.youtube.com/watch?v=VPsuazYU8oc">Logic Apps Migration Agent &mdash; YouTube demo from the article</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/logic-apps/migration/migration-agent-overview">Microsoft Learn: Migration Agent overview, supported platforms, and stages</a></li>
+            <li><a href="https://github.com/Azure/logicapps-migration-agent">Open-source Logic Apps Migration Agent: installation, requirements, releases, and extensibility</a></li>
+          </ul>
+        </section>
+
+        <nav class="pager" aria-label="Workshop pagination">
+          <a class="prev" href="agentic-workflows.html"><small>Previous</small><strong>&larr; Agentic Workflows</strong></a>
+          <a class="next" href="build-and-manage.html"><small>Next</small><strong>Build &amp; Manage &rarr;</strong></a>
+        </nav>
+      </main>
+
+      <aside class="toc" aria-label="Table of contents">
+        <h3>On This Page</h3>
+        <a href="#modernization">Modernization Approach</a>
+        <a href="#scope">Coverage and Scope</a>
+        <a href="#stages">Five-Stage Workflow</a>
+        <a href="#prepare">Prepare a Pilot</a>
+        <a href="#exercise">Workshop Exercise</a>
+        <a href="#production">Production and Cutover</a>
+        <a href="#video">YouTube Demo</a>
+        <a href="#references">References</a>
+      </aside>
+    </div>
+  </div>
+
+  <script type="module" src="../assets/site.js"></script>
+</body>
+</html>
