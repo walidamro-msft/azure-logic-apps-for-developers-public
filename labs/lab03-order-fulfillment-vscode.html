@@ -224,19 +224,102 @@ catch {
     ResponseBody = $_.ErrorDetails.Message
   } | Format-List
 }</pre><p>The status code should be <code>200</code>, and the response body should contain <code>"orderId":"ORD-1002"</code> and <code>"status":"manual-review"</code>.</p>
-<h3>Test 3: Rejected order</h3><div class="callout"><strong>Confirm the JSON response first:</strong> In the designer, open the <strong>False</strong> branch of <strong>Order is valid</strong> and select <strong>Rejected Response</strong>. Set <strong>Status Code</strong> to <code>400</code>. In <strong>Body</strong>, enter the JSON below, save the workflow, and confirm the Body remains populated after the save.
-<pre class="code" data-lang="json">{
-  "status": "rejected",
-  "reason": "Invalid order"
-}</pre></div><p>Run:</p><pre class="code">Invoke-OrderWorkflow -Payload @{
+<h3>Test 3: Rejected order</h3><p>Run:</p><pre class="code">Invoke-OrderWorkflow -Payload @{
   orderId = ''
   customerId = 'C-42'
   quantity = 0
   availableStock = 3
-}</pre><p>The output should show <code>StatusCode : 400</code> and <code>ResponseBody : {"status":"rejected","reason":"Invalid order"}</code>. If the status is 400 but the body is still empty, reopen the rejected run in local run history and inspect the False-branch Response action's inputs to confirm that its Body was saved.</p><p>After each request, inspect the host terminal for the new run. You can also open the workflow's local run history from the Logic Apps extension to inspect action inputs, outputs, skipped branches, and scope status.</p></section>
+}</pre><p>The output should show <code>StatusCode : 400</code> and <code>ResponseBody : {"status":"rejected","reason":"Invalid order"}</code>. If the status is 400 but the body is empty, open <strong>Rejected Response</strong> in the designer, confirm its <strong>Body</strong> contains the rejected JSON from the build steps, save the workflow, and run this test again.</p><p>After each request, inspect the host terminal for the new run. You can also open the workflow's local run history from the Logic Apps extension to inspect action inputs, outputs, skipped branches, and scope status.</p></section>
 <section id="validate" class="section-card reveal"><h2>Validation Checklist</h2><ul><li>The first payload returns <code>confirmed</code>.</li><li>The second payload returns <code>manual-review</code>.</li><li>The third payload returns HTTP 400.</li><li>Each 200 response contains a unique run ID.</li><li>The failure scope remains skipped during successful tests.</li></ul><p>To exercise failure handling, temporarily add a Compose action inside Try fulfillment with an expression that fails at runtime, such as <code>int('abc')</code>, run once, confirm the 500 response, and then remove the deliberate fault.</p></section>
-<section id="troubleshoot" class="section-card reveal"><h2>Troubleshooting</h2><div class="table-wrap"><table><thead><tr><th>Symptom</th><th>Check</th></tr></thead><tbody><tr><td>F5 appears to do nothing</td><td>Save the workflow, make sure you are in the new VS Code window that contains <code>order-fulfillment-workspace</code>, then open <strong>View</strong> &gt; <strong>Terminal</strong> and check the generated task terminal for startup output.</td></tr><tr><td>Host does not start</td><td>Confirm Core Tools v4, extension prerequisites, and storage settings; start Azurite if configured.</td></tr><tr><td>Callback URL lookup fails</td><td>Confirm the workflow and trigger names match the names in <code>$managementUri</code>, and verify that the local host finished starting on port 7071. Review the host terminal for an earlier startup error.</td></tr><tr><td>Saving shows "Failed to configure MSI permissions for connections"</td><td>You can ignore this notification in this lab. After saving, the extension tries to set up managed identity access for Azure-hosted connectors. Because you selected <strong>Skip for now</strong>, no Azure connection exists to configure. The workflow is still saved; confirm that <code>workflow.json</code> shows your latest change.</td></tr><tr><td>A valid order (Test 1) returns 400 rejected</td><td>The <strong>Order is valid</strong> expression was saved as text. Open its <strong>Code preview</strong> tab: if the left value is <code>"and(..."</code> instead of <code>"@and(..."</code>, delete it, re-add it using the <strong>fx</strong> Expression editor, and do the same for the <strong>Inventory is available</strong> values (<code>@int(...)</code>). Save the workflow and restart the host.</td></tr><tr><td>HTTP 400 has an empty body</td><td>Open the False-branch Response action and restore its JSON Body. Save the workflow, confirm the Body remains populated, and run the rejected-order test again.</td></tr><tr><td>Designer cannot load</td><td>Open the workspace root rather than only the workflow folder, then restart the extension host.</td></tr><tr><td>Two responses try to run</td><td>Review run-after settings so success and failure responses are mutually exclusive.</td></tr></tbody></table></div></section>
-<section id="cleanup" class="section-card reveal"><h2>Cleanup and References</h2><p>Stop the local host and Azurite. Delete the generated project folder if you do not need it, and remove any deployed Standard resource created while extending the lab.</p><div class="callout"><strong>Microsoft Learn:</strong> <a href="https://learn.microsoft.com/azure/logic-apps/create-single-tenant-workflows-visual-studio-code">Create Standard workflows with VS Code</a> and <a href="https://learn.microsoft.com/azure/logic-apps/logic-apps-control-flow-run-steps-group-scopes">Run actions based on scope status</a>.</div></section>
+<section id="deploy" class="section-card reveal"><h2>Optional: Deploy to Azure from VS Code</h2><p>After the local tests pass, you can publish the same project to a Standard logic app in Azure and run the same tests against the cloud endpoint.</p><div class="callout"><strong>Cost:</strong> A Standard logic app runs on a Workflow Standard plan that is billed while it exists, even when no workflow runs. Delete the resource group when you finish. Reusing an existing Workflow Standard plan adds no new plan charge.</div><ol class="lab-steps">
+<li>In the host terminal, press <strong>Ctrl+C</strong> to stop the local host, and save all files. Open <code>wf-order-fulfillment/workflow.json</code> and confirm that the <code>Order_is_valid</code> value still starts with <code>"@and(</code>. VS Code deploys this file as it is.</li>
+<li>In the Activity Bar, select <strong>Azure</strong>. Under <strong>Resources</strong>, select <strong>Sign in to Azure</strong> if you are not already signed in, and confirm that the subscription you want to use appears.</li>
+<li>In Explorer, right-click the <code>order-fulfillment-app</code> project folder, and select <strong>Deploy to logic app</strong>.
+<details class="screenshot-toggle"><summary>View screenshot</summary>
+<figure class="media-panel">
+  <img src="../images/custom/labs/lab03/lab03-step18-vscode-optional-deploy-to-logic-app.png" alt="Explorer context menu on the order-fulfillment-app project folder with Deploy to logic app selected." width="648" height="1258" loading="lazy" />
+  <figcaption>Right-click the project folder to deploy the entire Logic Apps project.</figcaption>
+</figure></details></li>
+<li>Select <strong>Create new Logic App (Standard) in Azure Advanced</strong>, and then answer the prompts:
+<details class="screenshot-toggle"><summary>View screenshot</summary>
+<figure class="media-panel">
+  <img src="../images/custom/labs/lab03/lab03-step18-vscode-optional-create-logic-app-advanced.png" alt="Logic App selection menu with an arrow pointing to Create new Logic App (Standard) in Azure Advanced." width="742" height="123" loading="lazy" />
+  <figcaption>Select the Advanced option to choose the hosting plan and other Azure resources.</figcaption>
+</figure></details>
+<div class="callout"><strong>Existing plan or logic app:</strong> If you already created an empty Standard logic app for this lab, select it by name in the <strong>Deploy to logic app</strong> list instead of a <strong>Create new</strong> option, confirm the overwrite prompt, and skip the table below. Deploying to a logic app <strong>overwrites</strong> its deployed project, so select one only if it is dedicated to this lab. To reuse only an existing WS1 plan, select <strong>Create new Logic App (Standard) in Azure Advanced</strong> and choose the plan at the <strong>App Service plan</strong> prompt.</div>
+<div class="table-wrap"><table><thead><tr><th>Prompt</th><th>Value</th></tr></thead><tbody><tr><td>Logic app name</td><td>A globally unique name, for example <code>la-order-fulfillment-&lt;suffix&gt;</code></td></tr><tr><td>Location</td><td>A region near you</td></tr><tr><td>Hosting plan</td><td><strong>Workflow Standard</strong></td></tr><tr><td>App Service plan</td><td>Select your existing Workflow Standard plan (for example, WS1), or select <strong>Create new App Service plan</strong>, enter a unique name, and select the <strong>WS1</strong> pricing tier. Existing plans appear only if they are Workflow Standard (WS1, WS2, or WS3) plans in the subscription and location you selected. If VS Code asks you to type a plan name, no matching plan exists, and the name you enter creates a new plan.</td></tr><tr><td>Resource group</td><td><strong>Create new resource group</strong>, for example <code>rg-order-fulfillment-&lt;suffix&gt;</code></td></tr><tr><td>Storage account</td><td><strong>Create new storage account</strong> with a unique name that uses only lowercase letters and numbers</td></tr><tr><td>SQL storage</td><td><strong>No</strong></td></tr><tr><td>Application Insights</td><td><strong>Skip for now</strong></td></tr></tbody></table></div></li>
+<li>When the confirmation message appears, select <strong>Deploy</strong>. To follow progress, select <strong>View &gt; Output</strong>, and then select <strong>Azure Logic Apps (Standard)</strong> in the Output list. Wait for the message that the deployment completed.
+<details class="screenshot-toggle"><summary>View screenshot</summary>
+<figure class="media-panel">
+  <img src="../images/custom/labs/lab03/lab03-step19-vscode-optional-deploy-azure-done.png" alt="VS Code deployment output showing that creating the Logic App and deploying to the app both succeeded." width="641" height="70" loading="lazy" />
+  <figcaption>Confirm that both resource creation and app deployment succeeded.</figcaption>
+</figure></details></li>
+<li>In the <a href="https://portal.azure.com">Azure portal</a>, open the new logic app, select <strong>Workflows</strong>, and then select <code>wf-order-fulfillment</code>. Open the <strong>Designer</strong>, select the <strong>When an HTTP request is received</strong> trigger, and copy its <strong>HTTP URL</strong>.</li>
+<li>Open a PowerShell terminal, replace <code>&lt;paste-the-HTTP-URL&gt;</code> below with the complete URL you copied (including its query string), and run this setup. This block is self-contained and does not require the local host or the earlier helper to be running. Keep the URL inside single quotes.
+<pre class="code">$callbackUri = '&lt;paste-the-HTTP-URL&gt;'
+
+function Invoke-OrderWorkflow {
+  param([hashtable]$Payload)
+
+  $body = $Payload | ConvertTo-Json
+
+  try {
+    $response = Invoke-WebRequest `
+      -Uri $callbackUri `
+      -Method Post `
+      -ContentType 'application/json' `
+      -Body $body
+
+    [pscustomobject]@{
+      StatusCode = [int]$response.StatusCode
+      ResponseBody = $response.Content
+    } | Format-List
+  }
+  catch {
+    $responseBody = $_.ErrorDetails.Message
+
+    if ([string]::IsNullOrWhiteSpace($responseBody) -and $_.Exception.Response.Content) {
+      $responseBody = $_.Exception.Response.Content.ReadAsStringAsync().GetAwaiter().GetResult()
+    }
+
+    if ([string]::IsNullOrWhiteSpace($responseBody) -and $_.Exception.Response.GetResponseStream) {
+      $reader = [System.IO.StreamReader]::new($_.Exception.Response.GetResponseStream())
+      try {
+        $responseBody = $reader.ReadToEnd()
+      }
+      finally {
+        $reader.Dispose()
+      }
+    }
+
+    [pscustomobject]@{
+      StatusCode = [int]$_.Exception.Response.StatusCode
+      ResponseBody = $responseBody
+    } | Format-List
+  }
+}</pre>
+<h3>Cloud Test 1: Confirmed order</h3><pre class="code">Invoke-OrderWorkflow -Payload @{
+  orderId = 'ORD-1001'
+  customerId = 'C-42'
+  quantity = 2
+  availableStock = 8
+}</pre><p>Expect HTTP <code>200</code> and a response body containing <code>confirmed</code>.</p>
+<h3>Cloud Test 2: Manual review</h3><pre class="code">Invoke-OrderWorkflow -Payload @{
+  orderId = 'ORD-1002'
+  customerId = 'C-42'
+  quantity = 10
+  availableStock = 3
+}</pre><p>Expect HTTP <code>200</code> and a response body containing <code>manual-review</code>.</p>
+<h3>Cloud Test 3: Rejected order</h3><pre class="code">Invoke-OrderWorkflow -Payload @{
+  orderId = ''
+  customerId = 'C-42'
+  quantity = 0
+  availableStock = 3
+}</pre><p>Expect HTTP <code>400</code> and <code>{"status":"rejected","reason":"Invalid order"}</code>. The helper displays this expected error response without stopping the test session.</p></li>
+<li>In the portal, open the workflow's <strong>Run history</strong> to inspect each run's actions, inputs, and outputs.</li>
+</ol><div class="callout"><strong>Security:</strong> The HTTP URL contains a <code>sig</code> value that lets anyone who has the URL run the workflow. Do not commit or share it. <code>local.settings.json</code> is not deployed; this workflow uses no app settings, so nothing else needs to be configured in Azure.</div></section>
+<section id="troubleshoot" class="section-card reveal"><h2>Troubleshooting</h2><div class="table-wrap"><table><thead><tr><th>Symptom</th><th>Check</th></tr></thead><tbody><tr><td>F5 appears to do nothing</td><td>Save the workflow, make sure you are in the new VS Code window that contains <code>order-fulfillment-workspace</code>, then open <strong>View</strong> &gt; <strong>Terminal</strong> and check the generated task terminal for startup output.</td></tr><tr><td>Host does not start</td><td>Confirm Core Tools v4, extension prerequisites, and storage settings; start Azurite if configured.</td></tr><tr><td>Callback URL lookup fails</td><td>Confirm the workflow and trigger names match the names in <code>$managementUri</code>, and verify that the local host finished starting on port 7071. Review the host terminal for an earlier startup error.</td></tr><tr><td>Saving shows "Failed to configure MSI permissions for connections"</td><td>You can ignore this notification in this lab. After saving, the extension tries to set up managed identity access for Azure-hosted connectors. Because you selected <strong>Skip for now</strong>, no Azure connection exists to configure. The workflow is still saved; confirm that <code>workflow.json</code> shows your latest change.</td></tr><tr><td>A valid order (Test 1) returns 400 rejected</td><td>The <strong>Order is valid</strong> expression was saved as text. Open its <strong>Code preview</strong> tab: if the left value is <code>"and(..."</code> instead of <code>"@and(..."</code>, delete it, re-add it in the <strong>Expression</strong> editor window (select the <strong>fx</strong> icon), and do the same for the <strong>Inventory is available</strong> values (<code>@int(...)</code>). Save the workflow and restart the host.</td></tr><tr><td>HTTP 400 has an empty body</td><td>Open the False-branch Response action and restore its JSON Body. Save the workflow, confirm the Body remains populated, and run the rejected-order test again.</td></tr><tr><td>Designer cannot load</td><td>Open the workspace root rather than only the workflow folder, then restart the extension host.</td></tr><tr><td>Two responses try to run</td><td>Review run-after settings so success and failure responses are mutually exclusive.</td></tr></tbody></table></div></section>
+<section id="cleanup" class="section-card reveal"><h2>Cleanup and References</h2><p>Stop the local host and Azurite. If you completed the optional deployment, delete the <code>rg-order-fulfillment-&lt;suffix&gt;</code> resource group to stop charges. If you reused an existing plan, delete only the logic app and storage account that the deployment created, so you keep the plan. Delete the generated project folder if you do not need it, and remove any deployed Standard resource created while extending the lab.</p><div class="callout"><strong>Microsoft Learn:</strong> <a href="https://learn.microsoft.com/azure/logic-apps/create-single-tenant-workflows-visual-studio-code">Create Standard workflows with VS Code</a> and <a href="https://learn.microsoft.com/azure/logic-apps/logic-apps-control-flow-run-steps-group-scopes">Run actions based on scope status</a>.</div></section>
 <nav class="pager" aria-label="Lab pagination"><a class="prev" href="lab02-timer-daily-report-portal.html"><small>Previous</small><strong>&larr; Lab 02: Timer Daily Report</strong></a><a class="next" href="lab04-event-grid-blob-processor-portal.html"><small>Next</small><strong>Lab 04: Event Grid Blob Processor &rarr;</strong></a></nav>
-</main><aside class="toc" aria-label="Table of contents"><h3>On This Page</h3><a href="#scenario">Scenario</a><a href="#architecture">Design</a><a href="#prerequisites">Prerequisites</a><a href="#project">Create Project</a><a href="#build">Build</a><a href="#run">Run Locally</a><a href="#validate">Validate</a><a href="#troubleshoot">Troubleshooting</a><a href="#cleanup">Cleanup</a></aside></div>
+</main><aside class="toc" aria-label="Table of contents"><h3>On This Page</h3><a href="#scenario">Scenario</a><a href="#architecture">Design</a><a href="#prerequisites">Prerequisites</a><a href="#project">Create Project</a><a href="#build">Build</a><a href="#run">Run Locally</a><a href="#validate">Validate</a><a href="#deploy">Deploy (Optional)</a><a href="#troubleshoot">Troubleshooting</a><a href="#cleanup">Cleanup</a></aside></div>
 </div><script type="module" src="../assets/site.js"></script></body></html>
