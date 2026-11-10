@@ -19,19 +19,118 @@
  classDef azure fill:#e6f2fb,stroke:#0078d4,stroke-width:2,color:#0f1722;
  classDef result fill:#e7f5e7,stroke:#107c10,stroke-width:2,color:#103010;
  class U,I,E,L azure; class A,H result;</pre></div><div class="callout"><strong>Loop prevention:</strong> subscribe only to the <strong>incoming</strong> container. Audit blobs are written to a different container and must not match the event subject filter.</div></section>
-<section id="prerequisites" class="section-card reveal"><h2>Prerequisites and Names</h2><ul><li>Permission to create Storage, Event Grid subscriptions, API connections, and a Consumption logic app.</li><li>A region that supports the selected services.</li><li>The <strong>Microsoft.EventGrid</strong> resource provider registered in your subscription.</li></ul><div class="table-wrap"><table><thead><tr><th>Resource</th><th>Suggested name</th></tr></thead><tbody><tr><td>Logic app</td><td><code>la-blob-events-&lt;suffix&gt;</code></td></tr><tr><td>Storage account</td><td><code>stlaevents&lt;suffix&gt;</code></td></tr><tr><td>Source container</td><td><code>incoming</code></td></tr><tr><td>Output container</td><td><code>audit</code></td></tr></tbody></table></div></section>
-<section id="prepare" class="section-card reveal"><h2>Prepare Resources</h2><ol><li>Create a general-purpose v2 storage account with Event Grid support.</li><li>Create private blob containers named <strong>incoming</strong> and <strong>audit</strong>.</li><li>Create a Logic App (Consumption) in the same resource group.</li><li>Enable its system-assigned identity and grant <strong>Storage Blob Data Contributor</strong> only where needed if your Blob connector operation supports managed identity.</li></ol></section>
-<section id="build" class="section-card reveal"><h2>Build the Event Workflow</h2><ol><li>In the designer, select the Event Grid trigger <strong>When a resource event occurs</strong>.</li><li>Select the subscription, resource type <strong>Microsoft.Storage.StorageAccounts</strong>, and your storage account resource.</li><li>Select the <strong>Microsoft.Storage.BlobCreated</strong> event type.</li><li>Add the <strong>Prefix Filter</strong> advanced parameter and set it to <code>/blobServices/default/containers/incoming/</code>. Save once so Azure can create the event subscription.</li><li>Add a <strong>Compose</strong> action named <strong>Audit record</strong> and build the JSON object below. Use trigger dynamic content for the event fields where available.</li><li>Add Azure Blob Storage <strong>Create blob (V2)</strong>. Create the connection as in Lab 02 (managed identity when authorized, otherwise access key for the lab). Set <strong>Folder path</strong> to <code>/audit</code>, and use the blob name and content expressions below.</li><li>Save the workflow.</li></ol>
-<h3>Audit record</h3><pre class="code" data-lang="json">{
+<section id="prerequisites" class="section-card reveal"><h2>Prerequisites and Names</h2><ul><li>Permission to create Storage, Event Grid subscriptions, API connections, and a Consumption logic app.</li><li>A region that supports the selected services.</li><li>The <strong>Microsoft.EventGrid</strong> resource provider registered in your subscription.</li></ul>
+<h3>Verify Event Grid Resource Provider Registration</h3><ol><li>Sign in to the <a href="https://portal.azure.com">Azure portal</a>, search for <strong>Subscriptions</strong>, and open it.</li><li>Select the subscription you will use for this lab. Registration applies to the subscription, not an individual resource group.</li><li>In the subscription menu, under <strong>Settings</strong>, select <strong>Resource providers</strong>.</li><li>In the filter box, enter <code>Microsoft.EventGrid</code> and check its <strong>Status</strong>.</li><li>If the status is <strong>Registered</strong>, no change is needed. If it is <strong>NotRegistered</strong>, select <strong>Microsoft.EventGrid</strong> and then select <strong>Register</strong>.</li><li>If the status is <strong>Registering</strong>, registration is still in progress. Use <strong>Refresh</strong> to check again and confirm that the status becomes <strong>Registered</strong> before continuing with this lab.</li></ol><div class="callout"><strong>Registration permissions:</strong> you need the provider's <code>/register/action</code> permission at subscription scope, included in the <strong>Contributor</strong> and <strong>Owner</strong> roles. Contributor access only to a resource group is not sufficient. If registration is unavailable or denied, ask your subscription administrator to register <code>Microsoft.EventGrid</code>. See <a href="https://learn.microsoft.com/azure/azure-resource-manager/management/resource-providers-and-types#register-resource-provider">Register an Azure resource provider</a>.</div>
+<div class="table-wrap"><table><thead><tr><th>Resource</th><th>Suggested name</th></tr></thead><tbody><tr><td>Logic app</td><td><code>la-blob-events-&lt;suffix&gt;</code></td></tr><tr><td>Storage account</td><td><code>stlaevents&lt;suffix&gt;</code></td></tr><tr><td>Source container</td><td><code>incoming</code></td></tr><tr><td>Output container</td><td><code>audit</code></td></tr></tbody></table></div></section>
+<section id="prepare" class="section-card reveal"><h2>Prepare Resources</h2><ol class="lab-steps">
+  <li>Create a general-purpose v2 storage account with Event Grid support.
+    <details class="screenshot-toggle"><summary>View screenshot</summary>
+    <figure class="media-panel">
+      <img src="../images/custom/labs/lab04/lab04-step1-create-azure-storage-account.png" alt="Create a storage account Basics page with Azure Blob Storage or Azure Data Lake Storage as the primary service, General purpose workload, Standard performance, and locally redundant storage selected." width="1221" height="1204" loading="lazy" />
+      <figcaption>Step 1: Configure the storage account basics. Use your own unique account name, subscription, resource group, and region.</figcaption>
+    </figure></details>
+    <details class="screenshot-toggle"><summary>View screenshot</summary>
+    <figure class="media-panel">
+      <img src="../images/custom/labs/lab04/lab04-step1.1-create-azure-storage-account-data-prtection.png" alt="Storage account Data protection page showing point-in-time restore, soft delete, versioning, blob change feed, and immutability options unchecked." width="1052" height="1176" loading="lazy" />
+      <figcaption>Step 1: Review Data protection before selecting Review and create. The unchecked options shown are example lab settings, not requirements; retain any settings required by your organization.</figcaption>
+    </figure></details></li>
+  <li>Create private blob containers named <strong>incoming</strong> and <strong>audit</strong>.
+    <details class="screenshot-toggle"><summary>View screenshot</summary>
+    <figure class="media-panel">
+      <img src="../images/custom/labs/lab04/lab04-step1.2-create-azure-storage-account-create-2-containers.png" alt="Storage account Containers page listing audit and incoming, both with Private anonymous access level." width="1375" height="635" loading="lazy" />
+      <figcaption>Step 2: Confirm that both incoming and audit exist and their anonymous access level is Private.</figcaption>
+    </figure></details></li>
+  <li>In the Azure portal, search for <strong>Logic apps</strong> and select <strong>Add</strong>. Create a <strong>Consumption</strong> logic app named <code>la-blob-events-&lt;suffix&gt;</code> in the same subscription and resource group as your storage account. Select your lab region, then select <strong>Review + create &gt; Create</strong>. When deployment completes, select <strong>Go to resource</strong>.</li>
+  <li>For Blob connector managed identity authentication, open <strong>Settings &gt; Identity</strong> in the logic app. On the <strong>System assigned</strong> tab, set <strong>Status</strong> to <strong>On</strong>, select <strong>Save</strong>, and confirm.
+    <details class="screenshot-toggle"><summary>View screenshot</summary>
+    <figure class="media-panel">
+      <img src="../images/custom/labs/lab04/lab04-step2-enable-identity-logic-apps.png" alt="Logic app Identity page with System assigned selected, Status set to On, and the Azure role assignments button highlighted." width="1162" height="868" loading="lazy" />
+      <figcaption>Step 4: Enable the logic app's system-assigned identity, then open Azure role assignments.</figcaption>
+    </figure></details></li>
+  <li>Select <strong>Azure role assignments &gt; Add role assignment</strong>. Set <strong>Scope</strong> to <strong>Storage</strong>, select your subscription and lab storage account as the <strong>Resource</strong>, choose <strong>Storage Blob Data Contributor</strong>, and select <strong>Save</strong>. You need permission to assign roles at the selected scope; ask your administrator if this is unavailable.
+    <details class="screenshot-toggle"><summary>View screenshot</summary>
+    <figure class="media-panel">
+      <img src="../images/custom/labs/lab04/lab04-step2.1-assign-storage-contributor-role-logic-apps.png" alt="Add role assignment panel with Storage scope, the lab storage account resource, and Storage Blob Data Contributor selected." width="1703" height="436" loading="lazy" />
+      <figcaption>Step 5: Grant the logic app identity Storage Blob Data Contributor on the lab storage account.</figcaption>
+    </figure></details></li>
+  <li>Select <strong>Refresh</strong> and confirm that the role assignment lists your storage account and logic app identity. Allow several minutes for permissions to take effect.
+    <details class="screenshot-toggle"><summary>View screenshot</summary>
+    <figure class="media-panel">
+      <img src="../images/custom/labs/lab04/lab04-step2.2-role-assigned-logic-apps.png" alt="Azure role assignments list showing Storage Blob Data Contributor on the storage account assigned to the logic app identity, with identifying values redacted." width="1448" height="366" loading="lazy" />
+      <figcaption>Step 6: Confirm the Storage Blob Data Contributor assignment lists your storage account and logic app identity before using managed identity in the Blob connector. Identifying values are redacted in this example.</figcaption>
+    </figure></details></li>
+</ol></section>
+<section id="build" class="section-card reveal"><h2>Build the Event Workflow</h2>
+<div class="callout"><strong>Where the link happens:</strong> create storage and the Consumption logic app first, then configure the Event Grid trigger <em>inside the logic app designer</em>. Saving that trigger creates the Event Grid event subscription on your storage account. Do not create a separate custom topic or manually add a second event subscription for this lab. The identity and Storage role assignment above authorize writing audit blobs; they do not subscribe the workflow to events. If managed identity is unavailable for your Blob connector, skip preparation steps 4&ndash;6 and use the temporary access key fallback described in Lab 02.</div>
+<h3>Link Event Grid to the Logic App</h3>
+<div class="callout"><strong>Why OAuth after enabling managed identity?</strong> Enabling the logic app's system-assigned managed identity creates a service principal in Microsoft Entra ID, but each connector must support that authentication method. The <a href="https://learn.microsoft.com/connectors/azureeventgrid/">Azure Event Grid managed connector</a> does not list managed identity as a supported authentication option. This lab therefore uses two separate connections: <strong>OAuth with your signed-in account</strong> for the Event Grid trigger to create and manage the event subscription, and <strong>managed identity</strong> for the Blob Storage action to write audit blobs. The <strong>Storage Blob Data Contributor</strong> role grants blob data access, not permission to manage Event Grid event subscriptions. If your designer offers <strong>Service principal</strong> authentication, that option requires a separately configured application service principal, its credentials, and appropriate Event Grid permissions; it does not reuse the system-assigned identity enabled above.</div>
+<ol class="lab-steps">
+  <li>Open your newly created logic app. Under <strong>Development Tools</strong>, select <strong>Logic app designer</strong>. Start with a blank workflow if prompted.</li>
+  <li>Select <strong>Add a trigger</strong>, search for <strong>Azure Event Grid</strong>, and choose <strong>When a resource event occurs</strong>. Do not choose an HTTP request or Blob Storage polling trigger.
+    <details class="screenshot-toggle"><summary>View screenshot</summary>
+    <figure class="media-panel">
+      <img src="../images/custom/labs/lab04/lab04-step3-logic-apps-add-event-grid-trigger.png" alt="Add a trigger pane with Event Grid in the search box and the Azure Event Grid trigger When a resource event occurs in the results." width="432" height="278" loading="lazy" />
+      <figcaption>Step 2: Select When a resource event occurs under Azure Event Grid.</figcaption>
+    </figure></details></li>
+  <li>If prompted to create an Event Grid connection, select <strong>OAuth</strong>, confirm the Microsoft Entra tenant for your subscription, and select <strong>Sign in</strong>. Use an account authorized to create Event Grid event subscriptions on the source storage account. This Event Grid connection is separate from the Blob Storage connection used later.</li>
+  <li>In the trigger parameters, select your storage account's <strong>Subscription</strong>, set <strong>Resource Type</strong> to <strong>Microsoft.Storage.StorageAccounts</strong>, and set <strong>Resource Name</strong> to your lab storage account, not the logic app or a container.</li>
+  <li>For the event type, select <strong>Microsoft.Storage.BlobCreated</strong>. Under <strong>Advanced parameters</strong>, add <strong>Prefix Filter</strong> and enter <code>/blobServices/default/containers/incoming/</code>.
+    <details class="screenshot-toggle"><summary>View screenshot</summary>
+    <figure class="media-panel">
+      <img src="../images/custom/labs/lab04/lab04-step3.1-logic-apps-event-grid-trigger-creation.png" alt="Event Grid trigger parameters with Microsoft.Storage.StorageAccounts as Resource Type, a storage account selected, Microsoft.Storage.BlobCreated as Event Type, and /blobServices/default/containers/incoming/ as Prefix Filter." width="508" height="851" loading="lazy" />
+      <figcaption>Step 5: Confirm your storage account, BlobCreated event type, and incoming container prefix before saving. Identifying values are redacted in this example.</figcaption>
+    </figure></details></li>
+  <li>Select <strong>Save</strong> on the designer toolbar. Azure creates the Event Grid event subscription that delivers matching storage events to this workflow.</li>
+  <li>To verify the link, open your storage account in another portal tab and select <strong>Events &gt; Event Subscriptions</strong>. Select <strong>Refresh</strong> and find the event subscription created by the trigger. Confirm that <strong>Provisioning state</strong> is <strong>Succeeded</strong> and the event type is <strong>Microsoft.Storage.BlobCreated</strong>. Open the subscription to confirm the full subject prefix is <code>/blobServices/default/containers/incoming/</code>; the list can truncate it. <strong>WebHook</strong> is the expected endpoint type because Event Grid delivers events to the Logic App trigger's HTTPS callback endpoint. Return to the logic app designer. Do not upload a test file until you have added and saved the actions below.
+    <details class="screenshot-toggle"><summary>View screenshot</summary>
+    <figure class="media-panel">
+      <img src="../images/custom/labs/lab04/lab04-step3.2-logic-apps-event-grid-trigger-verification-storage-events.png" alt="Storage account Events page on the Event Subscriptions tab, showing a LogicApp-named subscription with WebHook endpoint, Microsoft.Storage.BlobCreated event type, and Succeeded provisioning state." width="1686" height="786" loading="lazy" />
+      <figcaption>Step 7: Confirm the generated event subscription under Storage account &gt; Events &gt; Event Subscriptions. WebHook is correct for this trigger; Succeeded confirms provisioning, not delivery of a test event.</figcaption>
+    </figure></details></li>
+</ol>
+<h3>Add the Audit Actions</h3><ol class="lab-steps">
+  <li>Below the Event Grid trigger, add a <strong>Compose</strong> action named <strong>Audit record</strong> and build the JSON object below. Use trigger dynamic content for the event fields where available.
+    <p class="step-label">Audit record</p><pre class="code" data-lang="json">{
   "eventId": "@{triggerBody()?['id']}",
   "eventType": "@{triggerBody()?['eventType']}",
   "subject": "@{triggerBody()?['subject']}",
   "blobUrl": "@{triggerBody()?['data']?['url']}",
   "receivedUtc": "@{utcNow()}",
   "workflowRunId": "@{workflow()?['run']?['name']}"
-}</pre><pre class="code">Folder path: /audit
+}</pre>
+    <details class="screenshot-toggle"><summary>View screenshot</summary>
+    <figure class="media-panel">
+      <img src="../images/custom/labs/lab04/lab04-step4-logic-apps-add-compose.png" alt="Audit record Compose action with a JSON object in Inputs containing eventId, eventType, subject, blobUrl, receivedUtc, and workflowRunId populated with dynamic content and expressions." width="515" height="362" loading="lazy" />
+      <figcaption>Step 1: Build the Audit record object in Compose Inputs. The expression tokens abbreviate their contents; verify the full expressions against the JSON example above. In the expression editor, omit the leading @ and interpolation braces.</figcaption>
+    </figure></details></li>
+  <li>Add Azure Blob Storage <strong>Create blob (V2)</strong> below <strong>Audit record</strong>.
+    <details class="screenshot-toggle"><summary>View screenshot</summary>
+    <figure class="media-panel">
+      <img src="../images/custom/labs/lab04/lab04-step5-logic-apps-create-blob-action.png" alt="Add an action pane with Create blob (V2) in the search box and the matching Azure Blob Storage action in the results." width="429" height="247" loading="lazy" />
+      <figcaption>Step 2: Select Create blob (V2) under Azure Blob Storage.</figcaption>
+    </figure></details>
+    <p>Create the connection as in Lab 02. Enter a connection name, select <strong>Logic Apps Managed Identity</strong> as the authentication type when available and authorized, and select <strong>Create new</strong>. If managed identity is unavailable, use an access key only as the temporary lab fallback.</p>
+    <details class="screenshot-toggle"><summary>View screenshot</summary>
+    <figure class="media-panel">
+      <img src="../images/custom/labs/lab04/lab04-step5.1-logic-apps-create-blob-connection.png" alt="Create new connection tab for Create blob (V2), with a connection name entered and Logic Apps Managed Identity selected as Authentication Type." width="668" height="439" loading="lazy" />
+      <figcaption>Step 2: Create the Blob Storage connection using the managed identity enabled during preparation. This is separate from the Event Grid OAuth connection.</figcaption>
+    </figure></details>
+    <p>In <strong>Storage account name or blob endpoint</strong>, select your lab storage account or enter its blob endpoint, such as <code>https://&lt;storage-account-name&gt;.blob.core.windows.net</code>. Set <strong>Folder path</strong> to <code>/audit</code>, and use the blob name and content expressions below. When shown, confirm <strong>Managed identity</strong> is <strong>System-assigned managed identity</strong>.</p>
+    <p class="step-label">Blob values</p><pre class="code">Folder path: /audit
 Blob name: @concat('event-', triggerBody()?['id'], '.json')
-Blob content: @string(outputs('Audit_record'))</pre><div class="speaker-note"><h3>Connector output shape</h3><p>If your trigger exposes the Event Grid event as an array or uses different dynamic-content tokens, select the values from the designer and inspect the first trigger output in run history. Do not guess property nesting in production workflows.</p></div></section>
+Blob content: @string(outputs('Audit_record'))</pre>
+    <details class="screenshot-toggle"><summary>View screenshot</summary>
+    <figure class="media-panel">
+      <img src="../images/custom/labs/lab04/lab04-step5.2-logic-apps-create-blob-container-folder.png" alt="Create blob (V2) parameters showing a blob endpoint, /audit as Folder path, concat and string expression tokens for Blob name and Blob content, and System-assigned managed identity selected." width="514" height="643" loading="lazy" />
+      <figcaption>Step 2: Select your own storage endpoint, write to /audit, and verify the full concat and string expressions against the values above. In the expression editor, omit the leading @.</figcaption>
+    </figure></details></li>
+  <li>Confirm the workflow contains <strong>When a resource event occurs</strong>, <strong>Audit record</strong>, and <strong>Create blob (V2)</strong> in that order, then save the workflow. If your designer shows <strong>Publish</strong>, select it to make your draft changes live before testing.
+    <details class="screenshot-toggle"><summary>View screenshot</summary>
+    <figure class="media-panel">
+      <img src="../images/custom/labs/lab04/lab04-full-workflow-final.png" alt="Completed workflow with When a resource event occurs, Audit record, and Create blob (V2) connected in sequence." width="395" height="597" loading="lazy" />
+      <figcaption>Step 3: Confirm the trigger and audit actions appear in this order before saving or publishing and testing the workflow.</figcaption>
+    </figure></details></li>
+</ol><div class="speaker-note"><h3>Connector output shape</h3><p>If your trigger exposes the Event Grid event as an array or uses different dynamic-content tokens, select the values from the designer and inspect the first trigger output in run history. Do not guess property nesting in production workflows.</p></div></section>
 <section id="test" class="section-card reveal"><h2>Test the Event</h2><ol><li>Upload a small text file named <code>order-1001.txt</code> to <strong>incoming</strong>.</li><li>Wait for the workflow run, then open run history and inspect the trigger body.</li><li>Open the <strong>audit</strong> container and inspect the generated JSON blob.</li><li>Upload a file directly to <strong>audit</strong> and confirm that no new workflow run starts.</li></ol><ul><li>The audit record identifies the source blob URL and event ID.</li><li>Exactly one run occurs for the upload to incoming.</li><li>No loop occurs when the workflow creates the audit blob.</li></ul></section>
 <section id="troubleshoot" class="section-card reveal"><h2>Troubleshooting</h2><div class="table-wrap"><table><thead><tr><th>Symptom</th><th>Check</th></tr></thead><tbody><tr><td>No run starts</td><td>Open the storage account Event Grid subscription and check provisioning status, event type, and subject prefix.</td></tr><tr><td>Repeated runs occur</td><td>Narrow the subject prefix to incoming and verify the output action writes only to audit.</td></tr><tr><td>Audit action is unauthorized</td><td>Confirm connector authentication and the identity's data-plane role assignment.</td></tr></tbody></table></div></section>
 <section id="cleanup" class="section-card reveal"><h2>Cleanup and References</h2><p>Delete the Event Grid subscription before deleting the logic app, then delete storage data and the resource group when no longer needed.</p><div class="callout"><strong>Microsoft Learn:</strong> <a href="https://learn.microsoft.com/azure/event-grid/monitor-virtual-machine-changes-logic-app">Use Event Grid with Logic Apps</a>, <a href="https://learn.microsoft.com/azure/event-grid/event-filtering">Filter Event Grid events</a>, and <a href="https://learn.microsoft.com/azure/storage/blobs/storage-blob-event-overview">React to Blob Storage events</a>.</div></section>
