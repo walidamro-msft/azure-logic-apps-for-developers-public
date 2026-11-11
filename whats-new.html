@@ -32,6 +32,47 @@
         <p>This page highlights visitor-facing additions, improvements, and corrections. Earlier entries are summarized from the repository history; this is not a list of every commit.</p>
 
         <!-- Keep entries newest first; add visitor-facing changes here and update the shared footer date in assets/site.js. -->
+        <section id="2026-11-10" class="section-card reveal">
+          <h2><time datetime="2026-11-10">November 10, 2026</time></h2>
+          <h3>Lab 05 testing walkthrough</h3>
+          <ul>
+            <li><strong>Expanded:</strong> <a href="labs/lab05-logic-app-testing-portal.html">Lab 05: Logic App Testing</a> with portal screenshots covering the HTTP trigger, Product lookup action, response branches, static results, and draft run history.</li>
+            <li><strong>Clarified:</strong> success and failure Run after settings, mocking the Product lookup action through its Testing tab, and using Run draft with payload without publishing.</li>
+            <li><strong>Added:</strong> guidance for checking both the HTTP 200 success path and HTTP 503 dependency-failure path, then disabling static results after testing.</li>
+          </ul>
+        </section>
+
+        <section id="2026-11-09" class="section-card reveal">
+          <h2><time datetime="2026-11-09">November 9, 2026</time></h2>
+          <h3>Lab 03 cloud deployment and Lab 04 portal walkthrough</h3>
+          <ul>
+            <li><strong>Expanded:</strong> the optional Azure deployment instructions in <a href="labs/lab03-order-fulfillment-vscode.html">Lab 03: Order Fulfillment</a>, with VS Code resource-creation and deployment screenshots plus cloud testing steps.</li>
+            <li><strong>Added:</strong> a screenshot walkthrough for <a href="labs/lab04-event-grid-blob-processor-portal.html">Lab 04: Event Grid Blob Processor</a>, from storage account and container preparation through the completed workflow.</li>
+            <li><strong>Clarified:</strong> Lab 04 managed identity and storage role assignments, Event Grid trigger setup and verification, and the Blob Storage connection and output configuration.</li>
+          </ul>
+        </section>
+
+        <section id="2026-11-07" class="section-card reveal">
+          <h2><time datetime="2026-11-07">November 7, 2026</time></h2>
+          <h3>Lab 03 designer guidance and troubleshooting</h3>
+          <ul>
+            <li><strong>Added:</strong> step-by-step VS Code screenshots and a completed-workflow reference in <a href="labs/lab03-order-fulfillment-vscode.html">Lab 03: Order Fulfillment</a>.</li>
+            <li><strong>Aligned:</strong> the instructions with the <code>wf-order-fulfillment</code> workflow name.</li>
+            <li><strong>Corrected:</strong> condition-entry guidance to use the Expression editor and a single-line expression, explaining the <code>@</code> prefix and avoiding conditions saved as literal text.</li>
+            <li><strong>Added:</strong> callback URL checks and troubleshooting for managed identity save notifications, with updated condition screenshots.</li>
+          </ul>
+        </section>
+
+        <section id="2026-11-06" class="section-card reveal">
+          <h2><time datetime="2026-11-06">November 6, 2026</time></h2>
+          <h3>Screenshot walkthroughs for Labs 01 and 02</h3>
+          <ul>
+            <li><strong>Added:</strong> expandable, step-by-step screenshots in <a href="labs/lab01-http-product-api-portal.html">Lab 01: HTTP Product API</a>, covering request validation, success and rejection responses, and the completed workflow.</li>
+            <li><strong>Clarified:</strong> draft testing versus publishing before calling the Lab 01 HTTP callback URL.</li>
+            <li><strong>Expanded:</strong> <a href="labs/lab02-timer-daily-report-portal.html">Lab 02: Timer Daily Report</a> with managed identity and storage role-assignment steps, recurrence and CSV configuration screenshots, Blob Storage connection guidance, and output verification.</li>
+          </ul>
+        </section>
+
         <section id="2026-10-20" class="section-card reveal">
           <h2><time datetime="2026-10-20">October 20, 2026</time></h2>
           <h3>New migration topic and workshop update history</h3>
@@ -58,6 +99,7 @@
           <h3>Visible content freshness</h3>
           <ul>
             <li><strong>Added:</strong> a shared last-updated date in the footer across workshop pages, making the content update date visible to visitors.</li>
+            <li><strong>Updated:</strong> the <a href="index.html">home page</a> branding to remove customer-specific attribution.</li>
           </ul>
         </section>
 
@@ -66,6 +108,14 @@
           <h3>Workshop license access</h3>
           <ul>
             <li><strong>Added:</strong> a shared footer link to the local <a href="license.html">License page</a>.</li>
+          </ul>
+        </section>
+
+        <section id="2026-07-21" class="section-card reveal">
+          <h2><time datetime="2026-07-21">July 21, 2026</time></h2>
+          <h3>Public workshop publishing</h3>
+          <ul>
+            <li><strong>Added:</strong> an automated workflow to publish workshop content to the public repository.</li>
           </ul>
         </section>
 
@@ -79,9 +129,10 @@
 
         <section id="2026-07-13" class="section-card reveal">
           <h2><time datetime="2026-07-13">July 13, 2026</time></h2>
-          <h3>Lab 06 script contract clarification</h3>
+          <h3>Content consolidation and Lab 06 script contract</h3>
           <ul>
             <li><strong>Clarified:</strong> the C# script contract in <a href="labs/lab06-inline-dotnet-code-vscode.html">Lab 06: Inline .NET Code</a>.</li>
+            <li><strong>Consolidated:</strong> overlapping topic content and refined explanations across <a href="topics/hosting-plans.html">hosting plans</a>, <a href="topics/runtime-lifecycle.html">runtime lifecycle</a>, core concepts, connectors, and trainer guidance.</li>
           </ul>
         </section>
 
@@ -91,19 +142,36 @@
           <ul>
             <li><strong>Added:</strong> the <a href="topics/portal-menus.html">Portal Menus</a> subtopic and expanded Assemblies guidance, linked from <a href="topics/build-and-manage.html">Build &amp; Manage</a>.</li>
             <li><strong>Corrected:</strong> the C# Script Code action name in <a href="labs/lab06-inline-dotnet-code-vscode.html">Lab 06</a> and clarified error handling with an invalid-request example.</li>
+            <li><strong>Clarified:</strong> recurrence scheduling, CSV input, Blob Storage authentication, and output settings in <a href="labs/lab02-timer-daily-report-portal.html">Lab 02: Timer Daily Report</a>.</li>
+          </ul>
+        </section>
+
+        <section id="2026-07-10" class="section-card reveal">
+          <h2><time datetime="2026-07-10">July 10, 2026</time></h2>
+          <h3>Initial developer workshop</h3>
+          <ul>
+            <li><strong>Added:</strong> the <a href="index.html">developer workshop</a>, including topic modules, <a href="labs/index.html">six hands-on labs</a>, and <a href="trainer/index.html">trainer resources</a>.</li>
+            <li><strong>Included:</strong> shared navigation, styling, diagrams, reference images, and a <a href="license.html">License page</a>.</li>
+            <li><strong>Added:</strong> an App Service deployment workflow, with the target web app name configured through a repository secret.</li>
           </ul>
         </section>
       </main>
 
       <aside class="toc" aria-label="Update dates">
         <h3>Update Dates</h3>
+        <a href="#2026-11-10">November 10, 2026</a>
+        <a href="#2026-11-09">November 9, 2026</a>
+        <a href="#2026-11-07">November 7, 2026</a>
+        <a href="#2026-11-06">November 6, 2026</a>
         <a href="#2026-10-20">October 20, 2026</a>
         <a href="#2026-10-02">October 2, 2026</a>
         <a href="#2026-10-01">October 1, 2026</a>
         <a href="#2026-07-23">July 23, 2026</a>
+        <a href="#2026-07-21">July 21, 2026</a>
         <a href="#2026-07-14">July 14, 2026</a>
         <a href="#2026-07-13">July 13, 2026</a>
         <a href="#2026-07-12">July 12, 2026</a>
+        <a href="#2026-07-10">July 10, 2026</a>
       </aside>
     </div>
   </div>
