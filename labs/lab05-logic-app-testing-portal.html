@@ -19,19 +19,128 @@
  classDef result fill:#e7f5e7,stroke:#107c10,stroke-width:2,color:#103010;
  class T,H,F azure; class C,E result;</pre></div></section>
 <section id="prerequisites" class="section-card reveal"><h2>Prerequisites</h2><ul><li>An Azure subscription with permission to create or edit a logic app in your lab resource group.</li><li>A REST client such as PowerShell or curl, or the designer's run-with-payload option.</li></ul></section>
-<section id="build" class="section-card reveal"><h2>Build the Test Workflow</h2><ol><li>Create or open a lab Logic App workflow in the portal.</li><li>Add <strong>When an HTTP request is received</strong>, method POST, with a body containing a string property named <code>sku</code>.</li><li>Add an HTTP action named <strong>Product lookup</strong>. Set method GET and URI to <code>https://example.invalid/products/@{triggerBody()?['sku']}</code>. The reserved invalid domain ensures a live call cannot reach a real service.</li><li>Add a Response action named <strong>Product found</strong>, status 200, with the body below.</li><li>Below <strong>Product lookup</strong>, add a parallel branch with a Response action named <strong>Dependency unavailable</strong>, status 503. Configure its <strong>Run after</strong> to run only when Product lookup has failed or timed out.</li><li>Configure Product found to run only when Product lookup succeeds. Save the workflow.</li></ol><pre class="code" data-lang="json">{
+<section id="build" class="section-card reveal"><h2>Build the Test Workflow</h2><ol class="lab-steps">
+  <li>Create or open a lab Logic App workflow in the portal.</li>
+  <li>Add <strong>When an HTTP request is received</strong>, set method to <strong>POST</strong>, and paste the following into <strong>Request Body JSON Schema</strong>:<pre class="code" data-lang="json">{
+  "type": "object",
+  "properties": {
+    "sku": {
+      "type": "string"
+    }
+  },
+  "required": ["sku"]
+}</pre><p>Example POST body (send with <code>Content-Type: application/json</code>):</p><pre class="code" data-lang="json">{
+  "sku": "AZ-100"
+}</pre>
+    <details class="screenshot-toggle"><summary>View screenshot</summary>
+    <figure class="media-panel">
+      <img src="../images/custom/labs/lab05/lab05-step1-http-trigger.png" alt="HTTP request trigger parameters with method POST and a Request Body JSON Schema requiring a string property named sku." width="1021" height="811" loading="lazy" />
+      <figcaption>Step 2: Configure the POST trigger and paste the input schema into Request Body JSON Schema, not the example POST body.</figcaption>
+    </figure></details></li>
+  <li>Add an HTTP action named <strong>Product lookup</strong>. Set method GET and URI to <code>https://example.invalid/products/@{triggerBody()?['sku']}</code>. The reserved invalid domain ensures a live call cannot reach a real service.
+    <details class="screenshot-toggle"><summary>View screenshot</summary>
+    <figure class="media-panel">
+      <img src="../images/custom/labs/lab05/lab05-step2-http-action.png" alt="Add an action search results with the built-in HTTP action highlighted above the HTTP entry labeled Trigger." width="402" height="535" loading="lazy" />
+      <figcaption>Step 3: Select HTTP under the Built-in HTTP group. Choose the entry without the Trigger badge.</figcaption>
+    </figure></details>
+    <details class="screenshot-toggle"><summary>View screenshot</summary>
+    <figure class="media-panel">
+      <img src="../images/custom/labs/lab05/lab05-step2.2-http-action-values.png" alt="Product lookup HTTP action parameters with method GET and a URI containing https://example.invalid/products/ followed by the trigger's sku dynamic content token." width="828" height="606" loading="lazy" />
+      <figcaption>Step 3: Rename the action Product lookup, set GET, and append the trigger's sku value to the product URI.</figcaption>
+    </figure></details></li>
+  <li>Add a Response action named <strong>Product found</strong>, set <strong>Status Code</strong> to <code>200</code>, and paste the following JSON into its <strong>Body</strong> field:<pre class="code" data-lang="json">{
   "requestedSku": "@{triggerBody()?['sku']}",
   "product": "@{body('Product_lookup')}",
   "testRun": "@{workflow()?['run']?['name']}"
-}</pre></section>
-<section id="success" class="section-card reveal"><h2>Test a Successful Action</h2><ol><li>Select <strong>Product lookup</strong> and open its <strong>Testing</strong> tab.</li><li>Select <strong>Enable Static Result</strong>.</li><li>Set action status to <strong>Succeeded</strong>. Configure outputs with status code <strong>200</strong>, content-type <code>application/json</code>, and the body below.</li><li>Save, trigger the workflow with <code>{ "sku": "AZ-100" }</code>, and inspect the run.</li></ol><pre class="code" data-lang="json">{
+}</pre>
+    <details class="screenshot-toggle"><summary>View screenshot</summary>
+    <figure class="media-panel">
+      <img src="../images/custom/labs/lab05/lab05-step3-add-response-action.png" alt="Add an action search results with Response highlighted under the built-in Request group." width="402" height="249" loading="lazy" />
+      <figcaption>Step 4: Search for response and select Response under Request (Built-in).</figcaption>
+    </figure></details>
+    <details class="screenshot-toggle"><summary>View screenshot</summary>
+    <figure class="media-panel">
+      <img src="../images/custom/labs/lab05/lab05-step3.1-add-product-found-response-action-values.png" alt="Product found Response action with Status Code 200 and a Body containing requestedSku, product, and testRun populated with dynamic content and an expression." width="477" height="510" loading="lazy" />
+      <figcaption>Step 4: Set Status Code to 200 and enter the response JSON in Body. Tokens abbreviate their contents; verify the full expressions against the JSON above.</figcaption>
+    </figure></details></li>
+  <li>Below <strong>Product lookup</strong>, add a parallel branch with a Response action named <strong>Dependency unavailable</strong>, status 503. Configure its <strong>Run after</strong> to run only when Product lookup has failed or timed out.
+    <details class="screenshot-toggle"><summary>View screenshot</summary>
+    <figure class="media-panel">
+      <img src="../images/custom/labs/lab05/lab05-step4-add-response-dependancy-unavailable-action.png" alt="Dependency unavailable Response action parameters with Status Code 503 and an empty Body field." width="468" height="433" loading="lazy" />
+      <figcaption>Step 5: Set the parallel branch's Dependency unavailable response to HTTP 503. The response body can be left empty.</figcaption>
+    </figure></details>
+    <details class="screenshot-toggle"><summary>View screenshot</summary>
+    <figure class="media-panel">
+      <img src="../images/custom/labs/lab05/lab05-step4.2-add-response-dependancy-unavailable-run-after.png" alt="Parallel response branches below Product lookup with Dependency unavailable Settings open. Run after shows Has timed out selected and Has failed unchecked." width="1012" height="856" loading="lazy" />
+      <figcaption>Step 5: Under Settings &gt; Run after &gt; Product lookup, select both Has failed and Has timed out; clear Is successful and Is skipped. This screenshot shows only Has timed out selected: also select Has failed so the mocked failure test reaches the 503 response.</figcaption>
+    </figure></details></li>
+  <li>Select the <strong>Product found</strong> Response action, open <strong>Settings</strong>, and expand <strong>Run after</strong>. For <strong>Product lookup</strong>, select only <strong>Is successful</strong>. Clear <strong>Has failed</strong>, <strong>Is skipped</strong>, and <strong>Has timed out</strong>. This makes the HTTP 200 response run only when Product lookup succeeds, including when you mock a successful result. Save the workflow.
+    <details class="screenshot-toggle"><summary>View screenshot</summary>
+    <figure class="media-panel">
+      <img src="../images/custom/labs/lab05/lab05-step3.2-product-found-response-run-after.png" alt="Product found Settings with Run after for Product lookup expanded, Is successful selected, and the timeout, skipped, and failed conditions unchecked." width="464" height="806" loading="lazy" />
+      <figcaption>Step 6: Product found must run after Product lookup only when Is successful is selected.</figcaption>
+    </figure></details></li>
+  <li>Review the final workflow using the screenshot below. Confirm that <strong>When an HTTP request is received</strong> connects to <strong>Product lookup</strong>, followed by parallel <strong>Product found</strong> and <strong>Dependency unavailable</strong> responses. Save the workflow. If your designer shows <strong>Publish</strong>, publish the draft before testing.
+    <details class="screenshot-toggle"><summary>View screenshot</summary>
+    <figure class="media-panel">
+      <img src="../images/custom/labs/lab05/lab05-full-workflow-final.png" alt="Completed workflow with When an HTTP request is received, Product lookup, and parallel Product found and Dependency unavailable responses." width="490" height="631" loading="lazy" />
+      <figcaption>Step 7: Final workflow. Both responses must branch directly from Product lookup.</figcaption>
+    </figure></details></li>
+</ol></section>
+<section id="success" class="section-card reveal"><h2>Test a Successful Action</h2><ol class="lab-steps">
+  <li>Select <strong>Product lookup</strong> and open its <strong>Testing</strong> tab.</li>
+  <li>Select <strong>Enable Static Result</strong>.</li>
+  <li>Set action status to <strong>Succeeded</strong>. Configure outputs with status code <strong>200</strong> (shown as <strong>OK</strong> in some designers), content-type <code>application/json</code>, and the following mocked product body:<pre class="code" data-lang="json">{
   "sku": "AZ-100",
   "name": "Workflow Mug",
   "price": 18.50,
   "inventory": 24
-}</pre><ul><li>The action displays the static-result beaker indicator.</li><li>The workflow returns HTTP 200 with the mocked product.</li><li>Run details show Product lookup used a static result.</li></ul></section>
-<section id="failure" class="section-card reveal"><h2>Test a Failed Action</h2><ol><li>Return to the Product lookup Testing tab and edit its static result.</li><li>Set status to <strong>Failed</strong> and provide an error code such as <code>ProductServiceUnavailable</code> with a clear test message.</li><li>Save and submit the same trigger payload.</li><li>Confirm Product found is skipped and Dependency unavailable returns HTTP 503.</li></ol><div class="speaker-note"><h3>What to inspect</h3><p>Open each action in run details. Verify the mocked error is visible, the run-after rule selected the failure path, and no outbound request reached the invalid URI.</p></div></section>
-<section id="disable" class="section-card reveal"><h2>Restore Live Behavior</h2><ol><li>Select Product lookup, open <strong>Testing</strong>, and choose <strong>Disable Static Result</strong>.</li><li>Save the workflow and confirm the beaker indicator is gone.</li><li>Do not run against a production endpoint until authentication, authorization, retry, timeout, and test-data controls are ready.</li></ol><div class="callout"><strong>Important:</strong> disabling static results can preserve the configured mock values for reuse. The absence of the enabled indicator is what confirms the action will call its configured endpoint.</div></section>
+}</pre>
+    <details class="screenshot-toggle"><summary>View screenshot</summary>
+    <figure class="media-panel">
+      <img src="../images/custom/labs/lab05/lab05-step5-add-testing-to-product-lookup-action.png" alt="Product lookup Testing tab with static results enabled, Status Succeeded, output status code OK, application/json content-type, and the mocked Workflow Mug product body." width="468" height="995" loading="lazy" />
+      <figcaption>Step 3: Configure the static result on Product lookup and select Save. OK means HTTP 200. The larger product object goes in this action's mocked Body, not the trigger payload.</figcaption>
+    </figure></details></li>
+  <li>Save the static-result settings. In the designer shown below, select the payload icon beside <strong>Run draft</strong>. Set <strong>Content-Type</strong> to <code>application/json</code>, enter <code>{ "sku": "AZ-100" }</code> in <strong>Body</strong>, and select <strong>Run draft with payload</strong>. This tests the draft without publishing. If your designer has no draft option, save or publish as required and use its run-with-payload option.
+    <details class="screenshot-toggle"><summary>View screenshot</summary>
+    <figure class="media-panel">
+      <img src="../images/custom/labs/lab05/lab05-step6-run-draft-with-payload.png" alt="Run draft payload panel showing POST, Content-Type application/json, a Body containing only sku AZ-100, and the Run draft with payload button. Numbered arrows mark the payload icon, Body, and run button." width="404" height="621" loading="lazy" />
+      <figcaption>Step 4: Open the payload panel (1), enter the trigger's SKU input (2), and select Run draft with payload (3).</figcaption>
+    </figure></details></li>
+  <li>Open <strong>Run history</strong>, select the new run (marked <strong>Draft</strong> when applicable), and select <strong>Product lookup</strong>. Verify its static-result indicator, <strong>Succeeded</strong> status, <strong>OK</strong> output status code, and mocked product body. Also inspect both Response actions to verify the selected control-flow path.
+    <details class="screenshot-toggle"><summary>View screenshot</summary>
+    <figure class="media-panel">
+      <img src="../images/custom/labs/lab05/lab05-step6.1-run-draft-history.png" alt="Draft run history with Product lookup selected, the example.invalid URI ending in AZ-100, mocked product outputs, status code OK, and status Succeeded. Both Response actions have gray skipped indicators." width="1687" height="1199" loading="lazy" />
+      <figcaption>Step 5: Inspect the mocked lookup's outputs in run history. This screenshot confirms the lookup's static result, but both Response actions are shown as skipped; it does not demonstrate the complete HTTP 200 response path. Check your own run's response actions before considering that path validated.</figcaption>
+    </figure></details></li>
+</ol>
+<ul><li>The action displays the static-result beaker indicator.</li><li>The workflow returns HTTP 200 with the mocked product.</li><li>Run details show Product lookup used a static result.</li></ul></section>
+<section id="failure" class="section-card reveal"><h2>Test a Failed Action</h2><ol class="lab-steps">
+  <li>Return to the <strong>Product lookup</strong> action's <strong>Testing</strong> tab and edit its enabled static result.</li>
+  <li>In the top <strong>Select fields</strong> dropdown, select <strong>Status</strong>, <strong>Code</strong>, and <strong>Error</strong>. Set <strong>Status</strong> to <strong>Failed</strong> and the top-level <strong>Code</strong> to <code>ProductServiceUnavailable</code>. Under <strong>Error</strong>, select <strong>Message</strong> and <strong>Code</strong>, enter <code>Simulated product service failure for testing.</code> as the <strong>Error message</strong>, and choose <code>ServiceTemporarilyUnavailable</code> as the <strong>Error code</strong>. A Failed static result requires the error details; setting an output HTTP status code alone is not sufficient.
+    <details class="screenshot-toggle"><summary>View screenshot</summary>
+    <figure class="media-panel">
+      <img src="../images/custom/labs/lab05/lab05-step7-setup-fail-test.png" alt="Product lookup Testing tab with Status, Code, and Error selected; Status Failed; top-level Code ProductServiceUnavailable; the simulated failure message; and Error code ServiceTemporarilyUnavailable." width="463" height="804" loading="lazy" />
+      <figcaption>Step 2: Configure the failed static result with both the top-level Code and the nested Error fields. Outputs are not required for this mock; the separate Dependency unavailable Response action supplies HTTP 503.</figcaption>
+    </figure></details></li>
+  <li>Save the static-result settings and use <strong>Run draft with payload</strong> again with the same trigger input: <code>{ "sku": "AZ-100" }</code>. If your designer has no draft option, save or publish as required and use its run-with-payload option.</li>
+  <li>In <strong>Run history</strong>, select the new run and open <strong>Product lookup</strong>. Verify its <strong>Failed</strong> status, static-result indicator, error code, and test message. Then confirm <strong>Product found</strong> is skipped and <strong>Dependency unavailable</strong> runs with response status code <strong>503</strong>. An empty response body is expected if you left the 503 response Body field empty.
+    <details class="screenshot-toggle"><summary>View screenshot</summary>
+    <figure class="media-panel">
+      <img src="../images/custom/labs/lab05/lab05-step8-fail-test-draft-run-history.png" alt="Failed draft run with Product lookup selected, ServiceTemporarilyUnavailable and the simulated failure message displayed, no outputs, and Status Failed. Both Response actions have gray skipped indicators." width="1699" height="1047" loading="lazy" />
+      <figcaption>Step 4: Inspect the mocked failure and error details. This example uses SKU AZ-102; you can keep AZ-100 for the lab. Both responses are shown as skipped, so this screenshot does not validate the 503 response path. If Dependency unavailable is skipped in your run, check that its Run after for Product lookup includes Has failed, then rerun.</figcaption>
+    </figure></details></li>
+</ol><div class="speaker-note"><h3>What to inspect</h3><p>Open each action in run details. Verify the mocked error is visible, the run-after rule selected the failure path, and no outbound request reached the invalid URI.</p></div></section>
+<section id="disable" class="section-card reveal"><h2>Restore Live Behavior</h2><ol class="lab-steps">
+  <li>Select <strong>Product lookup</strong>, open <strong>Testing</strong>, and switch off static results. Depending on the designer, choose <strong>Disable Static Result</strong> or turn the toggle off so the label reads <strong>Enable static result</strong>.
+    <details class="screenshot-toggle"><summary>View screenshot</summary>
+    <figure class="media-panel">
+      <img src="../images/custom/labs/lab05/lab05-step8-disable-tests.png" alt="Product lookup Testing tab with the static-result toggle off, the label Enable static result, a red arrow pointing to the toggle, and the Save button below." width="480" height="285" loading="lazy" />
+      <figcaption>Step 1: Turn static results off. The gray toggle and Enable static result label show that mocking is disabled; select Save to apply the change.</figcaption>
+    </figure></details></li>
+  <li>Save the workflow and confirm the beaker indicator is gone.</li>
+  <li>Do not run against a production endpoint until authentication, authorization, retry, timeout, and test-data controls are ready.</li>
+</ol><div class="callout"><strong>Important:</strong> disabling static results can preserve the configured mock values for reuse. The absence of the enabled indicator is what confirms the action will call its configured endpoint.</div></section>
 <section id="troubleshoot" class="section-card reveal"><h2>Troubleshooting</h2><div class="table-wrap"><table><thead><tr><th>Symptom</th><th>Check</th></tr></thead><tbody><tr><td>Testing tab is unavailable</td><td>Static results are action-specific; select the HTTP action rather than the trigger or a control.</td></tr><tr><td>Success response is skipped</td><td>Check the mocked action status and the Response run-after settings.</td></tr><tr><td>Workflow calls the URI</td><td>Confirm static results are enabled and the action shows its test indicator before running.</td></tr></tbody></table></div></section>
 <section id="cleanup" class="section-card reveal"><h2>Cleanup and References</h2><p>Disable static results, disable or delete the test workflow, and remove the lab resource group when finished.</p><div class="callout"><strong>Microsoft Learn:</strong> <a href="https://learn.microsoft.com/azure/logic-apps/testing-framework/test-logic-apps-mock-data-static-results">Test workflows with mock outputs</a> and <a href="../topics/workflow-testing.html">Workshop topic: Workflow Testing</a>.</div></section>
 <nav class="pager" aria-label="Lab pagination"><a class="prev" href="lab04-event-grid-blob-processor-portal.html"><small>Previous</small><strong>&larr; Lab 04: Event Grid Blob Processor</strong></a><a class="next" href="lab06-inline-dotnet-code-vscode.html"><small>Next</small><strong>Lab 06: Inline .NET Code &rarr;</strong></a></nav>
