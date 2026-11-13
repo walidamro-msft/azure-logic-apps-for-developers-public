@@ -41,7 +41,8 @@ const LABS = [
   { key: "lab03-order-fulfillment", label: "Lab 03: Order Fulfillment", href: "labs/lab03-order-fulfillment-vscode.html", dot: "dot-orange" },
   { key: "lab04-event-grid-blob", label: "Lab 04: Event Grid Blob Processor", href: "labs/lab04-event-grid-blob-processor-portal.html", dot: "dot-purple" },
   { key: "lab05-workflow-testing", label: "Lab 05: Logic App Testing", href: "labs/lab05-logic-app-testing-portal.html", dot: "dot-red" },
-  { key: "lab06-inline-dotnet", label: "Lab 06: Inline .NET Code", href: "labs/lab06-inline-dotnet-code-vscode.html", dot: "dot-blue" }
+  { key: "lab06-inline-dotnet", label: "Lab 06: Inline .NET Code", href: "labs/lab06-inline-dotnet-code-vscode.html", dot: "dot-blue" },
+  { key: "lab07-reusable-workflows", label: "Lab 07: Reusable Workflows", href: "labs/lab07-reusable-workflows-portal.html", dot: "dot-green" }
 ];
 
 const MOON_SUN = `
@@ -133,7 +134,7 @@ function buildFooter() {
   footer.innerHTML = `
     <div class="footer-inner">
       <span>&copy; <span id="footer-year"></span> ${COPYRIGHT_TEXT}</span>
-      <span>Last updated: <time datetime="2026-11-10">11/10/2026</time></span>
+      <span>Last updated: <time datetime="2026-11-13">11/13/2026</time></span>
       <span class="footer-links">
         <a href="${url("index.html")}">Home</a>
         <a href="${url("whats-new.html")}">What's New</a>

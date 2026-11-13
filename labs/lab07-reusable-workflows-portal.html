@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lab 07: Reusable Workflows &middot; Azure Logic Apps Workshop</title>
+  <meta name="description" content="Use the Azure portal to build two Logic Apps Standard workflows: a shared customer eligibility check and an order workflow that calls it and branches on its response." />
+  <script>(function(){var t=localStorage.getItem("logic-apps-workshop-theme");document.documentElement.setAttribute("data-theme",(t==="light"||t==="dark")?t:(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"));})();</script>
+  <link rel="icon" type="image/svg+xml" href="../images/azure/02631-icon-service-Logic-Apps.svg" />
+  <link rel="stylesheet" href="../assets/site.css" />
+</head>
+<body data-root=".." data-active="lab07-reusable-workflows">
+  <div class="page">
+    <nav class="breadcrumb" aria-label="Breadcrumb"><a href="../index.html">Home</a><span class="sep">/</span><a href="index.html">Labs</a><span class="sep">/</span><span>Lab 07</span></nav>
+    <header class="hero">
+      <h1>Lab 07: Reusable Workflows</h1>
+      <p class="subtitle">Build a common customer eligibility workflow, call it from an order workflow, and continue according to the returned decision.</p>
+      <div class="badge-row"><span class="badge">Azure portal</span><span class="badge">Standard only</span><span class="badge">~60 min</span><span class="badge">2 stateful workflows</span></div>
+    </header>
+
+    <div class="layout">
+      <main class="content">
+        <section id="scenario" class="section-card reveal">
+          <h2>Scenario and Objectives</h2>
+          <p>Order intake, quote creation, and subscription renewal all need the same check: does this customer exist, and is their account active? Instead of copying the rule into each workflow, expose it once as a shared workflow with a small request-response contract.</p>
+          <p>In this lab, create exactly two workflows in <strong>one Azure Logic Apps Standard resource</strong>, entirely in the Azure portal:</p>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Workflow</th><th>Role</th><th>Responsibility</th></tr></thead>
+            <tbody>
+              <tr><td><code>common-customer-eligibility</code></td><td>Shared child</td><td>Normalize a customer ID, look up demo customer data, and return a Boolean eligibility decision with a reason.</td></tr>
+              <tr><td><code>submit-order</code></td><td>Parent / caller</td><td>Receive an order, call the child, then prepare fulfillment or reject the order based on the child's response.</td></tr>
+            </tbody>
+          </table></div>
+          <ul>
+            <li>Separate a reusable business capability from caller-specific processing.</li>
+            <li>Use the built-in <strong>Workflow Operations</strong> action rather than copying a callback URL.</li>
+            <li>Pass only the child's required input and consume its typed response.</li>
+            <li>Distinguish a business rejection from a failed or timed-out workflow call.</li>
+            <li>Trace the parent and child runs in the portal.</li>
+          </ul>
+          <div class="callout"><strong>Lab boundary:</strong> customer records are synthetic data in a Compose action. Fulfillment is another Compose action, not an actual inventory reservation, payment, or database write. No CRM, managed connector connection, or custom code is required. A production implementation would replace the demo lookup with an authorized customer-system call.</div>
+        </section>
+
+        <section id="architecture" class="section-card reveal">
+          <h2>Architecture</h2>
+          <div class="diagram-wrap"><pre class="mermaid">flowchart TD
+ subgraph APP[One Logic Apps Standard resource]
+   subgraph P[submit-order - parent]
+     T[POST order] --> CALL[Call customer eligibility]
+     CALL --> PARSE[Parse eligibility response]
+     PARSE --> DECIDE{Customer eligible?}
+     DECIDE -->|true| PREP[Prepare fulfillment]
+     PREP --> OK[200 - ReadyForFulfillment]
+     DECIDE -->|false| REJECT[400 - Rejected with reason]
+     CALL -. failed or timed out .-> ERROR[503 - EligibilityUnavailable]
+     PARSE -. invalid response contract .-> ERROR
+   end
+   subgraph C[common-customer-eligibility - child]
+     CT[Request trigger] --> NORMALIZE[Normalize customer ID]
+     NORMALIZE --> LOOKUP[Look up demo customer]
+     LOOKUP --> CR[200 - customerId, eligible, reason]
+   end
+   CALL -->|customerId only| CT
+   CR -->|Response body| PARSE
+ end
+ classDef azure fill:#e6f2fb,stroke:#0078d4,stroke-width:2,color:#0f1722;
+ classDef result fill:#e7f5e7,stroke:#107c10,stroke-width:2,color:#103010;
+ class T,CALL,PARSE,PREP,CT,NORMALIZE,LOOKUP azure;
+ class OK,REJECT,ERROR,CR result;</pre></div>
+          <p>The child knows nothing about orders. It can serve other workflows in the same Standard resource without duplicating customer rules. Only the parent decides what eligibility means for order processing.</p>
+        </section>
+
+        <section id="prerequisites" class="section-card reveal">
+          <h2>Prerequisites and Resource Setup</h2>
+          <ul>
+            <li>A non-production Azure subscription and permission to create or edit a Standard logic app and its supporting resources.</li>
+            <li>Access to the <a href="https://portal.azure.com/">Azure portal</a>. All authoring and required tests use the portal; VS Code and a local runtime are not needed.</li>
+            <li>A dedicated lab resource group, or an existing <strong>portal-editable</strong> Standard logic app. Do not use a production app or a read-only app deployed from a package.</li>
+          </ul>
+          <ol class="lab-steps">
+            <li>If you already have a suitable Standard logic app, open it and skip resource creation. Otherwise, search for <strong>Logic apps</strong> in the portal and select <strong>Create</strong>.</li>
+            <li>Select <strong>Standard (Workflow Service Plan)</strong>, not Consumption. Choose your lab subscription, resource group, region, and a unique app name such as <code>la-shared-workflows-&lt;suffix&gt;</code>.</li>
+            <li>Select or create a Windows Workflow Service Plan, using <strong>WS1</strong> for this small lab if allowed by your subscription. On the storage settings tab, select or create the required storage account. Follow your organization's networking and monitoring policies, review the estimated cost, and select <strong>Review + create</strong>, then <strong>Create</strong>.</li>
+            <li>After deployment, open the resource. Under <strong>Workflows</strong>, select <strong>Workflows</strong>. You will add both workflows here, not create a second logic app resource.</li>
+          </ol>
+          <div class="callout"><strong>Cost:</strong> a Standard plan has provisioned compute charges even when workflows are idle; storage and monitoring can also incur charges. Reuse an approved lab app when practical. Disabling a workflow does not remove the plan's cost.</div>
+          <div class="callout"><strong>Why stateful?</strong> choose <strong>Stateful</strong> for both workflows so their run histories are available for this exercise. This is a lab choice, not a requirement that every reusable workflow be stateful.</div>
+        </section>
+
+        <section id="contract" class="section-card reveal">
+          <h2>Define the Shared Contract</h2>
+          <p>The child accepts one string, <code>customerId</code>. It trims surrounding whitespace and converts the ID to uppercase before lookup. Its response always contains these fields when the check completes:</p>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Field</th><th>Type</th><th>Meaning</th></tr></thead>
+            <tbody>
+              <tr><td><code>customerId</code></td><td>string</td><td>The normalized customer ID.</td></tr>
+              <tr><td><code>eligible</code></td><td>Boolean</td><td><code>true</code> only when the customer exists and has status <code>Active</code>.</td></tr>
+              <tr><td><code>reason</code></td><td>string</td><td><code>Eligible</code>, <code>CustomerBlocked</code>, or <code>CustomerNotFound</code> for the demo data.</td></tr>
+            </tbody>
+          </table></div>
+          <p>The child returns HTTP <strong>200 for both eligible and ineligible customers</strong>: it successfully answered the business question. The parent must inspect <code>eligible</code>, not treat a successful action as permission to process an order. Invocation failures and invalid response shapes follow a separate 503 path.</p>
+          <div class="callout"><strong>Expression entry:</strong> for a single expression, open the field's <strong>Expression (fx)</strong> editor and enter the expression shown without a leading <code>@</code>. For the JSON Body examples below, paste the complete object; full-value strings such as <code>"@equals(...)"</code> are workflow expressions and preserve the Boolean or object type. Do not change them to <code>"@{equals(...)}"</code>, which interpolates a string. Inspect <strong>Code view</strong> or <strong>Code preview</strong> to confirm the saved values if the designer turns them into tokens.</div>
+        </section>
+
+        <section id="child" class="section-card reveal">
+          <h2>1. Build the Common Workflow</h2>
+          <ol class="lab-steps">
+            <li>From the Standard app's workflow list, select <strong>Add</strong>. Name the workflow <code>common-customer-eligibility</code>, choose <strong>Stateful</strong>, and create it. Open the workflow's <strong>Designer</strong>.</li>
+            <li>Add the built-in Request trigger <strong>When an HTTP request is received</strong>. Set <strong>Method</strong> to <strong>POST</strong> (under advanced parameters if necessary). Leave the relative path empty. Paste this into <strong>Request Body JSON Schema</strong>:
+              <pre class="code" data-lang="json">{
+  "type": "object",
+  "properties": {
+    "customerId": { "type": "string" }
+  },
+  "required": ["customerId"]
+}</pre>
+            </li>
+            <li>Add <strong>Data Operations &gt; Compose</strong> and rename it <strong>Normalize customer ID</strong>. In <strong>Inputs</strong>, use the Expression editor:
+              <pre class="code">toUpper(trim(triggerBody()?['customerId']))</pre>
+            </li>
+            <li>Add another Compose action named <strong>Customer directory</strong>. Paste this JSON object into <strong>Inputs</strong>:
+              <pre class="code" data-lang="json">{
+  "CUST-100": { "status": "Active" },
+  "CUST-200": { "status": "Blocked" }
+}</pre>
+              <p>Keep this as an object, not a quoted JSON string. These two records make the lab repeatable without connecting to a real customer system.</p>
+            </li>
+            <li>Add a Compose action named <strong>Customer record</strong>. In <strong>Inputs</strong>, enter this expression:
+              <pre class="code">outputs('Customer_directory')?[outputs('Normalize_customer_ID')]</pre>
+              <p>The dynamic key selects the normalized customer's record. The <code>?</code> safely returns null if the ID is absent, allowing an explicit <code>CustomerNotFound</code> decision.</p>
+            </li>
+            <li>Add the built-in Request <strong>Response</strong> action and rename it <strong>Return eligibility</strong>. Set <strong>Status Code</strong> to <code>200</code>, add the header <code>Content-Type</code> with value <code>application/json</code>, and paste this into <strong>Body</strong>:
+              <pre class="code" data-lang="json">{
+  "customerId": "@outputs('Normalize_customer_ID')",
+  "eligible": "@equals(outputs('Customer_record')?['status'], 'Active')",
+  "reason": "@if(empty(outputs('Customer_record')), 'CustomerNotFound', if(equals(outputs('Customer_record')?['status'], 'Active'), 'Eligible', 'CustomerBlocked'))"
+}</pre>
+              <p>Keep <strong>Asynchronous response</strong> off in the Response settings if that option is shown. The parent needs the result, not an early acknowledgement. Keep the Response as the last action.</p>
+            </li>
+            <li><strong>Save</strong> the workflow. If your designer uses drafts, also <strong>Publish</strong> it. The parent must call the saved, published child, not an unpublished draft.</li>
+          </ol>
+          <div class="callout"><strong>Names matter:</strong> spaces in display names become underscores in expression references. The names above produce <code>Normalize_customer_ID</code>, <code>Customer_directory</code>, and <code>Customer_record</code>. Rename actions before adding dependent expressions, and verify these names in Code view.</div>
+          <h3>Quick child check</h3>
+          <p>Use the designer's <strong>Run with payload</strong> option (or the payload option beside <strong>Run</strong>). Set <code>Content-Type</code> to <code>application/json</code> and send:</p>
+          <pre class="code" data-lang="json">{
+  "customerId": " cust-100 "
+}</pre>
+          <p>In the workflow's <strong>Run history</strong>, open the run and inspect <strong>Return eligibility</strong>. Its evaluated response body should be:</p>
+          <pre class="code" data-lang="json">{
+  "customerId": "CUST-100",
+  "eligible": true,
+  "reason": "Eligible"
+}</pre>
+          <p>If your portal offers <strong>Run draft with payload</strong>, you can use it for this isolated check, but publish the child before continuing. A plain Run without a payload is not equivalent to this test.</p>
+        </section>
+
+        <section id="parent" class="section-card reveal">
+          <h2>2. Build the Calling Workflow</h2>
+          <ol class="lab-steps">
+            <li>Return to the <strong>same Standard app's</strong> workflow list. Add a second <strong>Stateful</strong> workflow named <code>submit-order</code>, then open its Designer.</li>
+            <li>Add <strong>When an HTTP request is received</strong>, set <strong>Method</strong> to <strong>POST</strong>, and paste this into <strong>Request Body JSON Schema</strong>:
+              <pre class="code" data-lang="json">{
+  "type": "object",
+  "properties": {
+    "orderId": { "type": "string" },
+    "customerId": { "type": "string" }
+  },
+  "required": ["orderId", "customerId"]
+}</pre>
+            </li>
+            <li>Add <strong>Control &gt; Scope</strong> and rename it <strong>Check customer</strong>. This scope will contain the workflow call and response parsing, so either failure can use the same error path.</li>
+            <li><strong>Inside the scope</strong>, add the built-in <strong>Workflow Operations &gt; Call workflow in this logic app</strong> action. Some designers label it <strong>Invoke a workflow in this workflow app</strong>. Rename it <strong>Call customer eligibility</strong> and select <code>common-customer-eligibility</code> under <strong>Workflow Name</strong>.
+              <p>Set the action's <strong>Headers</strong> to include <code>Content-Type: application/json</code>. In its <strong>Body</strong>, pass only the shared contract:</p>
+              <pre class="code" data-lang="json">{
+  "customerId": "@triggerBody()?['customerId']"
+}</pre>
+              <p>If the designer expands the request schema into input fields, populate <strong>customerId</strong> with the parent trigger's customerId token instead. Do not pass orderId: the common workflow should not depend on order-specific data.</p>
+            </li>
+            <li>Still <strong>inside Check customer</strong>, after the call, add <strong>Data Operations &gt; Parse JSON</strong> and rename it <strong>Parse eligibility</strong>. Set <strong>Content</strong> using this expression:
+              <pre class="code">body('Call_customer_eligibility')</pre>
+              <p>Paste the following into <strong>Schema</strong>. This validates the returned contract and exposes typed tokens to later actions:</p>
+              <pre class="code" data-lang="json">{
+  "type": "object",
+  "properties": {
+    "customerId": { "type": "string" },
+    "eligible": { "type": "boolean" },
+    "reason": { "type": "string" }
+  },
+  "required": ["customerId", "eligible", "reason"]
+}</pre>
+            </li>
+          </ol>
+          <div class="callout"><strong>Use the local workflow action:</strong> do not select a generic HTTP action or the Consumption workflow picker. The built-in operation selects a workflow in this Standard resource without storing its callback URL or SAS signature. Both workflows must be in the same resource and the child must have a Request trigger.</div>
+        </section>
+
+        <section id="branches" class="section-card reveal">
+          <h2>3. Continue Based on the Child's Response</h2>
+          <ol class="lab-steps">
+            <li><strong>After and outside Check customer</strong>, add a <strong>Control &gt; Condition</strong> action named <strong>Customer is eligible</strong>. Keep its <strong>Run after</strong> for <strong>Check customer</strong> set to <strong>Is successful</strong> only.</li>
+            <li>In the condition's left field, use the Expression editor to enter:
+              <pre class="code">body('Parse_eligibility')?['eligible']</pre>
+              <p>Choose <strong>is equal to</strong>. For the right field, use the Expression editor to enter <code>true</code> as a Boolean, not the text <code>"true"</code>. In Code preview, the comparison should resemble <code>"equals": ["@body('Parse_eligibility')?['eligible']", true]</code>.</p>
+            </li>
+            <li>In the <strong>True</strong> branch, add a Compose action named <strong>Prepare fulfillment</strong> with this object in <strong>Inputs</strong>:
+              <pre class="code" data-lang="json">{
+  "orderId": "@triggerBody()?['orderId']",
+  "customerId": "@body('Parse_eligibility')?['customerId']",
+  "status": "ReadyForFulfillment",
+  "nextAction": "ReserveInventory"
+}</pre>
+              <p>This is the parent's next processing step after eligibility succeeds. It uses the normalized customer ID returned by the child, rather than the unnormalized trigger value. Inventory is not actually reserved.</p>
+            </li>
+            <li>After that Compose, still in the <strong>True</strong> branch, add a Response named <strong>Order ready</strong>. Set status <code>200</code>, header <code>Content-Type: application/json</code>, and Body using the Expression editor:
+              <pre class="code">outputs('Prepare_fulfillment')</pre>
+            </li>
+            <li>In the <strong>False</strong> branch, add a Response named <strong>Order rejected</strong>. Set status <code>400</code>, header <code>Content-Type: application/json</code>, and this Body:
+              <pre class="code" data-lang="json">{
+  "orderId": "@triggerBody()?['orderId']",
+  "customerId": "@body('Parse_eligibility')?['customerId']",
+  "status": "Rejected",
+  "reason": "@body('Parse_eligibility')?['reason']"
+}</pre>
+            </li>
+            <li>Add a <strong>parallel branch directly after Check customer</strong>, alongside the condition, containing a Response named <strong>Eligibility unavailable</strong>. Set status <code>503</code>, header <code>Content-Type: application/json</code>, and this Body:
+              <pre class="code" data-lang="json">{
+  "orderId": "@triggerBody()?['orderId']",
+  "status": "EligibilityUnavailable",
+  "message": "The customer check could not be completed. Retry later.",
+  "runId": "@workflow()?['run']?['name']"
+}</pre>
+              <p>Open this Response's <strong>Settings &gt; Run after</strong>. Select <strong>Check customer</strong> as its predecessor and enable <strong>Has failed</strong> and <strong>Has timed out</strong> only. Clear <strong>Is successful</strong> and <strong>Is skipped</strong>. Do not attach this response after Order ready or Order rejected.</p>
+            </li>
+            <li>Keep asynchronous response off for all three parent Response actions. <strong>Save</strong> and, if offered, <strong>Publish</strong> the parent. Confirm that the app's workflow list contains both enabled workflows.</li>
+          </ol>
+          <div class="speaker-note"><h3>Business result versus execution result</h3><p>A blocked customer is a successful child execution with <code>eligible: false</code>, followed by the parent's 400 response. A disabled child, a failed call, or a malformed response is not a customer rejection: the parent must not prepare fulfillment and instead returns 503. Check the actual branch and response inputs, not just the overall run status.</p></div>
+        </section>
+
+        <section id="test" class="section-card reveal">
+          <h2>4. Test Both Workflows Together</h2>
+          <ol class="lab-steps">
+            <li>Open <code>submit-order</code> in the portal. Use <strong>Run with payload</strong>, set <code>Content-Type</code> to <code>application/json</code>, and enter the first request below. If only <strong>Run draft with payload</strong> is available, the parent draft can be tested that way, but the child must already be published.</li>
+            <li>Open the parent's <strong>Run history</strong> and select the new run. Expand <strong>Check customer</strong>. Inspect the call's inputs and outputs, then <strong>Parse eligibility</strong> and the condition's result.</li>
+            <li>Open the child workflow's <strong>Run history</strong> in another portal tab. Inspect the corresponding run using the call's child-run link if available, or match the timestamp and normalized customer ID. Confirm that the child received only customerId and returned the documented contract.</li>
+            <li>Inspect the executed parent Response action's evaluated <strong>Inputs</strong> to verify its status code and body. A portal run command may not display the HTTP response itself. Verify that only the intended Response executed and that <strong>Prepare fulfillment</strong> was skipped for rejections.</li>
+            <li>Repeat with the blocked, unknown, and blank customer requests in the table.</li>
+          </ol>
+          <h3>Eligible customer request</h3>
+          <pre class="code" data-lang="json">{
+  "orderId": "ORD-7001",
+  "customerId": " cust-100 "
+}</pre>
+          <h3>Expected parent response: HTTP 200</h3>
+          <pre class="code" data-lang="json">{
+  "orderId": "ORD-7001",
+  "customerId": "CUST-100",
+  "status": "ReadyForFulfillment",
+  "nextAction": "ReserveInventory"
+}</pre>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Case and parent request</th><th>Child result</th><th>Parent behavior</th></tr></thead>
+            <tbody>
+              <tr><td>Active: <code>{"orderId":"ORD-7001","customerId":" cust-100 "}</code></td><td><code>eligible: true</code>, <code>Eligible</code>, ID <code>CUST-100</code></td><td>Prepare fulfillment executes; Order ready returns 200.</td></tr>
+              <tr><td>Blocked: <code>{"orderId":"ORD-7002","customerId":"CUST-200"}</code></td><td><code>eligible: false</code>, <code>CustomerBlocked</code></td><td>Order rejected returns 400; fulfillment is skipped.</td></tr>
+              <tr><td>Unknown: <code>{"orderId":"ORD-7003","customerId":"CUST-999"}</code></td><td><code>eligible: false</code>, <code>CustomerNotFound</code></td><td>Order rejected returns 400, not 503.</td></tr>
+              <tr><td>Blank: <code>{"orderId":"ORD-7004","customerId":"   "}</code></td><td>Normalized ID is empty; <code>eligible: false</code>, <code>CustomerNotFound</code></td><td>Order rejected returns 400; fulfillment is skipped.</td></tr>
+            </tbody>
+          </table></div>
+          <h3>Expected blocked-customer response: HTTP 400</h3>
+          <pre class="code" data-lang="json">{
+  "orderId": "ORD-7002",
+  "customerId": "CUST-200",
+  "status": "Rejected",
+  "reason": "CustomerBlocked"
+}</pre>
+          <h3>Test a technical failure and restore the child</h3>
+          <ol class="lab-steps">
+            <li>After existing runs finish, open the <strong>common-customer-eligibility workflow's Overview</strong> and select <strong>Disable</strong>. Disable only this lab workflow, not the entire Standard app.</li>
+            <li>Run <code>submit-order</code> again with the eligible request. Inspect <strong>Call customer eligibility</strong>; the disabled child cannot serve the request. Allow any configured call retries to finish.</li>
+            <li>Verify that <strong>Check customer</strong> fails, <strong>Customer is eligible</strong> and fulfillment are skipped, and <strong>Eligibility unavailable</strong> executes with status <code>503</code> and a parent run ID. It must not return a business rejection or a ready-for-fulfillment result.</li>
+            <li><strong>Enable the child again</strong> and rerun the eligible request to confirm the 200 path is restored. Do not leave the shared workflow disabled.</li>
+          </ol>
+          <div class="callout"><strong>Completion check:</strong> keep evidence of the child response and the parent's selected branch for all four business cases, plus the 503 failure and restored 200 path. Use synthetic data only. Do not include callback URLs, SAS signatures, or other credentials in screenshots or shared notes.</div>
+        </section>
+
+        <section id="troubleshoot" class="section-card reveal">
+          <h2>Troubleshooting</h2>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Symptom</th><th>Check</th></tr></thead>
+            <tbody>
+              <tr><td>Child is missing from Workflow Name</td><td>Both workflows must belong to the same Standard resource. Save or publish the child's Request-trigger workflow first, enable it, then reopen the parent designer. Use Workflow Operations, not the Consumption action.</td></tr>
+              <tr><td>Call returns no eligibility body</td><td>Ensure every normal child run reaches Return eligibility, with status 200 and asynchronous response off. A Request workflow without a Response does not supply the business result needed here.</td></tr>
+              <tr><td>Parse eligibility fails</td><td>Inspect the call's Body. It must be an object with a Boolean eligible, not a JSON string or <code>"true"</code>. Use full-value <code>@...</code> expressions in response JSON, not string interpolation, and publish the corrected child.</td></tr>
+              <tr><td>Every order takes the False branch</td><td>Enter the condition through the fx editor and compare to Boolean true. Check the normalized ID and the exact <code>Active</code> status in the demo data.</td></tr>
+              <tr><td>503 response is skipped on failure</td><td>Its Run after must point directly to Check customer with Has failed and Has timed out selected. Keep the success condition on Is successful only.</td></tr>
+              <tr><td>Expression cannot find an action</td><td>Verify the internal names and nesting in Code view. Call customer eligibility and Parse eligibility belong inside Check customer; the condition is after that scope.</td></tr>
+              <tr><td>Portal does not allow editing</td><td>Use a portal-editable lab app. Do not change package deployment settings on a shared or production app just to complete the exercise.</td></tr>
+            </tbody>
+          </table></div>
+        </section>
+
+        <section id="cleanup" class="section-card reveal">
+          <h2>Cleanup and References</h2>
+          <p>If you reused a shared lab app, remove only <code>submit-order</code> and <code>common-customer-eligibility</code> when no longer needed, after checking that no other workflow calls the child. Do not delete the shared app, plan, or storage account. If you created a dedicated resource group for this lab, delete it after confirming that all its resources are disposable.</p>
+          <p>For production, keep the contract stable, version breaking changes, secure Request endpoints, and replace the demo customer directory with a real system accessed using least privilege. Treat run history as potentially sensitive. The local workflow action avoids copying a callback URL, but it does not by itself remove or secure the child's HTTP endpoint.</p>
+          <div class="callout"><strong>Reuse discussion:</strong> a quote or renewal workflow could call the same child with a customerId and make its own decision from eligible and reason. You do not need to create those additional workflows in this lab. Keep order-specific fulfillment in the parent and shared customer policy in the child.</div>
+          <ul>
+            <li><a href="https://learn.microsoft.com/azure/logic-apps/create-single-tenant-workflows-azure-portal">Microsoft Learn: Create Standard workflows in the Azure portal</a></li>
+            <li><a href="https://learn.microsoft.com/azure/logic-apps/logic-apps-http-endpoint#call-other-workflows">Microsoft Learn: Call other workflows and return responses</a></li>
+            <li><a href="https://learn.microsoft.com/azure/logic-apps/logic-apps-exception-handling">Microsoft Learn: Handle errors and exceptions</a></li>
+            <li><a href="https://learn.microsoft.com/azure/logic-apps/logic-apps-securing-a-logic-app#secure-inbound-requests">Microsoft Learn: Secure inbound requests</a></li>
+            <li><a href="../topics/design-best-practices.html#shared-workflows">Workshop topic: Design Shared, Callable Workflows</a></li>
+          </ul>
+        </section>
+
+        <nav class="pager" aria-label="Lab pagination"><a class="prev" href="lab06-inline-dotnet-code-vscode.html"><small>Previous</small><strong>&larr; Lab 06: Inline .NET Code</strong></a><a class="next" href="index.html"><small>Complete</small><strong>Labs Overview &rarr;</strong></a></nav>
+      </main>
+      <aside class="toc" aria-label="Table of contents">
+        <h3>On This Page</h3>
+        <a href="#scenario">Scenario</a>
+        <a href="#architecture">Architecture</a>
+        <a href="#prerequisites">Prerequisites</a>
+        <a href="#contract">Shared Contract</a>
+        <a href="#child">Common Workflow</a>
+        <a href="#parent">Calling Workflow</a>
+        <a href="#branches">Response Branches</a>
+        <a href="#test">Test and Verify</a>
+        <a href="#troubleshoot">Troubleshooting</a>
+        <a href="#cleanup">Cleanup</a>
+      </aside>
+    </div>
+  </div>
+  <script type="module" src="../assets/site.js"></script>
+</body>
+</html>

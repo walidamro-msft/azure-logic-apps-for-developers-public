@@ -106,6 +106,7 @@ flowchart LR
           </div>
 
           <div class="callout"><strong>How to choose:</strong> Extract a shared workflow when the capability has a stable contract and at least two real callers. Keep logic local when it is short, caller-specific, or likely to change independently; an unnecessary shared dependency can increase latency, cost, and deployment coordination.</div>
+          <p><strong>Try it:</strong> <a href="../labs/lab07-reusable-workflows-portal.html">Lab 07: Reusable Workflows</a> uses the Azure portal to build a shared customer eligibility check and an order workflow that calls it and branches on the response.</p>
           <p>Microsoft Learn: <a href="https://learn.microsoft.com/en-us/azure/logic-apps/logic-apps-http-endpoint?WT.mc_id=AZ-MVP-5003556">Create callable or nestable workflows in Azure Logic Apps</a>.</p>
         </section>
 
