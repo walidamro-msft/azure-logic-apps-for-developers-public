@@ -34,6 +34,16 @@
         <!-- Keep entries newest first; add visitor-facing changes here and update the shared footer date in assets/site.js. -->
         <section id="2026-11-13" class="section-card reveal">
           <h2><time datetime="2026-11-13">November 13, 2026</time></h2>
+          <h3>Lab 06 walkthrough, Azure test, and local debugging</h3>
+          <ul>
+            <li><strong>Expanded:</strong> <a href="labs/lab06-inline-dotnet-code-vscode.html">Lab 06: Inline .NET Code</a> into an eight-step screenshot walkthrough, with each code and JSON snippet placed under the step that uses it.</li>
+            <li><strong>Added:</strong> deployment to Azure from VS Code, PowerShell tests for a valid order (HTTP 200) and an invalid order (HTTP 400) against the deployed logic app, and run-history checks.</li>
+            <li><strong>Added:</strong> local testing with Azurite and the Functions host, plus a debugging section that explains why breakpoints in the <code>.csx</code> file are not supported and lists practical alternatives. The section links to the Microsoft Learn pages that confirm this: inline C# scripts have no step-through debugging, while local .NET custom code functions do.</li>
+            <li><strong>Changed:</strong> the local test steps are now self-contained. They define the <code>Invoke-PricingWorkflow</code> helper in the local test terminal and include their own valid and invalid order tests, so you no longer see <code>Invoke-PricingWorkflow is not recognized</code> in a new terminal. They also explain why the URL that the host prints cannot be called directly.</li>
+            <li><strong>Corrected:</strong> the <strong>Failed Response</strong> body to read the action error from <code>actions('Calculate_pricing')?['error']</code>, because <code>outputs('Calculate_pricing')</code> is empty when the script fails, and the <strong>Success Response</strong> body to return the script result.</li>
+            <li><strong>Changed:</strong> step 7 now sets the final <strong>Failed Response</strong> body with one designer expression that returns only the error code and the script's validation message, without the runtime details and stack trace. You no longer edit <code>workflow.json</code> in a separate step. A new section explains each part of the expression.</li>
+            <li><strong>Fixed:</strong> the PowerShell test helper failing in PowerShell 7 with a <code>ReadAsStringAsync</code> disposed-object error when a 400 response has no body. The helper now works the same in Windows PowerShell 5.1 and PowerShell 7 and shows <code>(empty)</code> for an empty response.</li>
+          </ul>
           <h3>Lab 07: Reusable Workflows</h3>
           <ul>
             <li><strong>Added:</strong> <a href="labs/lab07-reusable-workflows-portal.html">Lab 07: Reusable Workflows</a>, a portal-only exercise that creates two stateful workflows in one Logic Apps Standard resource: a shared customer eligibility check and an order-processing caller.</li>

@@ -2,25 +2,61 @@
 <html lang="en"><head>
   <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lab 06: Inline .NET Code &middot; Azure Logic Apps Workshop</title>
-  <meta name="description" content="Calculate order pricing with inline C# code in an Azure Logic Apps Standard workflow." />
+  <meta name="description" content="Calculate order pricing with inline C# code in an Azure Logic Apps Standard workflow, deploy it from Visual Studio Code, and test it in Azure and locally." />
   <script>(function(){var t=localStorage.getItem("logic-apps-workshop-theme");document.documentElement.setAttribute("data-theme",(t==="light"||t==="dark")?t:(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"));})();</script>
   <link rel="icon" type="image/svg+xml" href="../images/azure/02631-icon-service-Logic-Apps.svg" /><link rel="stylesheet" href="../assets/site.css" />
 </head><body data-root=".." data-active="lab06-inline-dotnet">
 <div class="page"><nav class="breadcrumb" aria-label="Breadcrumb"><a href="../index.html">Home</a><span class="sep">/</span><a href="index.html">Labs</a><span class="sep">/</span><span>Lab 06</span></nav>
-<header class="hero"><h1>Lab 06: Inline .NET Code</h1><p class="subtitle">Use a workflow-local C# script to validate line items and calculate subtotal, tax, and total.</p><div class="badge-row"><span class="badge">Visual Studio Code</span><span class="badge">Standard only</span><span class="badge">~50 min</span></div></header>
+<header class="hero"><h1>Lab 06: Inline .NET Code</h1><p class="subtitle">Use a workflow-local C# script to validate line items and calculate subtotal, tax, and total. Then deploy the logic app to Azure, test it with PowerShell, and run it locally.</p><div class="badge-row"><span class="badge">Visual Studio Code</span><span class="badge">Standard only</span><span class="badge">~75 min</span></div></header>
 <div class="layout"><main class="content">
-<section id="scenario" class="section-card reveal"><h2>Scenario and Objectives</h2><p>An order workflow receives a variable number of line items. The calculation is small and belongs only to this workflow, but nested loops and expressions would obscure the business rule. You will implement the rule in the <strong>Execute CSharp Script Code</strong> action.</p><ul><li>Read trigger data through <code>WorkflowContext</code>.</li><li>Validate items and calculate currency values with <code>decimal</code>.</li><li>Return a typed result to the next workflow action.</li><li>Recognize when custom logic should move to Azure Functions.</li></ul></section>
+<section id="scenario" class="section-card reveal"><h2>Scenario and Objectives</h2><p>An order workflow receives a variable number of line items. The calculation is small and belongs only to this workflow, but nested loops and expressions would obscure the business rule. You will implement the rule in the <strong>Execute C# script code</strong> action.</p><ul><li>Read trigger data through <code>WorkflowContext</code>.</li><li>Validate items and calculate currency values with <code>decimal</code>.</li><li>Return a typed result to the next workflow action.</li><li>Deploy to Azure, test the cloud endpoint with PowerShell, and then test and troubleshoot locally.</li><li>Recognize when custom logic should move to Azure Functions.</li></ul></section>
 <section id="architecture" class="section-card reveal"><h2>Architecture</h2><div class="diagram-wrap"><pre class="mermaid">flowchart LR
  C[HTTP client] --> T[Request trigger]
- T --> CS[Execute CSharp Script Code]
- CS -->|Results in action body| R[HTTP response]
- CS -. invalid item .-> F[Failure response]
+ T --> CS[Calculate pricing]
+ CS -->|Results in action body| R[Success Response 200]
+ CS -. script fails .-> F[Failed Response 400]
  classDef azure fill:#e6f2fb,stroke:#0078d4,stroke-width:2,color:#0f1722;
  classDef result fill:#e7f5e7,stroke:#107c10,stroke-width:2,color:#103010;
  class C,T,CS azure; class R,F result;</pre></div></section>
-<section id="prerequisites" class="section-card reveal"><h2>Prerequisites and Constraints</h2><ul><li>Visual Studio Code, the Azure Logic Apps (Standard) extension, Azure Functions Core Tools v4, and Azurite when required by local settings.</li><li>A Standard stateful workflow project. You can reuse the project pattern from Lab 03 or create a new project named <code>inline-pricing</code>.</li><li>Basic familiarity with C# classes, async methods, and JSON.</li></ul><div class="callout"><strong>Do not select the JavaScript action:</strong> <strong>Execute CSharp Script Code</strong> is a distinct Inline Code Operations action for Standard workflows. The predefined entry point is <code>Run</code>.</div><div class="table-wrap"><table><thead><tr><th>Boundary</th><th>Current limit</th><th>Design implication</th></tr></thead><tbody><tr><td>Script duration</td><td>10 minutes</td><td>Use an external compute service for longer work.</td></tr><tr><td>Action output</td><td>Generally 100 MB</td><td>Store large content and return a reference.</td></tr><tr><td>Reuse</td><td>Script is workflow-local</td><td>Move shared or independently versioned logic to a service.</td></tr></tbody></table></div></section>
-<section id="workflow" class="section-card reveal"><h2>Create the Workflow</h2><ol><li>Create a Logic Apps Standard project with a <strong>Stateful Workflow</strong> named <code>inline-pricing</code>.</li><li>Add <strong>When an HTTP request is received</strong>, set method to POST, and paste the schema below.</li><li>Add the Inline Code Operations action <strong>Execute CSharp Script Code</strong>. Rename its display name to <strong>Calculate pricing</strong>. Logic Apps generates the internal action name <code>Calculate_pricing</code> by replacing the space with an underscore. The designer shows the display name, while workflow expressions use the internal name.</li><li>Replace the sample code file with the C# script in the next section. Keep the generated <code>.csx</code> file beside the workflow's <code>workflow.json</code>.</li><li>Add a Response action after the script. Set status to 200 and body to <code>@body('Calculate_pricing')</code>. Here, <code>Calculate_pricing</code> is the internal action name from step 3.</li><li>Add a second Response action with status 400 (for error handling). Select it, open the <strong>Settings</strong> tab, and go to <strong>Run after</strong>: <ol style="list-style-type: lower-alpha;"><li>Select <strong>Select actions</strong> and choose <strong>Calculate pricing</strong>, the display name shown in the designer (remove <strong>Response</strong> if present).</li><li>Uncheck all conditions except <strong>has failed</strong>.</li><li>Switch to the <strong>Parameters</strong> tab and set the response Body to <code>@outputs('Calculate_pricing')</code>, using the internal action name, to include error details.</li></ol></li></ol>
-<h3>Request schema</h3><pre class="code" data-lang="json">{
+<section id="prerequisites" class="section-card reveal"><h2>Prerequisites and Constraints</h2><ul><li>Visual Studio Code, the Azure Logic Apps (Standard) extension, Azure Functions Core Tools v4, and Azurite (the VS Code extension or the <code>azurite</code> npm package) for local runs.</li><li>An Azure subscription where you can create a resource group, a Workflow Standard plan, and a storage account for the deployment step.</li><li>PowerShell (Windows PowerShell 5.1 or PowerShell 7) for the test commands.</li><li>Basic familiarity with C# classes, async methods, and JSON.</li></ul><p>This lab uses these names. The test commands depend on them, so keep them exactly as written.</p><div class="table-wrap"><table><thead><tr><th>Item</th><th>Name</th></tr></thead><tbody><tr><td>Workspace</td><td><code>ws-lab06-inline-dotnet-code</code></td></tr><tr><td>Logic app (Standard)</td><td><code>la-lab-06-inline-dotnet-code</code></td></tr><tr><td>Workflow (Stateful)</td><td><code>wf-inline-pricing</code></td></tr><tr><td>Actions (display name / internal name)</td><td><strong>Calculate pricing</strong> / <code>Calculate_pricing</code>, <strong>Success Response</strong> / <code>Success_Response</code>, <strong>Failed Response</strong> / <code>Failed_Response</code></td></tr></tbody></table></div><div class="callout"><strong>Pick the C# action:</strong> The <strong>Inline Code</strong> group also contains <strong>Execute JavaScript code</strong> and <strong>Execute PowerShell script code</strong>. Select <strong>Execute C# script code</strong>. Its predefined entry point is <code>Run</code>.</div><div class="table-wrap"><table><thead><tr><th>Boundary</th><th>Current limit</th><th>Design implication</th></tr></thead><tbody><tr><td>Script duration</td><td>10 minutes</td><td>Use an external compute service for longer work.</td></tr><tr><td>Action output</td><td>Generally 100 MB</td><td>Store large content and return a reference.</td></tr><tr><td>Reuse</td><td>Script is workflow-local</td><td>Move shared or independently versioned logic to a service.</td></tr></tbody></table></div></section>
+<section id="workflow" class="section-card reveal"><h2>Create the Workflow</h2><ol class="lab-steps">
+<li>In the Activity Bar, select <strong>Azure</strong> (1). In the <strong>Workspace</strong> section toolbar, select the <strong>Azure Logic Apps</strong> icon (2), and then select <strong>Create new logic app workspace...</strong> (3).
+<details class="screenshot-toggle"><summary>View screenshot</summary>
+<figure class="media-panel">
+  <img src="../images/custom/labs/lab06/lab-06-step1-create-new-logic-apps-workspace-in-vscode.png" alt="Visual Studio Code with the Azure icon in the Activity Bar numbered 1, the Azure Logic Apps icon in the Workspace toolbar numbered 2, and the Create new logic app workspace menu item numbered 3." width="845" height="834" loading="lazy" />
+  <figcaption>Step 1: Select <strong>Azure</strong> (1), the <strong>Azure Logic Apps</strong> icon (2), and then <strong>Create new logic app workspace...</strong> (3).</figcaption>
+</figure></details>
+On <strong>Project setup</strong>, select a <strong>Workspace parent folder path</strong> outside this workshop repository. Enter <code>ws-lab06-inline-dotnet-code</code> for <strong>Workspace name</strong> and <code>la-lab-06-inline-dotnet-code</code> for <strong>Logic app name</strong>, and select <strong>Logic app (Standard)</strong>. Under <strong>Workflow configuration</strong>, enter <code>wf-inline-pricing</code> for <strong>Workflow name</strong>, select <strong>Stateful</strong> for <strong>Workflow type</strong>, and then select <strong>Next</strong>.
+<details class="screenshot-toggle"><summary>View screenshot</summary>
+<figure class="media-panel">
+  <img src="../images/custom/labs/lab06/lab-06-step1.1-create-new-logic-apps-workspace-in-vscode-project-step-1.png" alt="Create logic app workspace Project setup page with ws-lab06-inline-dotnet-code as the workspace name, la-lab-06-inline-dotnet-code as the logic app name with Logic app (Standard) selected, and wf-inline-pricing as a Stateful workflow." width="1311" height="1236" loading="lazy" />
+  <figcaption>Step 1: Your parent folder path will differ. Use these workspace, logic app, and workflow names so the later test commands match.</figcaption>
+</figure></details>
+On <strong>Review + create</strong>, confirm the values, and then select <strong>Create workspace</strong>.
+<details class="screenshot-toggle"><summary>View screenshot</summary>
+<figure class="media-panel">
+  <img src="../images/custom/labs/lab06/lab-06-step1.2-create-new-logic-apps-workspace-in-vscode-project-step-2.png" alt="Review and create page summarizing the workspace, the Logic app (Standard), and the Stateful wf-inline-pricing workflow, with the Create workspace button highlighted." width="1315" height="1238" loading="lazy" />
+  <figcaption>Step 1: Confirm that the workflow name is <code>wf-inline-pricing</code> before you select <strong>Create workspace</strong>.</figcaption>
+</figure></details></li>
+<li>In Explorer, expand the <code>la-lab-06-inline-dotnet-code</code> project and the <code>wf-inline-pricing</code> folder. Right-click <code>workflow.json</code>, and select <strong>Open designer</strong>. If VS Code asks whether to enable Azure-hosted connectors, select <strong>Skip for now</strong>. This lab uses only built-in operations.
+<details class="screenshot-toggle"><summary>View screenshot</summary>
+<figure class="media-panel">
+  <img src="../images/custom/labs/lab06/lab-06-step2-open-workflow-designer-in-vscode.png" alt="VS Code Explorer shortcut menu on wf-inline-pricing workflow.json with Open designer highlighted." width="546" height="407" loading="lazy" />
+  <figcaption>Step 2: Right-click <code>workflow.json</code> in the <code>wf-inline-pricing</code> folder and select <strong>Open designer</strong>.</figcaption>
+</figure></details>
+<details class="screenshot-toggle"><summary>View screenshot</summary>
+<figure class="media-panel">
+  <img src="../images/custom/labs/lab06/lab-06-step2.1-workflow-designer-opened-in-vscode.png" alt="Empty workflow designer with the Add a trigger prompt." width="1590" height="563" loading="lazy" />
+  <figcaption>Step 2: The designer opens with an empty canvas and an <strong>Add a trigger</strong> prompt.</figcaption>
+</figure></details></li>
+<li>Select <strong>Add a trigger</strong>, and add the built-in Request trigger <strong>When an HTTP request is received</strong>.
+<details class="screenshot-toggle"><summary>View screenshot</summary>
+<figure class="media-panel">
+  <img src="../images/custom/labs/lab06/lab-06-step3-add-http-trigger.png" alt="Add a trigger panel with the When an HTTP request is received trigger selected." width="392" height="231" loading="lazy" />
+  <figcaption>Step 3: Select <strong>When an HTTP request is received</strong>.</figcaption>
+</figure></details>
+Set <strong>Method</strong> to <code>POST</code>, and paste the following schema into <strong>Request Body JSON Schema</strong>.
+<p class="step-label">Request schema</p><pre class="code" data-lang="json">{
   "type": "object",
   "properties": {
     "orderId": { "type": "string" },
@@ -39,16 +75,34 @@
     }
   },
   "required": ["orderId", "items"]
-}</pre></section>
-<section id="code" class="section-card reveal"><h2>Add the C# Pricing Script</h2><h3>Understand the script contract</h3><p>A Logic Apps C# script is a <code>.csx</code> file compiled and hosted by the Azure Logic Apps runtime. The runtime supplies the workflow objects and invokes the script entry point.</p><div class="table-wrap"><table><thead><tr><th>Code element</th><th>Purpose</th></tr></thead><tbody><tr><td><code>Run</code></td><td>This predefined method name is the script entry point. The runtime calls <code>Run</code>, so do not rename it. Use <code>Task&lt;T&gt;</code> with <code>async</code> when awaiting workflow data and returning a value.</td></tr><tr><td><code>WorkflowContext context</code></td><td>The runtime provides this object. Use <code>GetTriggerResults()</code> for the trigger or <code>GetActionResults("action-name")</code> for a preceding action. Each operation result can include inputs, outputs, status, timing, tracking information, and error details.</td></tr><tr><td><code>ILogger log</code></td><td>The runtime injects this logger. Use it instead of <code>Console.Write</code> so messages flow through the host logging pipeline and can appear in Application Insights when configured. Log identifiers and counts rather than sensitive payloads.</td></tr><tr><td><code>#r</code> directives</td><td>A <code>#r</code> directive tells the script compiler to reference an assembly. Here, the script references the JSON and Logic Apps scripting assemblies available to the host.</td></tr><tr><td><code>using</code> directives</td><td>A <code>using</code> directive imports a namespace from a referenced or host-provided assembly, allowing names such as <code>WorkflowContext</code>, <code>ILogger</code>, and <code>JObject</code> without their fully qualified names.</td></tr><tr><td><code>PricingResults</code></td><td>This class defines the shape returned by <code>Run</code>. The runtime serializes the instance to JSON and places it in the C# action's output body for later workflow actions.</td></tr></tbody></table></div><div class="callout"><strong>Assembly versus namespace:</strong> <code>#r "Microsoft.Azure.Workflows.Scripting"</code> makes the assembly available to the script compiler; <code>using Microsoft.Azure.Workflows.Scripting;</code> then imports its namespace. The Logic Apps host already provides common framework and logging assemblies, while these explicit directives make this script's dependencies clear.</div><pre class="code" data-lang="csharp">// Reference assemblies used by this .csx script.
+}</pre>
+<details class="screenshot-toggle"><summary>View screenshot</summary>
+<figure class="media-panel">
+  <img src="../images/custom/labs/lab06/lab-06-step3.1-add-http-trigger-settings.png" alt="When an HTTP request is received trigger with Method set to POST and the order request schema in Request Body JSON Schema." width="472" height="943" loading="lazy" />
+  <figcaption>Step 3: Set the method to POST and paste the request schema. The HTTP URL is generated after you save the workflow.</figcaption>
+</figure></details></li>
+<li>Select the <strong>+</strong> below the trigger, and then select <strong>Add an action</strong>. Search for <code>inline</code>, and under <strong>Inline Code</strong>, select <strong>Execute C# script code</strong>.
+<details class="screenshot-toggle"><summary>View screenshot</summary>
+<figure class="media-panel">
+  <img src="../images/custom/labs/lab06/lab-06-step4-add-inline-csharp-action.png" alt="Add an action panel searching for inline, with Execute JavaScript code, Execute C# script code (highlighted by an arrow), and Execute PowerShell script code listed." width="398" height="353" loading="lazy" />
+  <figcaption>Step 4: Select <strong>Execute C# script code</strong>, not the JavaScript or PowerShell action.</figcaption>
+</figure></details>
+Rename the action to <strong>Calculate pricing</strong>. Logic Apps generates the internal action name <code>Calculate_pricing</code> by replacing the space with an underscore. The designer shows the display name, while workflow expressions use the internal name. The <strong>Code file</strong> box shows <code>Calculate_pricing_csharp_script_code</code>; the designer saves it as a <code>.csx</code> file beside <code>workflow.json</code>.
+Select all of the template code in the editor, delete it, and paste this script. <a href="#code">How the script works</a> explains each part.
+<p class="step-label">Calculate_pricing_csharp_script_code.csx</p><pre class="code" data-lang="csharp">// Add the required libraries
 #r "Newtonsoft.Json"
 #r "Microsoft.Azure.Workflows.Scripting"
-
-// Import namespaces so their types can be used without full names.
-using Microsoft.Azure.Workflows.Scripting;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Primitives;
 using Microsoft.Extensions.Logging;
+using Microsoft.Azure.Workflows.Scripting;
 using Newtonsoft.Json.Linq;
 
+/// &lt;summary&gt;
+/// Executes the inline csharp code.
+/// &lt;/summary&gt;
+/// &lt;param name="context"&gt;The workflow context.&lt;/param&gt;
+/// &lt;remarks&gt; This is the entry-point to your code. The function signature should remain unchanged.&lt;/remarks&gt;
 // Logic Apps calls this predefined Run method and supplies context and log.
 public static async Task&lt;PricingResults&gt; Run(WorkflowContext context, ILogger log)
 {
@@ -112,32 +166,239 @@ public class PricingResults
     public decimal Tax { get; set; }
     public decimal Total { get; set; }
     public string Currency { get; set; }
-}</pre><h3>Follow the data through the script</h3><ol><li><code>GetTriggerResults()</code> retrieves the Request trigger result, and <code>Outputs["body"]</code> selects the submitted JSON body.</li><li>The script reads <code>orderId</code>, <code>items</code>, and <code>taxRate</code>. Because <code>taxRate</code> is optional, the null-coalescing operator (<code>??</code>) supplies <code>0.08m</code> when it is absent.</li><li>The <code>foreach</code> loop processes one JSON object from the <code>items</code> array at a time. It reads that item's SKU, quantity, and unit price, validates them, then adds <code>quantity * unitPrice</code> to <code>subtotal</code>.</li><li>After every item has been processed, the script rounds the subtotal, calculates and rounds tax, and writes a structured log message.</li><li>The script creates one <code>PricingResults</code> object. Its public properties become JSON fields in the action output body, which the 200 Response action reads with <code>@body('Calculate_pricing')</code>.</li></ol><div class="callout"><strong>Why use a result class?</strong> Returning a typed model documents the output contract, keeps all response fields together, and gives downstream actions a stable JSON shape. If you add or remove a public property in <code>PricingResults</code>, you change the data exposed by the script action.</div></section>
-<section id="run" class="section-card reveal"><h2>Run and Verify</h2><ol><li>Start Azurite if your local project requires it, then press <strong>F5</strong>.</li><li>Get the local callback URL with the <code>listCallbackUrl</code> request from Lab 03, replacing <code>order-fulfillment</code> with <code>inline-pricing</code> and using your trigger's name, then send the valid request to it.</li><li>Confirm the response values match the expected result.</li><li>Send the invalid request and confirm the script fails and the 400 response path runs.</li><li>Inspect local run details and the host log. Confirm the log identifies the order and item count without logging the complete customer payload.</li></ol>
-<h3>Valid request</h3><pre class="code" data-lang="json">{
-  "orderId": "ORD-2001",
-  "taxRate": 0.08,
-  "items": [
-    { "sku": "AZ-100", "quantity": 2, "unitPrice": 18.50 },
-    { "sku": "AZ-200", "quantity": 1, "unitPrice": 25.00 }
-  ]
-}</pre><pre class="code" data-lang="json">{
-  "orderId": "ORD-2001",
-  "itemCount": 2,
-  "subtotal": 62.00,
-  "tax": 4.96,
-  "total": 66.96,
-  "currency": "USD"
-}</pre><h3>Invalid request (to test 400 error response)</h3><pre class="code" data-lang="json">{
-  "orderId": "ORD-2002",
-  "taxRate": 0.08,
-  "items": [
-    { "sku": "AZ-100", "quantity": 0, "unitPrice": 18.50 }
-  ]
-}</pre><p>This request has a quantity of <code>0</code>, which violates the validation rule. The pricing script throws an exception, the 400 Response action runs (because <code>Calculate_pricing</code> has failed), and you see the error message in the 400 response body.</p></section>
-<section id="decision" class="section-card reveal"><h2>Inline Code or Azure Functions?</h2><div class="table-wrap"><table><thead><tr><th>Keep inline C# when</th><th>Move to Azure Functions when</th></tr></thead><tbody><tr><td>The logic is small, workflow-local, and executes within action limits.</td><td>Multiple workflows or applications share the logic.</td></tr><tr><td>Deployment and versioning should follow one workflow.</td><td>The code needs independent deployment, scaling, testing, or ownership.</td></tr><tr><td>The script is clearer than a large expression graph.</td><td>The solution needs long execution, large output, complex dependencies, or a public API.</td></tr></tbody></table></div></section>
-<section id="troubleshoot" class="section-card reveal"><h2>Troubleshooting</h2><div class="table-wrap"><table><thead><tr><th>Symptom</th><th>Check</th></tr></thead><tbody><tr><td>Script does not compile</td><td>Keep the <code>#r</code> directives, namespaces, predefined <code>Run</code> name, and supported method signature.</td></tr><tr><td>Body is null</td><td>Inspect trigger outputs and confirm the JSON request used <code>application/json</code>.</td></tr><tr><td>Response cannot find output</td><td>Use the action's internal name in <code>body('Calculate_pricing')</code> or insert its Body token from dynamic content.</td></tr><tr><td>Package import fails</td><td>For optional NuGet packages, place <code>functions.proj</code> in the workflow folder, target <code>netstandard2.0</code>, and restart the app.</td></tr></tbody></table></div></section>
-<section id="cleanup" class="section-card reveal"><h2>Cleanup and References</h2><p>Stop the local host and Azurite. Remove any deployed Standard logic app and supporting storage resources, or delete the lab resource group.</p><div class="callout"><strong>Microsoft Learn:</strong> <a href="https://learn.microsoft.com/azure/logic-apps/add-run-csharp-scripts">Add and run C# scripts in Standard workflows</a>, <a href="https://learn.microsoft.com/azure/logic-apps/create-single-tenant-workflows-visual-studio-code">Create Standard workflows with VS Code</a>, and <a href="../topics/core-concepts.html#inline-code">Workshop topic: Inline Code</a>.</div></section>
+}</pre>
+<details class="screenshot-toggle"><summary>View screenshot</summary>
+<figure class="media-panel">
+  <img src="../images/custom/labs/lab06/lab-06-step4.1-inline-csharp-action-settings.png" alt="Calculate pricing action with the Code file Calculate_pricing_csharp_script_code.csx and the pricing script in the code editor." width="930" height="748" loading="lazy" />
+  <figcaption>Step 4: The action is named <strong>Calculate pricing</strong>, and the code file is <code>Calculate_pricing_csharp_script_code.csx</code>. Replace the template with the lab script; your editor shows the first lines of that script.</figcaption>
+</figure></details></li>
+<li>Select the <strong>+</strong> below <strong>Calculate pricing</strong>, select <strong>Add an action</strong>, search for <code>Response</code>, and add the Request action <strong>Response</strong>. Rename it <strong>Success Response</strong>, and keep <strong>Status Code</strong> at <code>200</code>.
+<details class="screenshot-toggle"><summary>View screenshot</summary>
+<figure class="media-panel">
+  <img src="../images/custom/labs/lab06/lab-06-step5-add-response-action.png" alt="Add an action panel searching for Response with the Response action listed." width="393" height="291" loading="lazy" />
+  <figcaption>Step 5: Add the <strong>Response</strong> action below <strong>Calculate pricing</strong>.</figcaption>
+</figure></details>
+Select the <strong>Body</strong> field, select the <strong>fx</strong> icon to open the <strong>Expression</strong> editor, enter the following expression without a leading <code>@</code>, and select <strong>Add</strong>. The <strong>Body</strong> field shows an <strong>fx</strong> token. Here, <code>Calculate_pricing</code> is the internal action name from step 4.
+<p class="step-label">Success Response body</p><pre class="code">body('Calculate_pricing')</pre>
+<div class="callout"><strong>Expression, not text:</strong> If you paste or type the expression directly into the <strong>Body</strong> field, the designer saves it as plain text and the response returns the literal text instead of the pricing result. Open the action's <strong>Code preview</strong> tab to confirm that the body is <code>"@body('Calculate_pricing')"</code>, including the <code>@</code>.</div>
+<details class="screenshot-toggle"><summary>View screenshot</summary>
+<figure class="media-panel">
+  <img src="../images/custom/labs/lab06/lab-06-step5.1-sucess-response-paramters.png" alt="Success Response parameters with Status Code 200. Marker 1 points to the fx icon beside the Body field, marker 2 to the expression body('Calculate_pricing') in the Expression editor, and marker 3 to the Add button." width="895" height="833" loading="lazy" />
+  <figcaption>Step 5: With <strong>Status Code</strong> at 200, select <strong>fx</strong> beside <strong>Body</strong> (1), enter <code>body('Calculate_pricing')</code> in the Expression editor (2), and select <strong>Add</strong> (3).</figcaption>
+</figure></details>
+Open the action's <strong>Settings</strong> tab. Under <strong>Run after</strong>, confirm that <strong>Calculate pricing</strong> is selected with only <strong>Is successful</strong> checked. This is the default.
+<details class="screenshot-toggle"><summary>View screenshot</summary>
+<figure class="media-panel">
+  <img src="../images/custom/labs/lab06/lab-06-step5.2-sucess-response-settings.png" alt="Success Response settings with Run after set to Calculate pricing and only Is successful selected." width="474" height="830" loading="lazy" />
+  <figcaption>Step 5: <strong>Success Response</strong> runs only when <strong>Calculate pricing</strong> is successful.</figcaption>
+</figure></details></li>
+<li>To handle a script failure, add a second response next to the first one. Hover over the connector between <strong>Calculate pricing</strong> and <strong>Success Response</strong>, select the <strong>+</strong>, and then select <strong>Add a parallel branch</strong>.
+<details class="screenshot-toggle"><summary>View screenshot</summary>
+<figure class="media-panel">
+  <img src="../images/custom/labs/lab06/lab-06-step6-add-parallel-branch.png" alt="Plus menu below Calculate pricing with Add an action, Add a parallel branch (highlighted), and Add an agent." width="304" height="131" loading="lazy" />
+  <figcaption>Step 6: Select <strong>Add a parallel branch</strong> so both responses sit directly below <strong>Calculate pricing</strong>.</figcaption>
+</figure></details></li>
+<li id="failed-response">In the new branch, add another <strong>Response</strong> action. Rename it <strong>Failed Response</strong>, and set <strong>Status Code</strong> to <code>400</code>. Select the <strong>Body</strong> field, select the <strong>fx</strong> icon, paste the following expression without a leading <code>@</code>, and select <strong>Add</strong>. The expression is a single line, so copy all of it with the <strong>Copy</strong> button.
+<p class="step-label">Failed Response body</p><pre class="code">addProperty(addProperty(json('{}'), 'code', actions('Calculate_pricing')?['error']?['code']), 'message', first(split(last(split(coalesce(actions('Calculate_pricing')?['error']?['message'], ''), 'failed with the error ''')), ''' and stack trace ''')))</pre>
+<p>When the script throws, this body returns the error code and only the message that the script threw, without the runtime details and stack trace:</p><pre class="code" data-lang="json">{"code":"InvokeFunctionFailed","message":"Each item needs a SKU, positive quantity, and nonnegative unitPrice."}</pre>
+<div class="callout"><strong>Use the action error, not Outputs:</strong> When the script throws, <strong>Calculate pricing</strong> has no output body, so the <strong>Outputs</strong> token (<code>outputs('Calculate_pricing')</code>) is empty and the 400 response has no body. The error details are on the action itself, in <code>actions('Calculate_pricing')?['error']</code>. <a href="#error-body">How the Failed Response body works</a> explains each part of the expression.</div>
+<details class="screenshot-toggle"><summary>View screenshot</summary>
+<figure class="media-panel">
+  <img src="../images/custom/labs/lab06/lab-06-step7-add-failed-response-action-paramters.png" alt="Failed Response parameters with Status Code 400 and the full addProperty expression entered in the Expression editor. Marker 1 points to the fx icon beside Body, marker 2 to the expression, and marker 3 to the Add button." width="891" height="833" loading="lazy" />
+  <figcaption>Step 7: With <strong>Status Code</strong> at 400, select <strong>fx</strong> beside <strong>Body</strong> (1), enter the <strong>Failed Response body</strong> expression in the Expression editor (2), and select <strong>Add</strong> (3).</figcaption>
+</figure></details>
+Open the <strong>Code preview</strong> tab and confirm that the body starts with <code>"@addProperty(</code>, including the <code>@</code>. If the <code>@</code> is missing, the designer saved the expression as text. Clear the <strong>Body</strong> field, and add the expression again with <strong>fx</strong>.
+Open the <strong>Settings</strong> tab. Under <strong>Run after</strong>, select <strong>Calculate pricing</strong>, clear <strong>Is successful</strong>, and select only <strong>Has failed</strong>.
+<details class="screenshot-toggle"><summary>View screenshot</summary>
+<figure class="media-panel">
+  <img src="../images/custom/labs/lab06/lab-06-step7.1-add-failed-response-action-settings.png" alt="Failed Response settings with Run after set to Calculate pricing and only Has failed selected." width="472" height="828" loading="lazy" />
+  <figcaption>Step 7: <strong>Failed Response</strong> runs only when <strong>Calculate pricing</strong> has failed.</figcaption>
+</figure></details></li>
+<li>Save the workflow (<strong>Ctrl+S</strong>) and compare it with the completed design. <strong>Success Response</strong> and <strong>Failed Response</strong> must be parallel branches below <strong>Calculate pricing</strong>.
+<details class="screenshot-toggle"><summary>View screenshot</summary>
+<figure class="media-panel">
+  <img src="../images/custom/labs/lab06/lab-06-full-workflow-final.png" alt="Completed workflow with the HTTP trigger, Calculate pricing, and parallel Success Response and Failed Response actions." width="456" height="576" loading="lazy" />
+  <figcaption>Step 8: Confirm that your completed workflow matches this layout before you deploy it.</figcaption>
+</figure></details></li></ol></section>
+<section id="code" class="section-card reveal"><h2>How the C# Script Works</h2><h3>Understand the script contract</h3><p>A Logic Apps C# script is a <code>.csx</code> file compiled and hosted by the Azure Logic Apps runtime. The runtime supplies the workflow objects and invokes the script entry point.</p><div class="table-wrap"><table><thead><tr><th>Code element</th><th>Purpose</th></tr></thead><tbody><tr><td><code>Run</code></td><td>This predefined method name is the script entry point. The runtime calls <code>Run</code>, so do not rename it. Use <code>Task&lt;T&gt;</code> with <code>async</code> when awaiting workflow data and returning a value.</td></tr><tr><td><code>WorkflowContext context</code></td><td>The runtime provides this object. Use <code>GetTriggerResults()</code> for the trigger or <code>GetActionResults("action-name")</code> for a preceding action. Each operation result can include inputs, outputs, status, timing, tracking information, and error details.</td></tr><tr><td><code>ILogger log</code></td><td>The runtime injects this logger. Use it instead of <code>Console.Write</code> so messages flow through the host logging pipeline and can appear in Application Insights when configured. Log identifiers and counts rather than sensitive payloads.</td></tr><tr><td><code>#r</code> directives</td><td>A <code>#r</code> directive tells the script compiler to reference an assembly. Here, the script references the JSON and Logic Apps scripting assemblies available to the host.</td></tr><tr><td><code>using</code> directives</td><td>A <code>using</code> directive imports a namespace from a referenced or host-provided assembly, allowing names such as <code>WorkflowContext</code>, <code>ILogger</code>, and <code>JObject</code> without their fully qualified names.</td></tr><tr><td><code>PricingResults</code></td><td>This class defines the shape returned by <code>Run</code>. The runtime serializes the instance to JSON and places it in the C# action's output body for later workflow actions.</td></tr></tbody></table></div><div class="callout"><strong>Assembly versus namespace:</strong> <code>#r "Microsoft.Azure.Workflows.Scripting"</code> makes the assembly available to the script compiler; <code>using Microsoft.Azure.Workflows.Scripting;</code> then imports its namespace. The Logic Apps host already provides common framework and logging assemblies, while these explicit directives make this script's dependencies clear.</div><h3>Follow the data through the script</h3><ol><li><code>GetTriggerResults()</code> retrieves the Request trigger result, and <code>Outputs["body"]</code> selects the submitted JSON body.</li><li>The script reads <code>orderId</code>, <code>items</code>, and <code>taxRate</code>. Because <code>taxRate</code> is optional, the null-coalescing operator (<code>??</code>) supplies <code>0.08m</code> when it is absent.</li><li>The <code>foreach</code> loop processes one JSON object from the <code>items</code> array at a time. It reads that item's SKU, quantity, and unit price, validates them, then adds <code>quantity * unitPrice</code> to <code>subtotal</code>.</li><li>After every item has been processed, the script rounds the subtotal, calculates and rounds tax, and writes a structured log message.</li><li>The script creates one <code>PricingResults</code> object. Its public properties become JSON fields in the action output body, which <strong>Success Response</strong> reads with <code>@body('Calculate_pricing')</code>.</li><li>When validation fails, the script throws an <code>ArgumentException</code>. <strong>Calculate pricing</strong> then has the status <strong>Failed</strong>, <strong>Success Response</strong> is skipped, and <strong>Failed Response</strong> runs and returns the exception message to the caller.</li></ol><div class="callout"><strong>Why use a result class?</strong> Returning a typed model documents the output contract, keeps all response fields together, and gives downstream actions a stable JSON shape. If you add or remove a public property in <code>PricingResults</code>, you change the data exposed by the script action.</div>
+<h3 id="error-body">How the Failed Response body works</h3><p>When the script throws, the runtime sets the error on <strong>Calculate pricing</strong>. The error <code>code</code> is <code>InvokeFunctionFailed</code>, and the error <code>message</code> wraps the text that the script threw in runtime details and a stack trace:</p><pre class="code">The function '...csx' failed with the error '&lt;message&gt;' and stack trace '...' when executing. Please verify function code is valid.</pre><p>The <strong>Failed Response</strong> expression from <a href="#failed-response">step 7</a> builds a new JSON object that keeps the code and only <code>&lt;message&gt;</code>. Read it from the inside out:</p>
+<div class="table-wrap"><table><thead><tr><th>Expression part</th><th>Result</th></tr></thead><tbody><tr><td><code>json('{}')</code></td><td>An empty JSON object to build the response body on.</td></tr><tr><td><code>addProperty(..., 'code', actions('Calculate_pricing')?['error']?['code'])</code></td><td>Adds a <code>code</code> property with the error code.</td></tr><tr><td><code>coalesce(actions('Calculate_pricing')?['error']?['message'], '')</code></td><td>The full error message, or an empty string if there is none, so that <code>split</code> never receives null.</td></tr><tr><td><code>last(split(..., 'failed with the error '''))</code></td><td>The text after the opening marker, which starts with the script's message.</td></tr><tr><td><code>first(split(..., ''' and stack trace '''))</code></td><td>The text before the stack trace, which is only the script's message.</td></tr><tr><td><code>addProperty(..., 'message', ...)</code></td><td>Adds a <code>message</code> property with that text.</td></tr></tbody></table></div>
+<div class="callout"><strong>Apostrophes in expressions:</strong> Expression strings use single quotes, so two single quotes (<code>''</code>) stand for one literal apostrophe. For example, <code>'failed with the error '''</code> is the text <code>failed with the error '</code>. If a marker is not found, <code>split</code> returns the whole text, so the response falls back to the full message instead of an empty body.</div>
+<div class="callout warning"><strong>Security:</strong> The full error message includes runtime details and a stack trace. This body returns only the error code and the script's message, while the details stay in the run history. The script's message still reaches the caller, so in production throw only messages that are safe for callers to see, or return a fixed message such as <code>{"message":"Invalid order."}</code>.</div></section>
+<section id="deploy" class="section-card reveal"><h2>Deploy to Azure and Test with PowerShell</h2><p>Publish the project to a Standard logic app in Azure, and then call the cloud endpoint from PowerShell.</p><div class="callout"><strong>Cost:</strong> A Standard logic app runs on a Workflow Standard plan that is billed while it exists, even when no workflow runs. Delete the resource group when you finish. Reusing an existing Workflow Standard plan adds no new plan charge.</div><ol class="lab-steps">
+<li>Save all files. In the Activity Bar, select <strong>Azure</strong>. Under <strong>Resources</strong>, select <strong>Sign in to Azure</strong> if you are not already signed in, and confirm that the subscription you want to use appears.</li>
+<li>In Explorer, right-click the <code>la-lab-06-inline-dotnet-code</code> project folder (1), and select <strong>Deploy to logic app...</strong> (2).
+<details class="screenshot-toggle"><summary>View screenshot</summary>
+<figure class="media-panel">
+  <img src="../images/custom/labs/lab06/lab-06-step8-deploy-logic-app-to-azure.png" alt="Explorer shortcut menu on the la-lab-06-inline-dotnet-code project folder (1) with Deploy to logic app selected (2)." width="653" height="1014" loading="lazy" />
+  <figcaption>Right-click the project folder (1), not a workflow folder, and select <strong>Deploy to logic app...</strong> (2) to deploy the entire Logic Apps project, including the <code>.csx</code> file.</figcaption>
+</figure></details></li>
+<li>Select <strong>Create new Logic App (Standard) in Azure Advanced</strong>, and then answer the prompts.
+<div class="callout"><strong>Existing plan or logic app:</strong> If you already created an empty Standard logic app for this lab, select it by name in the <strong>Deploy to logic app</strong> list instead of a <strong>Create new</strong> option, confirm the overwrite prompt, and skip the table below. Deploying to a logic app <strong>overwrites</strong> its deployed project, so select one only if it is dedicated to this lab. To reuse only an existing WS1 plan, select <strong>Create new Logic App (Standard) in Azure Advanced</strong> and choose the plan at the <strong>App Service plan</strong> prompt.</div>
+<div class="table-wrap"><table><thead><tr><th>Prompt</th><th>Value</th></tr></thead><tbody><tr><td>Logic app name</td><td>A globally unique name, for example <code>la-lab-06-inline-dotnet-&lt;suffix&gt;</code></td></tr><tr><td>Location</td><td>A region near you</td></tr><tr><td>Hosting plan</td><td><strong>Workflow Standard</strong></td></tr><tr><td>App Service plan</td><td>Select your existing Workflow Standard plan (for example, WS1), or select <strong>Create new App Service plan</strong>, enter a unique name, and select the <strong>WS1</strong> pricing tier. If VS Code asks you to type a plan name, no matching plan exists, and the name you enter creates a new plan.</td></tr><tr><td>Resource group</td><td><strong>Create new resource group</strong>, for example <code>rg-lab06-inline-dotnet-&lt;suffix&gt;</code></td></tr><tr><td>Storage account</td><td><strong>Create new storage account</strong> with a unique name that uses only lowercase letters and numbers</td></tr><tr><td>SQL storage</td><td><strong>No</strong></td></tr><tr><td>Application Insights</td><td><strong>Skip for now</strong></td></tr></tbody></table></div></li>
+<li>When the confirmation message appears, select <strong>Deploy</strong>. To follow progress, select <strong>View &gt; Output</strong>, and then select <strong>Azure Logic Apps (Standard)</strong> in the Output list. Wait for the message that the deployment completed.</li>
+<li>In the <a href="https://portal.azure.com">Azure portal</a>, open the new logic app, select <strong>Workflows</strong>, and then select <code>wf-inline-pricing</code>. Open the <strong>Designer</strong>, select the <strong>When an HTTP request is received</strong> trigger, and copy its <strong>HTTP URL</strong>.</li>
+<li>Open a PowerShell terminal, replace <code>&lt;paste-the-HTTP-URL&gt;</code> with the complete URL you copied (including its query string), and run this setup. The block is self-contained: it does not need the local host. Keep the URL inside single quotes. The helper sends a payload and displays both the HTTP status and the response body, including expected error responses. It works in Windows PowerShell 5.1 and PowerShell 7, and it shows <code>(empty)</code> when the response has no body.
+<pre class="code">$callbackUri = '&lt;paste-the-HTTP-URL&gt;'
+
+function Invoke-PricingWorkflow {
+  param([hashtable]$Payload)
+
+  $body = $Payload | ConvertTo-Json -Depth 5
+  $request = @{
+    Uri = $callbackUri
+    Method = 'Post'
+    ContentType = 'application/json'
+    Body = $body
+    UseBasicParsing = $true
+  }
+
+  if ($PSVersionTable.PSVersion.Major -ge 7) {
+    # PowerShell 7 returns 4xx and 5xx responses instead of throwing.
+    $response = Invoke-WebRequest @request -SkipHttpErrorCheck
+    $statusCode = [int]$response.StatusCode
+    $responseBody = $response.Content
+  }
+  else {
+    try {
+      $response = Invoke-WebRequest @request
+      $statusCode = [int]$response.StatusCode
+      $responseBody = $response.Content
+    }
+    catch {
+      if (-not $_.Exception.Response) { throw }
+      $statusCode = [int]$_.Exception.Response.StatusCode
+      $responseBody = $_.ErrorDetails.Message
+    }
+  }
+
+  # An empty body arrives as an empty byte array, which PowerShell displays as {}.
+  if ($responseBody -is [byte[]]) {
+    $responseBody = [System.Text.Encoding]::UTF8.GetString($responseBody)
+  }
+  if ([string]::IsNullOrWhiteSpace($responseBody)) {
+    $responseBody = '(empty)'
+  }
+
+  [pscustomobject]@{
+    StatusCode = $statusCode
+    ResponseBody = $responseBody
+  } | Format-List
+}</pre>
+<h3>Cloud Test 1: Valid order</h3><pre class="code">Invoke-PricingWorkflow -Payload @{
+  orderId = 'ORD-2001'
+  taxRate = 0.08
+  items = @(
+    @{ sku = 'AZ-100'; quantity = 2; unitPrice = 18.50 },
+    @{ sku = 'AZ-200'; quantity = 1; unitPrice = 25.00 }
+  )
+}</pre><p>Expect <code>StatusCode : 200</code> and this response body. The subtotal is 2 &times; 18.50 + 25.00 = 62.00. Tax at 8% is 4.96, so the total is 66.96. The JSON shows the subtotal as <code>62.0</code>, not <code>62.00</code>.</p><pre class="code" data-lang="json">{"orderId":"ORD-2001","itemCount":2,"subtotal":62.0,"tax":4.96,"total":66.96,"currency":"USD"}</pre>
+<div class="callout"><strong>Got <code>ResponseBody : (empty)</code>?</strong> The script ran, but <strong>Success Response</strong> has no <strong>Body</strong>, so the logic app returns 200 with no content. In the run history, <strong>Calculate pricing</strong> shows the pricing JSON in its outputs, while <strong>Success Response</strong> shows only the status code. Set the body as described in <a href="#workflow">step 5</a>, save, deploy again, and repeat the test. If the designer already shows the body, deploy again: Azure runs the last deployed version, not the open designer.</div>
+<h3>Cloud Test 2: Invalid order</h3><pre class="code">Invoke-PricingWorkflow -Payload @{
+  orderId = 'ORD-2002'
+  taxRate = 0.08
+  items = @(
+    @{ sku = 'AZ-100'; quantity = 0; unitPrice = 18.50 }
+  )
+}</pre><p>Expect <code>StatusCode : 400</code>. The quantity of <code>0</code> violates the validation rule, so the script throws, <strong>Success Response</strong> is skipped, and <strong>Failed Response</strong> returns the error code and the message that the script threw. The stack trace stays in the run history.</p><pre class="code" data-lang="json">{"code":"InvokeFunctionFailed","message":"Each item needs a SKU, positive quantity, and nonnegative unitPrice."}</pre>
+<div class="callout"><strong>Got the full message with <code>failed with the error</code> and a stack trace?</strong> <strong>Failed Response</strong> returns the whole error object, for example from the shorter expression <code>actions('Calculate_pricing')?['error']</code>. Replace its body with the expression from <a href="#failed-response">step 7</a>, save, deploy again, and repeat the test.</div>
+<div class="callout"><strong>Got <code>ResponseBody : (empty)</code>?</strong> <strong>Failed Response</strong> has no <strong>Body</strong>, or its body uses the <strong>Outputs</strong> token, which is empty when the script fails. In the run history, <strong>Failed Response</strong> shows only the status code. Set the body as described in <a href="#failed-response">step 7</a>, save, deploy again, and repeat the test. If the designer already shows that body, Azure is still running an earlier deployment, because changes reach Azure only after you save the workflow and deploy again. To check which body the run used, open the run, select <strong>Failed Response</strong>, and look at its <strong>Inputs</strong>.</div></li>
+<li>In the portal, open the workflow's <strong>Run history</strong>, and select the two runs. The invalid-order run is listed as <strong>Failed</strong> because <strong>Calculate pricing</strong> failed, even though the workflow handled the error and returned the 400. Inside that run, <strong>Calculate pricing</strong> shows <strong>Failed</strong> with the error message and a line number, <strong>Success Response</strong> shows <strong>Skipped</strong>, and <strong>Failed Response</strong> shows <strong>Succeeded</strong> because it ran as designed and sent the 400.</li>
+</ol><div class="callout"><strong>Security:</strong> The HTTP URL contains a <code>sig</code> value that lets anyone who has the URL run the workflow. Do not commit or share it. <code>local.settings.json</code> is not deployed. It sets <code>LOGIC_APPS_CUSTOMCODE_DOTNETVERSION</code> to <code>net10.0</code> for local runs. This script does not depend on the .NET version, so the Azure test works without that setting. To run the same .NET version in Azure, add it as an app setting on the logic app in the portal.</div></section>
+<section id="local" class="section-card reveal"><h2>Test Locally</h2><p>Now run the same workflow on your machine. Local runs are the fast loop for changing the script and seeing the result without redeploying.</p><div class="callout"><strong>Where to run the test commands:</strong> Do not paste them into the designer or the terminal running the host. Use a second PowerShell terminal and leave the host terminal running.</div><ol class="lab-steps">
+<li>Start Azurite. With the Azurite VS Code extension, open the Command Palette and run <strong>Azurite: Start</strong>. The generated <code>local.settings.json</code> uses development storage, so the host cannot start without it.</li>
+<li>In the VS Code window containing <code>ws-lab06-inline-dotnet-code</code>, press <strong>F5</strong>. If VS Code asks which configuration to run, select the generated Logic Apps project configuration.</li>
+<li>Open the bottom <strong>Terminal</strong> panel. Wait until the host lists the <code>wf-inline-pricing</code> function with its local URL and shows <code>Host lock lease acquired</code>, and then leave this terminal running.
+<pre class="code">wf-inline-pricing: [HEAD,POST,OPTIONS] http://localhost:7071/api/wf-inline-pricing/triggers/When_an_HTTP_request_is_received/invoke</pre>
+<div class="callout"><strong>Do not call this URL directly:</strong> The host shows the trigger path without its query string. A request to it returns <code>400 MissingApiVersionParameter</code>, and with only <code>api-version</code> added it returns <code>401 DirectApiAuthorizationRequired</code>, because the trigger accepts only requests signed with a <code>sig</code> value. The next step gets the complete signed URL. The message <code>Csproj not found ... Skipping user secrets file configuration</code> is expected for this project and does not stop the host.</div></li>
+<li>Select the <strong>+</strong> in the Terminal panel to open a second PowerShell terminal. Run the following to get the local signed callback URL for the trigger. It replaces the portal URL from the cloud test.
+<pre class="code">$managementUri = 'http://localhost:7071/runtime/webhooks/workflow/api/management/workflows/wf-inline-pricing/triggers/When_an_HTTP_request_is_received/listCallbackUrl?api-version=2022-05-01'
+
+$callbackUri = (Invoke-RestMethod `
+  -Uri $managementUri `
+  -Method Post
+).value</pre>
+<p>Check <code>$callbackUri</code>. It should start with <code>http://localhost:7071/api/wf-inline-pricing/triggers/When_an_HTTP_request_is_received/invoke</code> and end with a <code>sig=</code> value.</p></li>
+<li>In the same second terminal, define the <code>Invoke-PricingWorkflow</code> helper. It is the same function as in the cloud test. Each terminal starts empty, so you must define it in every new terminal, even if you defined it earlier for the cloud test. The helper reads <code>$callbackUri</code> when you call it, so it sends requests to the local URL from the previous step.
+<pre class="code">function Invoke-PricingWorkflow {
+  param([hashtable]$Payload)
+
+  $body = $Payload | ConvertTo-Json -Depth 5
+  $request = @{
+    Uri = $callbackUri
+    Method = 'Post'
+    ContentType = 'application/json'
+    Body = $body
+    UseBasicParsing = $true
+  }
+
+  if ($PSVersionTable.PSVersion.Major -ge 7) {
+    # PowerShell 7 returns 4xx and 5xx responses instead of throwing.
+    $response = Invoke-WebRequest @request -SkipHttpErrorCheck
+    $statusCode = [int]$response.StatusCode
+    $responseBody = $response.Content
+  }
+  else {
+    try {
+      $response = Invoke-WebRequest @request
+      $statusCode = [int]$response.StatusCode
+      $responseBody = $response.Content
+    }
+    catch {
+      if (-not $_.Exception.Response) { throw }
+      $statusCode = [int]$_.Exception.Response.StatusCode
+      $responseBody = $_.ErrorDetails.Message
+    }
+  }
+
+  # An empty body arrives as an empty byte array, which PowerShell displays as {}.
+  if ($responseBody -is [byte[]]) {
+    $responseBody = [System.Text.Encoding]::UTF8.GetString($responseBody)
+  }
+  if ([string]::IsNullOrWhiteSpace($responseBody)) {
+    $responseBody = '(empty)'
+  }
+
+  [pscustomobject]@{
+    StatusCode = $statusCode
+    ResponseBody = $responseBody
+  } | Format-List
+}</pre>
+<div class="callout"><strong>Got <code>The term 'Invoke-PricingWorkflow' is not recognized</code>?</strong> The helper is not defined in this terminal. Run the function block above in the same terminal, and then run the test again.</div></li>
+<li>Send the valid order.
+<p class="step-label">Local Test 1: Valid order</p><pre class="code">Invoke-PricingWorkflow -Payload @{
+  orderId = 'ORD-2001'
+  taxRate = 0.08
+  items = @(
+    @{ sku = 'AZ-100'; quantity = 2; unitPrice = 18.50 },
+    @{ sku = 'AZ-200'; quantity = 1; unitPrice = 25.00 }
+  )
+}</pre><p>Expect <code>StatusCode : 200</code> and the same body as in Azure:</p><pre class="code" data-lang="json">{"orderId":"ORD-2001","itemCount":2,"subtotal":62.0,"tax":4.96,"total":66.96,"currency":"USD"}</pre></li>
+<li>Send the invalid order.
+<p class="step-label">Local Test 2: Invalid order</p><pre class="code">Invoke-PricingWorkflow -Payload @{
+  orderId = 'ORD-2002'
+  taxRate = 0.08
+  items = @(
+    @{ sku = 'AZ-100'; quantity = 0; unitPrice = 18.50 }
+  )
+}</pre><p>Expect <code>StatusCode : 400</code> and the same body as in Azure:</p><pre class="code" data-lang="json">{"code":"InvokeFunctionFailed","message":"Each item needs a SKU, positive quantity, and nonnegative unitPrice."}</pre>
+<div class="callout"><strong>Local result differs from Azure?</strong> The local host runs the workflow saved on your machine, and Azure runs the last deployed version. If you changed the workflow after you deployed, the results can differ. Save the workflow, restart the host, and compare the <strong>Failed Response</strong> body in <strong>Code preview</strong> with <a href="#failed-response">step 7</a>.</div></li>
+<li>Look at the host terminal. The first request is slower because the host compiles the script. After a valid request, the log contains the message that the script wrote, and it identifies the order and item count without logging the customer payload:
+<pre class="code">Calculated pricing for order ORD-2001 with 2 items.</pre>
+<p>The host terminal does not show the invalid request as an error. The script failure is recorded in the run history, which you inspect next.</p></li>
+<li>In Explorer, right-click <code>wf-inline-pricing/workflow.json</code>, select <strong>Overview</strong>, and open the <strong>Run history</strong>. Select a run, and then select <strong>Calculate pricing</strong> to inspect its inputs and outputs, or its error for the invalid order.</li>
+</ol></section>
+<section id="debug" class="section-card reveal"><h2>Debug the Inline Script</h2><div class="callout warning"><strong>Breakpoints do not work in the <code>.csx</code> file:</strong> You cannot step through an inline C# script in VS Code. The extension's <strong>F5</strong> configuration attaches the debugger to the Logic Apps host, but the runtime compiles the <code>.csx</code> in memory and runs it in a separate script worker process. There is no source file for the debugger to bind to, which is why the stack trace later shows <code>in :line 45</code> with no file name. In testing for this lab, a breakpoint in the <code>.csx</code> never bound and never hit, even with a debugger attached to the worker process.</div><div class="callout"><strong>What Microsoft documents:</strong> <a href="https://learn.microsoft.com/azure/logic-apps/add-run-csharp-scripts">Add and run C# scripts in Standard workflows</a> covers logging, Application Insights metrics, and compilation and runtime errors, but has no debugger or breakpoint guidance. <a href="https://learn.microsoft.com/community/content/compare-extensibility-options-azure-logic-apps-standard">Compare extensibility options in Azure Logic Apps (Standard)</a> lists debugging as a consideration for inline code and points to run history, inputs, outputs, and execution logs for troubleshooting. Step-through debugging in VS Code is documented only for <a href="https://learn.microsoft.com/azure/logic-apps/create-run-custom-code-functions">local .NET functions (custom code)</a>, where you "step through your code and workflows in the same debugging session."</div><p>Use these techniques instead. They are enough for most inline scripts, which are small by design.</p><ol class="lab-steps">
+<li><strong>Trace with <code>ILogger</code>.</strong> Add a line such as <code>log.LogInformation("Item {Sku} has quantity {Quantity}.", sku, quantity);</code> inside the <code>foreach</code> loop, and save the file. The runtime loads the script when the host starts, so a saved change is not used until you restart the host: press <strong>Ctrl+C</strong> in the host terminal, and then press <strong>F5</strong> again. In the second terminal, send <strong>Local Test 1</strong> again and read the new lines in the host terminal. Log identifiers and counts, not the full payload.</li>
+<li><strong>Use the line number in the error.</strong> Send <strong>Local Test 2</strong> again and open the failed <strong>Calculate pricing</strong> action in the run history. The error says <code>stack trace '   at Script.&lt;Run&gt;d__1.MoveNext() in :line 45</code>. Line 45 of <code>Calculate_pricing_csharp_script_code.csx</code> is the <code>throw</code> inside the <code>foreach</code> loop. The line number matches the <code>.csx</code> file, so you can jump straight to the statement that failed.</li>
+<li><strong>Inspect the data around the script.</strong> In the run history, the inputs and outputs of the trigger, <strong>Calculate pricing</strong>, and each response show exactly what the script received and returned. Most inline script bugs are an unexpected payload shape, such as <code>quantity</code> sent as text or an empty <code>items</code> array.</li>
+<li><strong>Keep the logic testable.</strong> Keep the rules (validation, rounding) in plain methods that take simple values, and keep reading from <code>WorkflowContext</code> in <code>Run</code>. You can copy the plain methods into a console app or unit test, where you can set breakpoints.</li>
+<li><strong>Use Application Insights in Azure.</strong> If you enabled Application Insights at deployment, <code>ILogger</code> messages arrive as traces that you can query. This lab skipped it to avoid extra resources.</li>
+<li><strong>Move to a debuggable component when you need breakpoints.</strong> If the logic grows, needs NuGet packages, or needs step-through debugging, move it to a .NET custom code function in the Logic Apps project, which you can debug in VS Code, or to Azure Functions. See <a href="#decision">Inline Code or Azure Functions?</a></li>
+</ol></section>
+<section id="decision" class="section-card reveal"><h2>Inline Code or Azure Functions?</h2><div class="table-wrap"><table><thead><tr><th>Keep inline C# when</th><th>Move to Azure Functions when</th></tr></thead><tbody><tr><td>The logic is small, workflow-local, and executes within action limits.</td><td>Multiple workflows or applications share the logic.</td></tr><tr><td>Deployment and versioning should follow one workflow.</td><td>The code needs independent deployment, scaling, testing, or ownership.</td></tr><tr><td>The script is clearer than a large expression graph.</td><td>The solution needs long execution, large output, complex dependencies, a public API, or step-through debugging.</td></tr></tbody></table></div></section>
+<section id="troubleshoot" class="section-card reveal"><h2>Troubleshooting</h2><div class="table-wrap"><table><thead><tr><th>Symptom</th><th>Check</th></tr></thead><tbody><tr><td>Script does not compile</td><td>Keep the <code>#r</code> directives, namespaces, predefined <code>Run</code> name, and supported method signature.</td></tr><tr><td>Body is null</td><td>Inspect trigger outputs and confirm the JSON request used <code>application/json</code>.</td></tr><tr><td>A valid order returns 200 with <code>(empty)</code> or the literal text <code>body('Calculate_pricing')</code></td><td>The <strong>Success Response</strong> body is empty or was saved as text. Re-enter it in the <strong>Expression</strong> editor (<strong>fx</strong>) and confirm the <strong>Code preview</strong> shows <code>"@body('Calculate_pricing')"</code>.</td></tr><tr><td>The invalid order returns 400 with <code>(empty)</code></td><td><strong>Failed Response</strong> has no body, or it uses the <strong>Outputs</strong> token, which is empty when the script fails. Use the expression from <a href="#failed-response">step 7</a>, which reads the action error with <code>actions('Calculate_pricing')?['error']</code>. Save, and deploy again.</td></tr><tr><td>The 400 message starts with <code>The function '...'</code> and contains a stack trace</td><td><strong>Failed Response</strong> returns the whole error object. Replace its body with the expression from <a href="#failed-response">step 7</a>, save, and deploy again.</td></tr><tr><td>The 400 body is the expression text instead of JSON</td><td>The designer saved the body as text. In <strong>Code preview</strong>, the body must start with <code>"@addProperty(</code>. Clear the <strong>Body</strong> field, and add the expression again with <strong>fx</strong>.</td></tr><tr><td>Response cannot find output</td><td>Use the action's internal name in <code>body('Calculate_pricing')</code>, not its display name with a space.</td></tr><tr><td>Both responses run, or neither runs</td><td>Review <strong>Run after</strong>: <strong>Success Response</strong> uses only <strong>Is successful</strong>, and <strong>Failed Response</strong> uses only <strong>Has failed</strong>.</td></tr><tr><td>I changed the <code>.csx</code> file, but the local result did not change</td><td>The host compiles the script at startup. Stop the host with <strong>Ctrl+C</strong>, and run it again with <strong>F5</strong>.</td></tr><tr><td>A breakpoint in the <code>.csx</code> never hits</td><td>Breakpoints are not supported in inline scripts. See <a href="#debug">Debug the Inline Script</a>.</td></tr><tr><td><code>The term 'Invoke-PricingWorkflow' is not recognized</code></td><td>The helper is defined only in the terminal where you ran it. In the terminal you are testing from, run the <code>Invoke-PricingWorkflow</code> function block from <a href="#local">Test Locally</a> or the cloud test, and then run the test again. For local tests, also set <code>$callbackUri</code> to the local signed URL first.</td></tr><tr><td>A local request returns <code>400 MissingApiVersionParameter</code> or <code>401 DirectApiAuthorizationRequired</code></td><td>You used the URL that the host shows in the terminal, which has no <code>api-version</code> or <code>sig</code> value. Get the signed URL with <code>$managementUri</code> as described in <a href="#local">Test Locally</a>, and send the request to <code>$callbackUri</code>.</td></tr><tr><td>Callback URL lookup fails locally</td><td>Confirm that the workflow and trigger names match <code>$managementUri</code>, that Azurite is running, and that the host finished starting on port 7071. Review the host terminal for an earlier startup error.</td></tr><tr><td>The Azure request returns 401 or 404</td><td>Copy the complete <strong>HTTP URL</strong> again, including the <code>sig</code> value, and keep it in single quotes. Confirm that the deployment finished and that the workflow is enabled.</td></tr><tr><td>Package import fails</td><td>For optional NuGet packages, place <code>functions.proj</code> in the workflow folder, target <code>netstandard2.0</code>, and restart the app.</td></tr></tbody></table></div></section>
+<section id="cleanup" class="section-card reveal"><h2>Cleanup and References</h2><p>Stop the local host (<strong>Ctrl+C</strong>) and Azurite. Delete the <code>rg-lab06-inline-dotnet-&lt;suffix&gt;</code> resource group to stop charges. If you reused an existing plan, delete only the logic app and storage account that the deployment created, so you keep the plan. Delete the generated project folder if you do not need it.</p><div class="callout"><strong>Microsoft Learn:</strong> <a href="https://learn.microsoft.com/azure/logic-apps/add-run-csharp-scripts">Add and run C# scripts in Standard workflows</a>, <a href="https://learn.microsoft.com/azure/logic-apps/create-single-tenant-workflows-visual-studio-code">Create Standard workflows with VS Code</a>, <a href="https://learn.microsoft.com/azure/logic-apps/create-run-custom-code-functions">Create and run .NET custom code functions</a>, and <a href="../topics/core-concepts.html#inline-code">Workshop topic: Inline Code</a>.</div></section>
 <nav class="pager" aria-label="Lab pagination"><a class="prev" href="lab05-logic-app-testing-portal.html"><small>Previous</small><strong>&larr; Lab 05: Logic App Testing</strong></a><a class="next" href="lab07-reusable-workflows-portal.html"><small>Next</small><strong>Lab 07: Reusable Workflows &rarr;</strong></a></nav>
-</main><aside class="toc" aria-label="Table of contents"><h3>On This Page</h3><a href="#scenario">Scenario</a><a href="#architecture">Architecture</a><a href="#prerequisites">Prerequisites</a><a href="#workflow">Create Workflow</a><a href="#code">C# Script</a><a href="#run">Run and Verify</a><a href="#decision">Code Decision</a><a href="#troubleshoot">Troubleshooting</a><a href="#cleanup">Cleanup</a></aside></div>
+</main><aside class="toc" aria-label="Table of contents"><h3>On This Page</h3><a href="#scenario">Scenario</a><a href="#architecture">Architecture</a><a href="#prerequisites">Prerequisites</a><a href="#workflow">Create Workflow</a><a href="#code">How the Script Works</a><a href="#deploy">Deploy and Test in Azure</a><a href="#local">Test Locally</a><a href="#debug">Debug the Script</a><a href="#decision">Code Decision</a><a href="#troubleshoot">Troubleshooting</a><a href="#cleanup">Cleanup</a></aside></div>
 </div><script type="module" src="../assets/site.js"></script></body></html>
