@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Codeful Workflows &middot; Azure Logic Apps Workshop</title>
+  <meta name="description" content="Author Logic Apps Standard workflows in C# with the Standard SDK: when to choose code-first, how composition works, local development, deployment, and preview limitations." />
+  <script>
+    (function () {
+      var t = localStorage.getItem("logic-apps-workshop-theme");
+      document.documentElement.setAttribute("data-theme",
+        (t === "light" || t === "dark") ? t : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
+    })();
+  </script>
+  <link rel="icon" type="image/svg+xml" href="../images/azure/02631-icon-service-Logic-Apps.svg" />
+  <link rel="stylesheet" href="../assets/site.css" />
+</head>
+<body data-root=".." data-active="codeful-workflows">
+  <div class="page">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../index.html">Home</a><span class="sep">/</span><span>Topics</span><span class="sep">/</span><span>Codeful Workflows</span>
+    </nav>
+
+    <header class="hero">
+      <h1>Codeful Workflows</h1>
+      <p class="subtitle">Define the orchestration in C# with the Logic Apps Standard SDK, while retaining the Logic Apps runtime and visual run-history experience.</p>
+      <div class="badge-row"><span class="badge">Logic Apps Standard</span><span class="badge">C# + .NET SDK</span><span class="badge">Preview: verify release support</span></div>
+    </header>
+
+    <div class="layout">
+      <main class="content">
+        <section id="authoring-model" class="section-card reveal">
+          <h2>A New Authoring Model, Not a New Runtime</h2>
+          <p><strong>Codeful Workflows</strong>, also described as code-first authoring or Code for Workflows, lets developers define triggers, actions, dependencies, and control flow in C# rather than primarily through the visual designer and JSON. The <code>Microsoft.Azure.Workflows.Sdk</code> package provides typed operations, IntelliSense, and fluent APIs for composing the workflow.</p>
+          <p>The SDK compiles the workflow definition for execution on the Logic Apps runtime. Developers change how they author the orchestration; operators still inspect workflow runs visually, including action inputs, outputs, and failures.</p>
+          <div class="diagram-wrap">
+            <pre class="mermaid">
+flowchart TD
+    C["C# workflow definition"] --> B["SDK and project build"]
+    B --> R["Logic Apps Standard runtime"]
+    D["Designer-authored workflow"] --> R
+    R --> H["Visual run history and diagnostics"]
+            </pre>
+          </div>
+          <div class="callout"><strong>Keep the choices separate:</strong> Codeful Workflows is an authoring option for <a href="standard-plans.html">Logic Apps Standard</a>, not a hosting plan or a replacement for the stateful/stateless distinction. The SDK reference includes stateful, stateless, and agent factories; the workflow choices exposed by the workspace wizard depend on the installed release.</div>
+          <p><strong>Source context:</strong> the <a href="https://techcommunity.microsoft.com/blog/integrationsonazureblog/codeful-workflows-a-new-authoring-model-for-logic-apps-standard/4415702">May 20, 2025 announcement</a> describes an early, pre-release Durable Task-based design. This module follows the later <a href="https://learn.microsoft.com/en-us/azure/logic-apps/standard-sdk/create-workflows-with-csharp">public SDK authoring guide</a> and <a href="https://learn.microsoft.com/en-us/azure/logic-apps/standard-sdk/logic-apps-standard-sdk">fluent API reference</a>; do not combine the early function-based sample with SDK workflow-provider code as though they were one template.</p>
+        </section>
+
+        <section id="why-code-first" class="section-card reveal">
+          <h2>Why Choose Code-First Authoring?</h2>
+          <div class="plan-grid">
+            <div class="plan-box">
+              <h3>Familiar .NET development</h3>
+              <p>Use C# tooling, IntelliSense, refactoring, and a .NET project structure to develop integrations alongside the team's other application code.</p>
+            </div>
+            <div class="plan-box">
+              <h3>Maintainable composition</h3>
+              <p>Organize larger orchestrations through named operations and reusable C# components rather than navigating an increasingly large designer canvas.</p>
+            </div>
+            <div class="plan-box">
+              <h3>Readable code reviews</h3>
+              <p>Review changes to operations, dependencies, and error paths in C#. Designer-authored JSON already supports source control; code-first offers a different representation for reviewing it.</p>
+            </div>
+            <div class="plan-box">
+              <h3>Reuse and versioning</h3>
+              <p>Factor common composition into shared helpers or versioned .NET packages where appropriate, with explicit contracts and tests instead of copied workflow fragments.</p>
+            </div>
+          </div>
+          <div class="callout"><strong>Decision rule:</strong> choose code-first when it improves how the owning team builds, reviews, reuses, and maintains the integration. A large action count alone is not a reason to migrate, and changing authoring style does not automatically improve runtime performance.</div>
+        </section>
+
+        <section id="choose-authoring" class="section-card reveal">
+          <h2>Codeful vs. Designer, Inline Code, and Functions</h2>
+          <p>The important distinction is <strong>what the code defines</strong>: a processing step or the orchestration itself. VS Code is a tool for both designer-first and code-first Standard development; using VS Code does not by itself make a workflow codeful.</p>
+          <div class="table-wrap">
+            <table aria-label="Choosing a workflow authoring and custom-code approach">
+              <thead><tr><th>Approach</th><th>What it defines</th><th>When it fits</th></tr></thead>
+              <tbody>
+                <tr><td>Designer-first workflow</td><td>Orchestration authored visually and represented in JSON.</td><td>The workflow is clear in the designer, or maintainers need visual editing.</td></tr>
+                <tr><td>Codeful Workflows</td><td>The orchestration itself, composed in C# with SDK operations.</td><td>A .NET team benefits from code-based composition, reviews, and reuse, and the required operations are supported.</td></tr>
+                <tr><td>Inline C# script</td><td>Custom processing inside an <strong>Execute CSharp Script Code</strong> action.</td><td>A designer-authored Standard workflow needs a bounded transformation or calculation. See <a href="../labs/lab06-inline-dotnet-code-vscode.html">Lab 06</a>.</td></tr>
+                <tr><td>Local .NET function</td><td>A reusable custom-code step called by a workflow in the same Standard workspace.</td><td>Keep the designer orchestration while organizing richer .NET processing alongside it.</td></tr>
+                <tr><td>Separate Azure Function or service</td><td>An external processing or API boundary.</td><td>The code needs independent deployment, ownership, reuse, or scaling.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Keep a straightforward, working designer workflow unless there is a concrete maintenance benefit. For step-level extensions, start with <a href="core-concepts.html#inline-code">Inline Code and Script Actions</a> and <a href="advanced-patterns.html#extension-patterns">Advanced Patterns</a>.</p>
+        </section>
+
+        <section id="create-workspace" class="section-card reveal">
+          <h2>Create a Code-First Workspace</h2>
+          <p>Use Visual Studio Code with the <strong>Azure Logic Apps (Standard)</strong> extension and the .NET/local-runtime prerequisites linked from the <a href="https://learn.microsoft.com/en-us/azure/logic-apps/standard-sdk/create-workflows-with-csharp#prerequisites">SDK guide</a>. Use an approved non-production Azure subscription for connector resources and deployment; those resources can incur charges.</p>
+          <ol style="margin:8px 0 0 18px; color:var(--text-secondary);">
+            <li>Open the Azure view. On the Workspace toolbar, open the Azure Logic Apps menu and select <strong>Create new logic app workspace</strong>.</li>
+            <li>Provide the workspace folder, workspace name, logic app name, and workflow name.</li>
+            <li>For the project flavor, select <strong>Logic app (codeful)</strong>. Start with a <strong>Stateful</strong> workflow for a non-AI request-response example; check the current wizard for other supported choices.</li>
+            <li>Review the configuration and select <strong>Create workspace</strong>. Trust the workspace only after verifying its source.</li>
+            <li>When prompted, choose <strong>Use connectors from Azure</strong>, select the subscription and resource group, and configure only the connectors required for the example.</li>
+            <li>Open the generated workflow C# file. For a managed connector action, hover over its call and choose <strong>Manage connector</strong> to select or create its connection.</li>
+          </ol>
+          <div class="callout warning"><strong>Check support first:</strong> the linked public guide documents preview restrictions for service-provider connectors, authentication, and custom-code callbacks. Review <a href="#limitations">Release Boundaries</a> before selecting the example's connectors. Do not assume every operation from an existing designer workflow is available through the installed SDK.</div>
+        </section>
+
+        <section id="project-structure" class="section-card reveal">
+          <h2>Understand the Project and Configuration</h2>
+          <p>The generated project is a .NET project, not just a collection of hand-edited workflow JSON files. Follow the generated template for your installed SDK version.</p>
+          <div class="table-wrap">
+            <table aria-label="Code-first project files and their responsibilities">
+              <thead><tr><th>File or artifact</th><th>Responsibility</th></tr></thead>
+              <tbody>
+                <tr><td><code>Program.cs</code></td><td>Configure and start the host, including workflow-provider registration.</td></tr>
+                <tr><td>Workflow <code>.cs</code> files</td><td>Define and compose named triggers, actions, and dependencies.</td></tr>
+                <tr><td><code>.csproj</code></td><td>Record the target framework and package references, including the workflow SDK.</td></tr>
+                <tr><td><code>host.json</code></td><td>Configure runtime behavior.</td></tr>
+                <tr><td><code>connections.json</code></td><td>Record connector configuration and connection references.</td></tr>
+                <tr><td><code>local.settings.json</code></td><td>Hold local configuration, which can include credentials. Never commit it.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Externalize environment-specific values such as queue names and endpoints rather than hardcoding them into the orchestration. Review connection metadata before committing, keep secrets out of source control, and supply environment settings through the supported deployment configuration.</p>
+        </section>
+
+        <section id="sdk-composition" class="section-card reveal">
+          <h2>Define Operations, Then Compose the Flow</h2>
+          <p>Use the SDK to construct an execution graph. This is not a feature that converts an arbitrary C# method into a durable workflow.</p>
+          <div class="table-wrap">
+            <table aria-label="Workflow SDK building blocks">
+              <thead><tr><th>SDK entry point</th><th>Purpose</th></tr></thead>
+              <tbody>
+                <tr><td><code>IWorkflowProvider</code></td><td>Provide workflow definitions for host registration. Registration extensions include <code>AddWorkflowProvider&lt;T&gt;</code> and <code>AddWorkflowProviders</code>.</td></tr>
+                <tr><td><code>WorkflowFactory</code></td><td>Create workflow definitions for supported workflow types.</td></tr>
+                <tr><td><code>WorkflowTriggers</code> and <code>WorkflowActions</code></td><td>Create typed trigger and action operations, including supported managed connector operations.</td></tr>
+                <tr><td><code>Then()</code> and <code>Join()</code></td><td>Compose dependencies and join execution paths. Configure non-success run-after paths explicitly.</td></tr>
+                <tr><td><code>WorkflowControlActions</code></td><td>Define workflow controls such as Scope, Condition, ForEach, Until, Switch, and Terminate.</td></tr>
+                <tr><td><code>WorkflowContext</code></td><td>Access trigger and action results during custom-code execution, including typed results where supported.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>This <strong>composition fragment</strong> shows the chaining pattern only. The variables represent operations that have already been created and named through the SDK; this is not a complete runnable workflow:</p>
+          <pre class="code" data-lang="csharp">requestTrigger
+    .Then(validateOrder)
+    .Then(publishMessage)
+    .Then(successResponse);</pre>
+          <p>Follow the generated template and <a href="https://learn.microsoft.com/en-us/azure/logic-apps/standard-sdk/logic-apps-standard-sdk">SDK reference</a> for operation construction, provider registration, scopes, branches, and failure dependencies. Use custom-code callbacks for processing that needs ordinary C# logic, subject to the installed release's callback restrictions.</p>
+          <div class="callout"><strong>Definition time vs. run time:</strong> a C# loop that constructs the workflow definition is not a workflow <strong>ForEach</strong> operation. Use SDK workflow controls when the iterations need workflow scheduling, connector calls, retries, or per-action operational visibility.</div>
+        </section>
+
+        <section id="develop-and-operate" class="section-card reveal">
+          <h2>Build, Run, Inspect, and Deploy</h2>
+          <ol style="margin:8px 0 0 18px; color:var(--text-secondary);">
+            <li><strong>Build and start locally:</strong> select <strong>Run &gt; Start debugging</strong> (<strong>F5</strong>). The generated project compiles and starts the local Logic Apps runtime.</li>
+            <li><strong>Open Overview:</strong> use the <code>Program.cs</code> context menu's <strong>Overview</strong> entry. If the project contains multiple workflows, select the workflow to inspect.</li>
+            <li><strong>Trigger and inspect:</strong> execute the workflow from Overview or its supported trigger entry point. Inspect visual run history, action inputs and outputs, and failure paths.</li>
+            <li><strong>Iterate in C#:</strong> change the workflow source, rebuild, and rerun representative cases. Review the diff for changed dependencies, configuration, and error behavior, not only C# syntax.</li>
+            <li><strong>Deploy a built artifact:</strong> use the deployment experience supported by the generated project and installed release, or its supported CI/CD path. Provision connections, identities, networking, and environment settings deliberately; deploying source files alone is not a release process.</li>
+            <li><strong>Maintain the source of truth:</strong> make orchestration changes in the C# project, then rebuild and redeploy. The code-authored workflow's deployed visual representation is for inspection, not portal editing of its definition.</li>
+          </ol>
+          <div class="callout"><strong>Visual operations remain:</strong> the public SDK guide confirms that code-authored workflows use the same rich visual run-history representation as designer-authored workflows. This does not imply two-way designer/C# editing or a guaranteed visual preview before execution.</div>
+          <p>Apply the existing <a href="build-and-manage.html#pipeline">release pipeline guidance</a> and <a href="monitoring-troubleshooting.html">monitoring practices</a>. Test live connector authentication and side effects in an isolated environment; a successful build or a green run against mocks does not prove end-to-end readiness.</p>
+        </section>
+
+        <section id="example" class="section-card reveal">
+          <h2>Example Walkthrough: Request to Message</h2>
+          <p>For a first demonstration, keep the business flow small: receive an HTTP request, validate an order and create a correlation identifier with custom C#, publish a message through a supported managed connector, and return a response. Add an explicit failure path rather than demonstrating only the happy path.</p>
+          <p>If you choose Service Bus, confirm the <strong>managed connector</strong> operation and authentication available in your release. Do not substitute a built-in service-provider operation solely because it exists in the designer.</p>
+          <div class="table-wrap">
+            <table aria-label="Suggested code-first demonstration cases">
+              <thead><tr><th>Case</th><th>Expected evidence</th></tr></thead>
+              <tbody>
+                <tr><td>Valid order</td><td>The intended message is published, a successful response is returned, and the visual run shows the processing steps.</td></tr>
+                <tr><td>Invalid order</td><td>A clear validation response is returned without publishing a message.</td></tr>
+                <tr><td>Connector failure or timeout</td><td>The configured failure path runs, success is not reported, and diagnostics retain a useful correlation identifier without exposing secrets.</td></tr>
+                <tr><td>Small source change</td><td>The C# diff clearly shows the change, and rebuilding and rerunning confirms the expected behavior.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>This is a demonstration outline, not an additional hands-on lab. Use it to compare the C# definition with the visual execution view and discuss which parts are reusable.</p>
+        </section>
+
+        <section id="limitations" class="section-card reveal">
+          <h2>Release Boundaries and Preview Limitations</h2>
+          <p>The linked <a href="https://learn.microsoft.com/en-us/azure/logic-apps/standard-sdk/create-workflows-with-csharp#known-issues-and-limitations">public SDK guide</a> identifies this as a preview feature. The table below summarizes that guide's documented restrictions, checked for this module on <time datetime="2026-11-16">November 16, 2026</time>; it is not a claim that every newer extension, SDK, or backend release has identical support.</p>
+          <div class="table-wrap">
+            <table aria-label="Documented SDK preview boundaries and checks">
+              <thead><tr><th>Area</th><th>Public guide's documented position</th><th>Before teaching or adopting</th></tr></thead>
+              <tbody>
+                <tr><td>Service-provider connectors</td><td>Built-in service-provider-based operations are unavailable in the documented preview; managed connectors are supported. This restriction is distinct from SDK built-in operations such as control flow.</td><td>Verify the exact trigger/action and connector implementation in the target release.</td></tr>
+                <tr><td>Dynamic schemas</td><td>Unavailable in the documented preview.</td><td>Check operations that depend on runtime-selected schemas or generated inputs.</td></tr>
+                <tr><td>Custom-code actions</td><td>Callback methods are supported; inline lambda functions are unsupported in the documented preview.</td><td>Use the generated callback pattern. A workshop showing newer lambda support is not proof that the installed SDK supports it.</td></tr>
+                <tr><td>Managed identity</td><td>Support is in development for the documented code-first connector experience; the guide directs preview users to connection keys.</td><td>Confirm authentication support and organizational policy. If required managed identity is unavailable, choose another supported approach rather than weaken policy.</td></tr>
+                <tr><td>Operation references</td><td>Actions must be added and named before they can be referenced.</td><td>Review operation names and dependencies as part of the workflow contract.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Later demonstrations can show capabilities beyond the published guide. Validate the installed extension, SDK package, backend support, and release notes together before relying on them. Do not present planned JSON conversion, pre-execution visual preview, broader connector coverage, or expanded C# expressions as universally released features.</p>
+          <div class="callout"><strong>Do not generalize preview restrictions:</strong> these checks concern the code-first SDK experience. They do not remove capabilities from existing designer-authored Standard workflows, and code-first authoring does not itself change hosting costs, concurrency limits, or runtime settings.</div>
+        </section>
+
+        <section id="references" class="section-card reveal">
+          <h2>References and Further Reading</h2>
+          <ul>
+            <li><a href="https://learn.microsoft.com/en-us/azure/logic-apps/standard-sdk/create-workflows-with-csharp">Microsoft Learn: Create Standard workflow projects with the SDK</a> &mdash; workspace setup, managed connections, local execution, and documented preview limitations.</li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/logic-apps/standard-sdk/logic-apps-standard-sdk">Microsoft Learn: Logic Apps Standard SDK class library</a> &mdash; workflow providers, factories, chaining, controls, and runtime context.</li>
+            <li><a href="https://techcommunity.microsoft.com/blog/integrationsonazureblog/codeful-workflows-a-new-authoring-model-for-logic-apps-standard/4415702">PG announcement: Codeful Workflows: A New Authoring Model for Logic Apps Standard</a> &mdash; May 20, 2025; historical pre-release context, not the current SDK template.</li>
+            <li><a href="core-concepts.html#inline-code">Workshop: Inline Code and Script Actions</a> &mdash; distinguish code inside a step from C# orchestration.</li>
+            <li><a href="build-and-manage.html">Workshop: Build &amp; Manage</a> &mdash; authoring tools, configuration, deployment, and release practices.</li>
+          </ul>
+        </section>
+
+        <nav class="pager" aria-label="Workshop pagination">
+          <a class="prev" href="migration-agent.html"><small>Previous</small><strong>&larr; Migration Agent</strong></a>
+          <a class="next" href="build-and-manage.html"><small>Next</small><strong>Build &amp; Manage &rarr;</strong></a>
+        </nav>
+      </main>
+
+      <aside class="toc" aria-label="Table of contents">
+        <h3>On This Page</h3>
+        <a href="#authoring-model">Authoring Model</a>
+        <a href="#why-code-first">Why Code-First?</a>
+        <a href="#choose-authoring">Choose an Approach</a>
+        <a href="#create-workspace">Create a Workspace</a>
+        <a href="#project-structure">Project and Configuration</a>
+        <a href="#sdk-composition">SDK Composition</a>
+        <a href="#develop-and-operate">Build, Run, and Deploy</a>
+        <a href="#example">Example Walkthrough</a>
+        <a href="#limitations">Release Boundaries</a>
+        <a href="#references">References</a>
+      </aside>
+    </div>
+  </div>
+
+  <script type="module" src="../assets/site.js"></script>
+</body>
+</html>

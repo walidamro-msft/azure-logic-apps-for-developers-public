@@ -27,6 +27,7 @@ const TOPICS = [
   { key: "use-cases", label: "Use Cases", href: "topics/use-cases.html", dot: "dot-purple" },
   { key: "agentic-workflows", label: "Agentic Workflows", href: "topics/agentic-workflows.html", dot: "dot-blue" },
   { key: "migration-agent", label: "Migration Agent", href: "topics/migration-agent.html", dot: "dot-purple" },
+  { key: "codeful-workflows", label: "Codeful Workflows", href: "topics/codeful-workflows.html", dot: "dot-blue" },
   { key: "build-and-manage", label: "Build & Manage", href: "topics/build-and-manage.html", dot: "dot-blue",
     children: [
       { key: "portal-menus", label: "Portal Menus", href: "topics/portal-menus.html", dot: "dot-green" }
@@ -134,7 +135,7 @@ function buildFooter() {
   footer.innerHTML = `
     <div class="footer-inner">
       <span>&copy; <span id="footer-year"></span> ${COPYRIGHT_TEXT}</span>
-      <span>Last updated: <time datetime="2026-11-13">11/13/2026</time></span>
+      <span>Last updated: <time datetime="2026-11-16">11/16/2026</time></span>
       <span class="footer-links">
         <a href="${url("index.html")}">Home</a>
         <a href="${url("whats-new.html")}">What's New</a>

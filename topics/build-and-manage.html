@@ -74,7 +74,14 @@
           <div class="callout"><strong>Note:</strong> There is no publicly announced retirement notice for the Consumption extension at this time. For net-new local development, most active tooling investment is centered on the Standard extension.</div>
           <div class="callout warning"><strong>Warning:</strong> Do not use the Consumption extension for new development. It depends on legacy extension dependencies, including Azure Account integration, and does not align with the current best-practice toolchain. Use the Standard extension for supported SDLC and CI/CD workflows.</div>
           <div class="callout"><strong>Best practice:</strong> The primary reason to build Logic Apps Standard in VS Code is to follow SDLC and CI/CD practices. Keeping workflow artifacts in source control enables versioning, pull request reviews, release promotion, rollback, and repeatable deployments across environments.</div>
-          <p>A Standard project contains one folder per workflow with a <code>workflow.json</code> file, plus project-level files such as <code>host.json</code> and <code>connections.json</code>. Keep <code>local.settings.json</code> out of source control because it can contain local secrets and connection values.</p>
+          <p>A designer-authored Standard project contains one folder per workflow with a <code>workflow.json</code> file, plus project-level files such as <code>host.json</code> and <code>connections.json</code>. Keep <code>local.settings.json</code> out of source control because it can contain local secrets and connection values.</p>
+        </section>
+
+        <section id="authoring-models" class="section-card reveal">
+          <h2>Choose an Authoring Model, Not Just an Editor</h2>
+          <p>VS Code supports designer-first Standard development as well as <a href="codeful-workflows.html">Codeful Workflows</a>, where a .NET project defines the orchestration in C# with the Logic Apps Standard SDK. Codeful Workflows changes the authoring model, not the hosting plan; compiled workflow definitions still execute on the Logic Apps runtime with visual run history.</p>
+          <p>Choose code-first when C# composition, code reviews, and reuse suit the owning team. Keep designer-first when visual editing is important. Adding an <a href="core-concepts.html#inline-code">inline C# action or local function</a> is a separate choice: it implements a processing step rather than the entire orchestration.</p>
+          <div class="callout"><strong>Project boundary:</strong> code-first projects include workflow <code>.cs</code> files, <code>Program.cs</code>, and SDK package references. Build and package the generated SDK project using its supported release process; do not treat it as a JSON-only project or deploy only the C# source. Check the <a href="codeful-workflows.html#limitations">documented preview restrictions</a> before choosing connectors or authentication.</div>
         </section>
 
         <section id="tool-choice" class="section-card reveal">
@@ -87,6 +94,7 @@
               <tbody>
                 <tr><td>First workflow or quick prototype</td><td>Portal</td><td>Visual and immediate, with minimal local setup.</td></tr>
                 <tr><td>Standard engineering workflow with source control</td><td>VS Code (Standard extension)</td><td>Best-practice path for SDLC and CI/CD, including workflow versioning, pull request review, release promotion, and rollback.</td></tr>
+                <tr><td>C#-authored Standard orchestration</td><td>VS Code + Standard SDK</td><td>Use <a href="codeful-workflows.html">Codeful Workflows</a> when code-first composition fits and the required operations are supported.</td></tr>
                 <tr><td>Consumption workflow authoring</td><td>Portal</td><td>Use the portal as the primary authoring path. Avoid the Consumption extension for new development due to legacy dependencies and low maintenance activity.</td></tr>
                 <tr><td>Quick inspection of a deployed workflow</td><td>Portal</td><td>Fast access to run history, designer, and operational surfaces.</td></tr>
               </tbody>
@@ -104,7 +112,7 @@
               </thead>
               <tbody>
                 <tr><td>Azure portal</td><td>Operational debugging through run history, trigger history, action-level inputs/outputs, diagnostics logs, and run resubmission. For Standard stateless workflows, you can temporarily enable <strong>Debug state</strong> to view partial run history.</td><td>Investigating failures in deployed workflows, validating production behavior, and troubleshooting with telemetry.</td></tr>
-                <tr><td>VS Code (Standard extension)</td><td>Local developer debugging with breakpoints in <code>workflow.json</code> (actions), Start Debugging (F5), step inspection, and local run/test loops.</td><td>Pre-deployment development, step-through troubleshooting, and fast iteration during SDLC.</td></tr>
+                <tr><td>VS Code (Standard extension)</td><td>For designer-authored projects, local developer debugging with breakpoints in <code>workflow.json</code> (actions), Start Debugging (F5), step inspection, and local run/test loops. Code-first projects use the <a href="codeful-workflows.html#develop-and-operate">SDK project's build and debug experience</a>.</td><td>Pre-deployment development, step-through troubleshooting, and fast iteration during SDLC.</td></tr>
               </tbody>
             </table>
           </div>
@@ -151,7 +159,7 @@
               <thead><tr><th>Deployment layer</th><th>Typical contents</th><th>Release behavior</th></tr></thead>
               <tbody>
                 <tr><td>Infrastructure</td><td>Hosting plan, Logic App resource, storage, monitoring, networking, identities, role assignments, API connections, and access policies</td><td>Deploy through reviewed infrastructure changes before the app depends on them.</td></tr>
-                <tr><td>Application</td><td>Workflow folders, <code>workflow.json</code>, <code>connections.json</code>, <code>host.json</code>, maps, schemas, assemblies, and other project artifacts</td><td>Build once, zip the project contents at the artifact root, and promote the same immutable package.</td></tr>
+                <tr><td>Application</td><td>Designer workflow folders and <code>workflow.json</code>, or compiled SDK project output for code-first workflows, plus connection configuration, host settings, and supporting artifacts</td><td>Build once, package with the supported project deployment process, and promote the same immutable package.</td></tr>
                 <tr><td>Environment configuration</td><td>Azure app settings, connection endpoints, resource IDs, feature settings, and Key Vault references</td><td>Inject values per environment; do not promote local credentials.</td></tr>
               </tbody>
             </table>
@@ -173,7 +181,7 @@
         <section id="pipeline" class="section-card reveal">
           <h2>Use a Verifiable Release Pipeline</h2>
           <ol style="margin:8px 0 0 18px; color:var(--text-secondary);">
-            <li>Validate JSON, workflow definitions, infrastructure templates, and policy requirements.</li>
+            <li>Validate JSON, workflow definitions, infrastructure templates, and policy requirements; compile code-first SDK projects.</li>
             <li>Run local or isolated tests for expressions, branches, static results, and custom code.</li>
             <li>Build one versioned zip artifact with project files at the archive root.</li>
             <li>Deploy or update infrastructure, connections, access policies, identities, and environment settings.</li>
@@ -188,6 +196,7 @@
           <ul>
             <li><a href="https://learn.microsoft.com/en-us/azure/logic-apps/quickstart-create-example-consumption-workflow">Create a Consumption workflow in the Azure portal</a></li>
             <li><a href="https://learn.microsoft.com/en-us/azure/logic-apps/create-standard-workflows-visual-studio-code">Create Standard workflows with Visual Studio Code</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/logic-apps/standard-sdk/create-workflows-with-csharp">Create code-first Standard workflow projects with the SDK</a></li>
             <li><a href="https://learn.microsoft.com/en-us/azure/logic-apps/create-single-tenant-workflows-azure-portal">Create Standard workflows in the Azure portal (including run history and stateless debug state)</a></li>
             <li><a href="https://learn.microsoft.com/en-us/azure/logic-apps/monitor-workflows-collect-diagnostic-data">Collect diagnostic data for workflow debugging and troubleshooting</a></li>
             <li><a href="https://learn.microsoft.com/en-us/azure/logic-apps/create-workflow-with-trigger-or-action">Build workflows with triggers and actions</a></li>
@@ -197,7 +206,7 @@
         </section>
 
         <nav class="pager" aria-label="Workshop pagination">
-          <a class="prev" href="migration-agent.html"><small>Previous</small><strong>&larr; Migration Agent</strong></a>
+          <a class="prev" href="codeful-workflows.html"><small>Previous</small><strong>&larr; Codeful Workflows</strong></a>
           <a class="next" href="portal-menus.html"><small>Next</small><strong>Portal Menus &rarr;</strong></a>
         </nav>
       </main>
@@ -207,6 +216,7 @@
         <a href="#portal">Azure Portal</a>
         <a href="#portal-menus-subtopic">Portal Menus</a>
         <a href="#vscode">Visual Studio Code</a>
+        <a href="#authoring-models">Authoring Models</a>
         <a href="#tool-choice">Tool Choice</a>
         <a href="#debugging-workflows">Debugging Workflows</a>
         <a href="#sample-definition">Workflow Definition</a>
